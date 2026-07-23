@@ -239,7 +239,7 @@ export default function TopshiriqPage() {
             {/* Muddat */}
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">
-                Muddat <span className="text-[#C0392B]">*</span>
+                {tr('Muddat')} <span className="text-[#C0392B]">*</span>
               </label>
               <input
                 className="input"
@@ -254,7 +254,7 @@ export default function TopshiriqPage() {
             <div className="flex justify-end">
               <button type="submit" className="btn-primary gap-2" disabled={yuborilmoqda}>
                 <Send className="h-4 w-4" />
-                {yuborilmoqda ? 'Yuborilmoqda...' : 'Topshiriqni yuborish'}
+                {yuborilmoqda ? tr('Yuborilmoqda...') : tr('Topshiriqni yuborish')}
               </button>
             </div>
           </div>
@@ -271,13 +271,13 @@ export default function TopshiriqPage() {
       {/* Yuborilgan topshiriqlar */}
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-[#0F2033]">Yuborilgan topshiriqlar</h2>
+          <h2 className="text-base font-semibold text-[#0F2033]">{tr('Yuborilgan topshiriqlar')}</h2>
           <span className="text-sm text-slate-500">
             Jami <span className="font-semibold tabular-nums text-[#0F2033]">{total}</span> ta
           </span>
         </div>
         {loading ? (
-          <p className="px-6 py-12 text-center text-sm text-slate-400">Yuklanmoqda...</p>
+          <p className="px-6 py-12 text-center text-sm text-slate-400">{tr('Yuklanmoqda...')}</p>
         ) : topshiriqlar.length === 0 ? (
           <div className="empty-state">
             <ClipboardList className="mx-auto h-8 w-8 text-slate-300" />

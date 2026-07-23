@@ -231,6 +231,7 @@ export function KochaForma({
   onYopish: () => void;
   onSaqlandi: () => void;
 }) {
+  const { tr } = useAlifbo();
   const tahrirlash = modal.rejim === 'tahrirlash';
   const [nomi, setNomi] = useState(tahrirlash ? modal.kocha.nomi : '');
   const [saqlanmoqda, setSaqlanmoqda] = useState(false);
@@ -274,7 +275,7 @@ export function KochaForma({
             className="input py-3 text-base"
             type="text"
             maxLength={150}
-            placeholder="Masalan: Amir Temur ko'chasi"
+            placeholder={tr("Masalan: Amir Temur ko'chasi")}
             value={nomi}
             onChange={(e) => setNomi(e.target.value)}
             autoFocus
@@ -290,11 +291,11 @@ export function KochaForma({
 
         <div className="flex items-center justify-end gap-3 pt-2">
           <button type="button" className="btn-soft px-5 py-3 text-base" onClick={onYopish}>
-            Bekor qilish
+            {tr('Bekor qilish')}
           </button>
           <button type="submit" className="btn-primary px-5 py-3 text-base" disabled={saqlanmoqda}>
             {saqlanmoqda && <Loader2 className="h-5 w-5 animate-spin" />}
-            {saqlanmoqda ? 'Saqlanmoqda...' : 'Saqlash'}
+            {saqlanmoqda ? tr('Saqlanmoqda...') : tr('Saqlash')}
           </button>
         </div>
       </form>
@@ -315,6 +316,7 @@ export function OchirishTasdiq({
   onOchirildi: () => void;
   onXato: (matn: string) => void;
 }) {
+  const { tr } = useAlifbo();
   const [ochirilmoqda, setOchirilmoqda] = useState(false);
 
   const bloklangan = modal.xonadonSoni > 0;
@@ -330,25 +332,23 @@ export function OchirishTasdiq({
     if (res.ok) {
       onOchirildi();
     } else {
-      onXato(res.xato || 'O\'chirishda xatolik yuz berdi. Qayta urinib ko\'ring.');
+      onXato(res.xato || tr("O'chirishda xatolik yuz berdi. Qayta urinib ko'ring."));
     }
   };
 
   return (
-    <ModalQuti sarlavha="O'chirishni tasdiqlang" onYopish={onYopish}>
+    <ModalQuti sarlavha={tr("O'chirishni tasdiqlang")} onYopish={onYopish}>
       <div className="space-y-4">
         <p className="text-base leading-relaxed text-slate-700">
           <span className="font-semibold text-[#0F2033]">"{modal.nomi}"</span>
-          {modal.tur === 'mfy' ? ' MFY ni' : ' ko\'chasini'} rostdan ham
-          o'chirmoqchimisiz?
+          {modal.tur === 'mfy' ? tr(' MFY ni') : tr(" ko'chasini")} {tr('rostdan ham o\'chirmoqchimisiz?')}
         </p>
 
         {/* Ko'chalar birga o'chishi haqida ogohlantirish */}
         {modal.tur === 'mfy' && modal.kochalarSoni > 0 && !bloklangan && (
           <p className="flex items-start gap-2 rounded-xl bg-[#d9a441]/10 px-4 py-3 text-sm font-medium text-[#8a621b]">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-            Diqqat: bu MFY dagi {modal.kochalarSoni} ta ko'cha ham birga
-            o'chiriladi.
+            {tr('Diqqat: bu MFY dagi')} {modal.kochalarSoni} {tr('ta ko\'cha ham birga o\'chiriladi.')}
           </p>
         )}
 
@@ -356,15 +356,14 @@ export function OchirishTasdiq({
         {bloklangan && (
           <p className="flex items-start gap-2 rounded-xl bg-[#C0392B]/5 px-4 py-3 text-sm font-medium text-[#96291f]">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-            Bu {modal.tur === 'mfy' ? 'MFY ga' : 'ko\'chaga'} {modal.xonadonSoni}{' '}
-            ta xonadon biriktirilgan. O'chirishdan oldin xonadonlarni
-            o'chiring yoki boshqa joyga ko'chiring.
+            Bu {modal.tur === 'mfy' ? tr('MFY ga') : tr("ko'chaga")} {modal.xonadonSoni}{' '}
+            {tr('ta xonadon biriktirilgan. O\'chirishdan oldin xonadonlarni o\'chiring yoki boshqa joyga ko\'chiring.')}
           </p>
         )}
 
         <div className="flex items-center justify-end gap-3 pt-2">
           <button type="button" className="btn-soft px-5 py-3 text-base" onClick={onYopish}>
-            Bekor qilish
+            {tr('Bekor qilish')}
           </button>
           {!bloklangan && (
             <button
@@ -378,7 +377,7 @@ export function OchirishTasdiq({
               ) : (
                 <Trash2 className="h-5 w-5" />
               )}
-              {ochirilmoqda ? 'O\'chirilmoqda...' : 'Ha, o\'chirish'}
+              {ochirilmoqda ? tr("O'chirilmoqda...") : tr('Ha, o\'chirish')}
             </button>
           )}
         </div>

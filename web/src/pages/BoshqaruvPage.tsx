@@ -288,9 +288,9 @@ export default function BoshqaruvPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-[#0F2033]">Foydalanuvchilar ro'yxati</h2>
+          <h2 className="text-base font-semibold text-[#0F2033]">{tr("Foydalanuvchilar ro'yxati")}</h2>
           <span className="text-sm text-slate-500">
-            Jami <span className="font-semibold tabular-nums text-[#0F2033]">{total}</span> ta foydalanuvchi
+            {tr('Jami')} <span className="font-semibold tabular-nums text-[#0F2033]">{total}</span> {tr('ta foydalanuvchi')}
           </span>
         </div>
         {loading ? (
@@ -298,8 +298,8 @@ export default function BoshqaruvPage() {
         ) : users.length === 0 ? (
           <div className="empty-state">
             <Users className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm font-medium text-slate-600">Foydalanuvchilar topilmadi</p>
-            <p className="mt-1 text-xs text-slate-400">Filtrlarni o'zgartirib qayta urinib ko'ring</p>
+            <p className="mt-2 text-sm font-medium text-slate-600">{tr('Foydalanuvchilar topilmadi')}</p>
+            <p className="mt-1 text-xs text-slate-400">{tr("Filtrlarni o'zgartirib qayta urinib ko'ring")}</p>
           </div>
         ) : (
         <div className="overflow-x-auto">
@@ -330,12 +330,12 @@ export default function BoshqaruvPage() {
                   </td>
                   <td className="whitespace-nowrap">
                     <span className={rolRangi[u.rol] || 'badge-gray'}>
-                      {rolLabels[u.rol] || u.rol}
+                      {tr(rolLabels[u.rol] || u.rol)}
                     </span>
                   </td>
                   <td className="whitespace-nowrap">
                     <span className={holatRangi[u.holat] || 'badge-gray'}>
-                      {holatLabels[u.holat] || u.holat}
+                      {tr(holatLabels[u.holat] || u.holat)}
                     </span>
                   </td>
                   <td className="whitespace-nowrap text-slate-500">
@@ -377,7 +377,7 @@ export default function BoshqaruvPage() {
                         onClick={() => setMfyUser(u)}
                         className="btn-soft px-3 py-1.5 text-xs"
                       >
-                        MFY biriktirish
+                        {tr('MFY biriktirish')}
                       </button>
                     </div>
                   </td>

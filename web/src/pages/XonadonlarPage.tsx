@@ -102,34 +102,34 @@ export default function XonadonlarPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Uy raqami *</label>
-              <input className="input" value={createForm.uy_raqami} onChange={e => setCreateForm({...createForm, uy_raqami: e.target.value})} placeholder="15A" />
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Uy raqami")} *</label>
+              <input className="input" value={createForm.uy_raqami} onChange={e => setCreateForm({...createForm, uy_raqami: e.target.value})} placeholder={tr("15A")} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Egasi F.I.Sh</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Egasi F.I.Sh")}</label>
               <input className="input" value={createForm.egasi_fio || ''} onChange={e => setCreateForm({...createForm, egasi_fio: e.target.value})} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Egasi tel</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Egasi tel")}</label>
               <input className="input" value={createForm.egasi_tel || ''} onChange={e => setCreateForm({...createForm, egasi_tel: e.target.value})} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Lat</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Lat")}</label>
               <input className="input" type="number" step="any" value={createForm.lat ?? ''} onChange={e => setCreateForm({...createForm, lat: e.target.value ? Number(e.target.value) : undefined})} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Lng</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Lng")}</label>
               <input className="input" type="number" step="any" value={createForm.lng ?? ''} onChange={e => setCreateForm({...createForm, lng: e.target.value ? Number(e.target.value) : undefined})} />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Izoh</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Izoh")}</label>
             <textarea className="input" rows={2} value={createForm.izoh || ''} onChange={e => setCreateForm({...createForm, izoh: e.target.value})} />
           </div>
           {createError && <p className="text-sm text-[#C0392B]">{createError}</p>}
           <div className="flex gap-3">
-            <button onClick={handleCreate} disabled={creating} className="btn-primary">{creating ? 'Saqlanmoqda...' : 'Saqlash'}</button>
-            <button onClick={() => { setShowCreate(false); setCreateError(''); }} className="btn-ghost">Bekor qilish</button>
+            <button onClick={handleCreate} disabled={creating} className="btn-primary">{creating ? tr('Saqlanmoqda...') : tr('Saqlash')}</button>
+            <button onClick={() => { setShowCreate(false); setCreateError(''); }} className="btn-ghost">{tr('Bekor qilish')}</button>
           </div>
         </div>
       )}
@@ -160,14 +160,14 @@ export default function XonadonlarPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Qidiruv</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Qidiruv')}</label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 className="input pl-9"
                 value={qidiruv}
                 onChange={e => updateFilter('qidiruv', e.target.value)}
-                placeholder="Manzil yoki egasi..."
+                placeholder={tr("Manzil yoki egasi...")}
               />
             </div>
           </div>
@@ -176,7 +176,7 @@ export default function XonadonlarPage() {
           <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
             <button onClick={() => setSearchParams({})} className="btn-soft gap-2 text-xs">
               <FilterX className="h-4 w-4" />
-              Filtrlarni tozalash
+              {tr("Filtrlarni tozalash")}
             </button>
           </div>
         )}
@@ -187,19 +187,19 @@ export default function XonadonlarPage() {
         {/* Card header — sarlavha, natijalar soni va asosiy amal */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-[#0F2033]">Xonadonlar ro'yxati</h2>
+            <h2 className="text-sm font-semibold text-[#0F2033]">{tr("Xonadonlar ro'yxati")}</h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              Jami{' '}
+              {tr('Jami')}{' '}
               <span className="font-semibold tabular-nums text-[#0F2033]">
                 {data?.total ?? 0}
               </span>{' '}
-              ta xonadon
+              {tr('ta xonadon')}
             </p>
           </div>
           {isRahbar && (
             <button onClick={() => setShowCreate(!showCreate)} className="btn-primary gap-2">
               <Plus className="h-4 w-4" />
-              Yangi xonadon
+              {tr("Yangi xonadon")}
             </button>
           )}
         </div>
@@ -208,8 +208,8 @@ export default function XonadonlarPage() {
         ) : !data || data.items.length === 0 ? (
           <div className="empty-state">
             <Home className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm font-medium text-slate-600">Xonadonlar topilmadi</p>
-            <p className="mt-1 text-xs text-slate-400">Filtrlarni o'zgartirib qayta urinib ko'ring</p>
+            <p className="mt-2 text-sm font-medium text-slate-600">{tr("Xonadonlar topilmadi")}</p>
+            <p className="mt-1 text-xs text-slate-400">{tr("Filtrlarni o'zgartirib qayta urinib ko'ring")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -242,9 +242,9 @@ export default function XonadonlarPage() {
                     </td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link to={`/xonadonlar/${x.id}`} className="btn-soft px-2 py-1 text-xs">Ko'rish</Link>
+                        <Link to={`/xonadonlar/${x.id}`} className="btn-soft px-2 py-1 text-xs">{tr("Ko'rish")}</Link>
                         {isSuperadmin && (
-                          <button onClick={() => setDeleteId(x.id)} className="btn-danger px-2 py-1 text-xs">O'chirish</button>
+                          <button onClick={() => setDeleteId(x.id)} className="btn-danger px-2 py-1 text-xs">{tr("O'chirish")}</button>
                         )}
                       </div>
                     </td>
@@ -261,13 +261,13 @@ export default function XonadonlarPage() {
         <div className="flex items-center justify-center gap-4">
           <button disabled={page <= 1} onClick={() => updateFilter('page', String(page-1))} className="btn-soft gap-1.5 text-sm">
             <ChevronLeft className="h-4 w-4" />
-            Oldingi
+            {tr("Oldingi")}
           </button>
           <span className="text-sm text-slate-500">
-            Sahifa <span className="font-medium tabular-nums text-[#0F2033]">{page}</span> / {totalPages}
+            {tr("Sahifa")} <span className="font-medium tabular-nums text-[#0F2033]">{page}</span> / {totalPages}
           </span>
           <button disabled={page >= totalPages} onClick={() => updateFilter('page', String(page+1))} className="btn-soft gap-1.5 text-sm">
-            Keyingi
+            {tr("Keyingi")}
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -277,11 +277,11 @@ export default function XonadonlarPage() {
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="card mx-4 w-full max-w-sm space-y-4 p-6">
-            <h3 className="text-lg font-semibold text-[#0F2033]">Xonadonni o'chirish</h3>
-            <p className="text-sm text-slate-500">Rostdan ham bu xonadonni o'chirmoqchimisiz?</p>
+            <h3 className="text-lg font-semibold text-[#0F2033]">{tr("Xonadonni o'chirish")}</h3>
+            <p className="text-sm text-slate-500">{tr("Rostdan ham bu xonadonni o'chirmoqchimisiz?")}</p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteId(null)} className="btn-ghost">Bekor qilish</button>
-              <button onClick={handleDelete} className="btn-danger">O'chirish</button>
+              <button onClick={() => setDeleteId(null)} className="btn-ghost">{tr("Bekor qilish")}</button>
+              <button onClick={handleDelete} className="btn-danger">{tr("O'chirish")}</button>
             </div>
           </div>
         </div>

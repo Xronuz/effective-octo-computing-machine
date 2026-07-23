@@ -217,11 +217,11 @@ export default function HududPage() {
                 <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
                   <span className="inline-flex items-center gap-1">
                     <Home className="h-3.5 w-3.5" />
-                    {m.xonadon_soni} xonadon
+                    {m.xonadon_soni} {tr('xonadon')}
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <Route className="h-3.5 w-3.5" />
-                    {m.kochalar_soni} ko'cha
+                    {m.kochalar_soni} {tr("ko'cha")}
                   </span>
                 </div>
               </button>
@@ -234,7 +234,7 @@ export default function HududPage() {
       <div className="card space-y-4 p-6 xl:sticky xl:top-24">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-[#0F2033]">
-            Barcha ko'chalar{' '}
+            {tr("Barcha ko'chalar")}{' '}
             <span className="tabular-nums text-slate-400">({allKochalar.length})</span>
           </h2>
           <div className="w-full sm:w-auto sm:min-w-[180px]">
@@ -248,7 +248,7 @@ export default function HududPage() {
         {allKochalar.length === 0 ? (
           <div className="empty-state">
             <Route className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm text-slate-400">Ko'chalar topilmadi</p>
+            <p className="mt-2 text-sm text-slate-400">{tr("Ko'chalar topilmadi")}</p>
           </div>
         ) : (
           <div className="max-h-[60vh] overflow-auto rounded-xl border border-slate-200">
@@ -257,7 +257,7 @@ export default function HududPage() {
                 <tr>
                   <th>#</th>
                   <th>{tr("Ko'cha nomi")}</th>
-                  <th className="text-right">Xonadonlar</th>
+                  <th className="text-right">{tr('Xonadonlar')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -296,15 +296,14 @@ export default function HududPage() {
               <div className="min-w-0">
                 {selectedMfy ? (
                   <>
-                    <h2 className="truncate text-lg font-semibold text-[#0F2033]">
-                      MFY #{selectedMfy.raqami}: {selectedMfy.nomi}
+                    <h2 className="truncate text-lg font-semibold text-[#0F2033]">{tr('MFY')} #{selectedMfy.raqami}: {selectedMfy.nomi}
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
-                      {selectedMfy.kochalar.length} ta ko'cha, {selectedMfy.xonadon_soni} ta xonadon
+                      {selectedMfy.kochalar.length} {tr('ta ko\'cha')}, {selectedMfy.xonadon_soni} {tr('ta xonadon')}
                     </p>
                   </>
                 ) : (
-                  <h2 className="text-lg font-semibold text-[#0F2033]">MFY ma'lumotlari</h2>
+                  <h2 className="text-lg font-semibold text-[#0F2033]">{tr("MFY ma'lumotlari")}</h2>
                 )}
               </div>
               <div className="flex flex-shrink-0 items-center gap-2">
@@ -339,7 +338,7 @@ export default function HududPage() {
                 {canManage && selectedMfy && (
                   <button onClick={() => setKochaModal({ rejim: 'qoshish' })} className="btn-primary gap-2 text-sm">
                     <Plus className="h-4 w-4" />
-                    Yangi ko'cha
+                    {tr('Yangi ko\'cha')}
                   </button>
                 )}
                 <button
@@ -356,7 +355,7 @@ export default function HududPage() {
             {/* Kontent */}
             <div className="flex-1 space-y-4 overflow-y-auto px-6 pb-6">
               {loadingDetail && (
-                <p className="py-8 text-center text-sm text-slate-400">Yuklanmoqda...</p>
+                <p className="py-8 text-center text-sm text-slate-400">{tr('Yuklanmoqda...')}</p>
               )}
               {detailError && (
                 <div className="rounded-xl border border-[#C0392B]/20 bg-[#C0392B]/5 p-4 text-sm text-[#C0392B]">
@@ -370,7 +369,7 @@ export default function HududPage() {
                   {selectedMfy.kochalar.length === 0 ? (
                     <div className="empty-state py-8">
                       <Route className="mx-auto h-8 w-8 text-slate-300" />
-                      <p className="mt-2 text-sm text-slate-400">Ko'chalar mavjud emas</p>
+                      <p className="mt-2 text-sm text-slate-400">{tr("Ko'chalar mavjud emas")}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -379,8 +378,8 @@ export default function HududPage() {
                           <tr>
                             <th>#</th>
                             <th>{tr("Ko'cha nomi")}</th>
-                            <th className="text-right">Xonadonlar soni</th>
-                            {canManage && <th className="text-right">Amallar</th>}
+                            <th className="text-right">{tr('Xonadonlar soni')}</th>
+                            {canManage && <th className="text-right">{tr('Amallar')}</th>}
                           </tr>
                         </thead>
                         <tbody>

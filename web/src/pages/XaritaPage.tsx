@@ -409,28 +409,28 @@ export default function XaritaPage() {
 
       {/* Filtr chizig'i — sarlavha va statistika shu yerga ixcham ko'chirildi */}
       <div className="card px-4 py-2.5 mb-2 flex flex-wrap items-center gap-3">
-        <span className="text-sm font-semibold text-[var(--text-primary)]">Jonli xarita</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)]">{tr('Jonli xarita')}</span>
         <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
           <span
             className={`inline-block w-2 h-2 rounded-full ${isConnected ? 'bg-[#2E9E6B]' : 'bg-[#C0392B]'}`}
           />
-          {isConnected ? 'Ulangan' : 'Uzilgan'}
+          {isConnected ? tr('Ulangan') : tr('Uzilgan')}
         </span>
         <span className="hidden sm:inline text-xs text-[var(--text-muted)] tabular-nums">
-          Faol: {aktivlar.length} · Nuqta: {features.length}
+          {tr('Faol')}: {aktivlar.length} · {tr('Nuqta')}: {features.length}
         </span>
         <button
           onClick={fetchAktivlar}
           className="btn-ghost !p-1.5 text-[var(--text-muted)]"
-          title="Yangilash"
-          aria-label="Yangilash"
+          title={tr('Yangilash')}
+          aria-label={tr('Yangilash')}
         >
           <RefreshCw size={14} strokeWidth={1.8} />
         </button>
 
         <span className="w-px h-5 bg-[var(--border)] hidden sm:block" aria-hidden />
         <label className="flex items-center gap-2 text-sm text-gray-600">
-          <span className="font-medium">Status:</span>
+          <span className="font-medium">{tr('Status:')}</span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -446,7 +446,7 @@ export default function XaritaPage() {
         </label>
 
         <label className="flex items-center gap-2 text-sm text-gray-600">
-          <span className="font-medium">MFY:</span>
+          <span className="font-medium">{tr('MFY:')}</span>
           <select
             defaultValue=""
             onChange={(e) => handleMfyTanlash(e.target.value)}
@@ -516,15 +516,15 @@ export default function XaritaPage() {
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <Users size={15} strokeWidth={1.8} className="text-gray-500" />
-                Faol xodimlar
+                {tr('Faol xodimlar')}
               </h2>
               <div className="flex items-center gap-1.5">
                 <span className="badge-blue">{aktivlar.length}</span>
                 <button
                   onClick={() => setChapOchiq(false)}
                   className="btn-ghost !p-1 text-gray-400 hover:text-gray-700"
-                  title="Yig'ish"
-                  aria-label="Panelni yig'ish"
+                  title={tr("Yig'ish")}
+                  aria-label={tr("Panelni yig'ish")}
                 >
                   <ChevronLeft size={15} strokeWidth={2} />
                 </button>
@@ -533,7 +533,7 @@ export default function XaritaPage() {
             <div className="flex-1 overflow-y-auto">
               {saralanganAktivlar.length === 0 ? (
                 <p className="px-4 py-6 text-sm text-gray-400 text-center">
-                  Hozircha faol xodim yo'q
+                    {tr("Hozircha faol xodim yo'q")}
                 </p>
               ) : (
                 saralanganAktivlar.map((x) => (
@@ -575,8 +575,8 @@ export default function XaritaPage() {
           <button
             onClick={() => setChapOchiq(true)}
             className="absolute left-3 top-3 z-[1001] card !p-2.5 flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            title="Faol xodimlar panelini ochish"
-            aria-label="Faol xodimlar panelini ochish"
+            title={tr("Faol xodimlar panelini ochish")}
+            aria-label={tr("Faol xodimlar panelini ochish")}
           >
             <Users size={16} strokeWidth={1.8} />
             <span className="text-xs font-semibold tabular-nums">{aktivlar.length}</span>
@@ -590,13 +590,13 @@ export default function XaritaPage() {
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <Activity size={15} strokeWidth={1.8} className="text-gray-500" />
-                Hodisalar oqimi
+                {tr('Hodisalar oqimi')}
               </h2>
               <button
                 onClick={() => setOngOchiq(false)}
                 className="btn-ghost !p-1 text-gray-400 hover:text-gray-700"
-                title="Yig'ish"
-                aria-label="Panelni yig'ish"
+                title={tr("Yig'ish")}
+                aria-label={tr("Panelni yig'ish")}
               >
                 <ChevronRight size={15} strokeWidth={2} />
               </button>
@@ -604,7 +604,7 @@ export default function XaritaPage() {
             <div className="flex-1 overflow-y-auto">
               {hodisalar.length === 0 ? (
                 <p className="px-4 py-6 text-sm text-gray-400 text-center">
-                  Hozircha hodisa yo'q
+                    {tr("Hozircha hodisa yo'q")}
                 </p>
               ) : (
                 hodisalar.map((h) => (
@@ -632,8 +632,8 @@ export default function XaritaPage() {
           <button
             onClick={() => setOngOchiq(true)}
             className="absolute right-3 top-3 z-[1001] card !p-2.5 hidden lg:flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            title="Hodisalar panelini ochish"
-            aria-label="Hodisalar panelini ochish"
+            title={tr("Hodisalar panelini ochish")}
+            aria-label={tr("Hodisalar panelini ochish")}
           >
             <ChevronLeft size={14} strokeWidth={2} />
             <Activity size={16} strokeWidth={1.8} />

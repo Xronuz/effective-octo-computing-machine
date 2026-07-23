@@ -67,20 +67,20 @@ const TURI_ICON: Record<MuammoTuri, typeof Flame> = {
   boshqa: AlertCircle,
 };
 
-/** "5 daqiqa oldin" / "3 soat oldin" / "2 kun oldin" — eski sanalar uchun sanaVaqt. */
-function qanchaVaqtOldin(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  const farqSec = (Date.now() - d.getTime()) / 1000;
-  if (farqSec < 3600) return `${Math.max(1, Math.floor(farqSec / 60))} daqiqa oldin`;
-  if (farqSec < 86400) return `${Math.floor(farqSec / 3600)} soat oldin`;
-  if (farqSec < 7 * 86400) return `${Math.floor(farqSec / 86400)} kun oldin`;
-  return sanaVaqt(iso);
-}
-
 export default function DashboardPage() {
   const { tr } = useAlifbo();
+
+  /** "5 daqiqa oldin" / "3 soat oldin" / "2 kun oldin" — eski sanalar uchun sanaVaqt. */
+  function qanchaVaqtOldin(iso: string | null | undefined): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    const farqSec = (Date.now() - d.getTime()) / 1000;
+    if (farqSec < 3600) return `${Math.max(1, Math.floor(farqSec / 60))} ${tr('daqiqa oldin')}`;
+    if (farqSec < 86400) return `${Math.floor(farqSec / 3600)} ${tr('soat oldin')}`;
+    if (farqSec < 7 * 86400) return `${Math.floor(farqSec / 86400)} ${tr('kun oldin')}`;
+    return sanaVaqt(iso);
+  }
   const [xonadonTotal, setXonadonTotal] = useState<number>(0);
   const [statistika, setStatistika] = useState<StatistikaResponse | null>(null);
   const [songgiMuammolar, setSonggiMuammolar] = useState<MuammoBrief[]>([]);
@@ -302,20 +302,20 @@ export default function DashboardPage() {
           </div>
 
           {/* So'nggi faollik */}
-          <section className="card overflow-hidden" aria-label="So'nggi faollik">
+          <section className="card overflow-hidden" aria-label={tr("So'nggi faollik")}>
             <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-4">
-              <h2 className="text-base font-semibold text-[#0F2033]">So'nggi faollik</h2>
+              <h2 className="text-base font-semibold text-[#0F2033]">{tr("So'nggi faollik")}</h2>
               <Link
                 to="/muammolar"
                 className="text-sm font-medium text-[#3D6FB4] hover:underline"
               >
-                Barchasini ko'rish
+                {tr("Barchasini ko'rish")}
               </Link>
             </div>
             {songgiMuammolar.length === 0 ? (
               <div className="empty-state">
                 <Inbox className="mx-auto h-8 w-8 text-slate-300" />
-                <p className="mt-2 text-sm text-slate-400">Hozircha muammolar qayd etilmagan</p>
+                <p className="mt-2 text-sm text-slate-400">{tr("Hozircha muammolar qayd etilmagan")}</p>
               </div>
             ) : (
               <ul className="divide-y divide-slate-100">
@@ -332,15 +332,15 @@ export default function DashboardPage() {
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-[#0F2033]">
-                            {m.tavsif || `${TURI_LABEL[m.turi] || m.turi} — #${m.id}`}
+                            {m.tavsif || `${tr(TURI_LABEL[m.turi] || m.turi)} — #${m.id}`}
                           </p>
                           <p className="mt-0.5 truncate text-xs text-slate-500">
-                            {m.xonadon_manzil || 'Manzil ko‘rsatilmagan'}
+                            {m.xonadon_manzil || tr("Manzil ko‘rsatilmagan")}
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
                           <span className={STATUS_BADGE[m.status as MuammoStatus] || 'badge-gray'}>
-                            {STATUS_LABEL[m.status] || m.status}
+                            {tr(STATUS_LABEL[m.status] || m.status)}
                           </span>
                           <span className="text-xs text-slate-400">
                             {qanchaVaqtOldin(m.yaratilgan)}
