@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlifbo } from '../contexts/AlifboContext';
 import api from '../services/api';
 import { getKutilmaganSoni } from '../services/db';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, tabBarContentPadding } from '../theme';
@@ -31,16 +32,18 @@ interface StatItem {
   valueKey: keyof DashboardStats;
 }
 
-const STATS: StatItem[] = [
-  { key: 'xonadon', label: 'Jami xonadonlar', icon: 'home-city', color: Colors.primary, bg: Colors.primarySurface, valueKey: 'jami_xonadonlar' },
-  { key: 'muammo', label: 'Jami muammolar', icon: 'alert-octagon', color: Colors.secondary, bg: Colors.secondarySurface, valueKey: 'jami_muammolar' },
-  { key: 'ochiq', label: 'Ochiq muammolar', icon: 'alert-circle', color: Colors.info, bg: Colors.infoSurface, valueKey: 'ochiq_muammolar' },
-  { key: 'yopilgan', label: 'Yopilgan muammolar', icon: 'check-circle', color: Colors.success, bg: Colors.successSurface, valueKey: 'yopilgan_muammolar' },
-];
-
 export default function HomeScreen({ navigation }: any) {
   const { user } = useAuth();
+  const { tr } = useAlifbo();
   const insets = useSafeAreaInsets();
+
+  const STATS: StatItem[] = [
+    { key: 'xonadon', label: tr('Jami xonadonlar'), icon: 'home-city', color: Colors.primary, bg: Colors.primarySurface, valueKey: 'jami_xonadonlar' },
+    { key: 'muammo', label: tr('Jami muammolar'), icon: 'alert-octagon', color: Colors.secondary, bg: Colors.secondarySurface, valueKey: 'jami_muammolar' },
+    { key: 'ochiq', label: tr('Ochiq muammolar'), icon: 'alert-circle', color: Colors.info, bg: Colors.infoSurface, valueKey: 'ochiq_muammolar' },
+    { key: 'yopilgan', label: tr('Yopilgan muammolar'), icon: 'check-circle', color: Colors.success, bg: Colors.successSurface, valueKey: 'yopilgan_muammolar' },
+  ];
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -107,9 +110,9 @@ export default function HomeScreen({ navigation }: any) {
         {/* Header */}
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>Assalomu alaykum,</Text>
+            <Text style={styles.greeting}>{tr('Assalomu alaykum,')}</Text>
             <Text style={styles.name}>{user?.full_name || 'Xodim'}</Text>
-            <Text style={styles.role}>{user?.lavozim || "FVV xodimi — yong'in/gaz xavfsizligi nazorati"}</Text>
+            <Text style={styles.role}>{user?.lavozim || tr("FVV xodimi — yong'in/gaz xavfsizligi nazorati")}</Text>
           </View>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
@@ -119,7 +122,7 @@ export default function HomeScreen({ navigation }: any) {
         </View>
 
         {/* Stats */}
-        <Text style={styles.sectionTitle}>Statistika</Text>
+        <Text style={styles.sectionTitle}>{tr('Statistika')}</Text>
         {loading && !stats ? (
           <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: Spacing['3xl'] }} />
         ) : (
@@ -139,7 +142,7 @@ export default function HomeScreen({ navigation }: any) {
         )}
 
         {/* Quick Actions */}
-        <Text style={styles.sectionTitle}>Tezkor amallar</Text>
+        <Text style={styles.sectionTitle}>{tr('Tezkor amallar')}</Text>
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: Colors.primary }]}
@@ -147,7 +150,7 @@ export default function HomeScreen({ navigation }: any) {
             activeOpacity={0.8}
           >
             <MaterialCommunityIcons name="home-city" size={28} color={Colors.textInverse} />
-            <Text style={styles.actionText}>Xonadonlarni ko'rish</Text>
+            <Text style={styles.actionText}>{tr("Xonadonlarni ko'rish")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: Colors.danger }]}
@@ -155,7 +158,7 @@ export default function HomeScreen({ navigation }: any) {
             activeOpacity={0.8}
           >
             <MaterialCommunityIcons name="plus-circle" size={28} color={Colors.textInverse} />
-            <Text style={styles.actionText}>Yangi muammo qo'shish</Text>
+            <Text style={styles.actionText}>{tr('Yangi muammo qo\'shish')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: Colors.secondary }]}
@@ -163,7 +166,7 @@ export default function HomeScreen({ navigation }: any) {
             activeOpacity={0.8}
           >
             <MaterialCommunityIcons name="clipboard-check" size={28} color={Colors.textInverse} />
-            <Text style={styles.actionText}>Mening topshiriqlarim</Text>
+            <Text style={styles.actionText}>{tr('Mening topshiriqlarim')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -181,11 +184,11 @@ export default function HomeScreen({ navigation }: any) {
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.syncTitle}>Sinxronlash navbati</Text>
+            <Text style={styles.syncTitle}>{tr('Sinxronlash navbati')}</Text>
             <Text style={styles.syncSubtitle}>
               {navbatSoni > 0
-                ? `${navbatSoni} ta yozuv yuborilishi kutilmoqda`
-                : "Barcha yozuvlar sinxronlangan"}
+                ? tr('{count} ta yozuv yuborilishi kutilmoqda').replace('{count}', String(navbatSoni))
+                : tr("Barcha yozuvlar sinxronlangan")}
             </Text>
           </View>
           <Text style={[styles.syncCount, { color: navbatSoni > 0 ? Colors.accent : Colors.success }]}>
@@ -195,11 +198,11 @@ export default function HomeScreen({ navigation }: any) {
         </TouchableOpacity>
 
         {/* Biriktirilgan MFY lar */}
-        <Text style={styles.sectionTitle}>Biriktirilgan MFY lar</Text>
+        <Text style={styles.sectionTitle}>{tr('Biriktirilgan MFY lar')}</Text>
         {mfylar.length === 0 ? (
           <View style={styles.mfyEmpty}>
             <MaterialCommunityIcons name="map-marker-off-outline" size={22} color={Colors.textMuted} />
-            <Text style={styles.mfyEmptyText}>Sizga MFY biriktirilmagan</Text>
+            <Text style={styles.mfyEmptyText}>{tr('Sizga MFY biriktirilmagan')}</Text>
           </View>
         ) : (
           <View style={styles.mfyList}>

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Home, Landmark, Pencil, Plus, Route, Search, Trash2, X } from 'lucide-react';
 import { apiGet } from '@/api';
 import { useAuth } from '@/auth';
+import { useAlifbo } from '@/alifbo';
+import { krilldanLotinga } from '@/lib/alifbo';
 import type { MfyBrief, MfyDetail, KochaBrief } from '@/types';
 import {
   Toast,
@@ -15,6 +17,7 @@ import {
 } from '@/components/hudud-admin';
 
 export default function HududPage() {
+  const { tr } = useAlifbo();
   const { isRahbar, isSuperadmin } = useAuth();
   // POST/PATCH mfylar va kochalar: rahbar + superadmin
   const canManage = isRahbar || isSuperadmin;
@@ -86,7 +89,7 @@ export default function HududPage() {
   }, [sheetOpen]);
 
   const filteredMfylar = useMemo(() => {
-    const q = mfyQidiruv.trim().toLowerCase();
+    const q = krilldanLotinga(mfyQidiruv.trim().toLowerCase());
     if (!q) return mfylar;
     return mfylar.filter(
       m => m.nomi.toLowerCase().includes(q) || String(m.raqami).includes(q),
@@ -103,7 +106,7 @@ export default function HududPage() {
     if (res.ok) {
       setSelectedMfy(res.data);
     } else {
-      setDetailError(res.xato || "MFY ma'lumotlarini yuklashda xatolik");
+      setDetailError(res.xato || tr("MFY ma'lumotlarini yuklashda xatolik"));
     }
   };
 
@@ -118,7 +121,7 @@ export default function HududPage() {
     const tahrirlanganId = mfyModal?.rejim === 'tahrirlash' ? mfyModal.mfy.id : null;
     setXabar({
       turi: 'yaxshi',
-      matn: tahrirlanganId ? 'MFY muvaffaqiyatli yangilandi.' : 'Yangi MFY qo\'shildi.',
+      matn: tahrirlanganId ? tr('MFY muvaffaqiyatli yangilandi.') : tr('Yangi MFY qo\'shildi.'),
     });
     setMfyModal(null);
     fetchMfylar();
@@ -130,7 +133,7 @@ export default function HududPage() {
   const kochaSaqlandi = () => {
     setXabar({
       turi: 'yaxshi',
-      matn: kochaModal?.rejim === 'tahrirlash' ? 'Ko\'cha muvaffaqiyatli yangilandi.' : 'Yangi ko\'cha qo\'shildi.',
+      matn: kochaModal?.rejim === 'tahrirlash' ? tr('Ko\'cha muvaffaqiyatli yangilandi.') : tr('Yangi ko\'cha qo\'shildi.'),
     });
     setKochaModal(null);
     if (selectedMfy) loadMfyDetail(selectedMfy.id);
@@ -140,7 +143,7 @@ export default function HududPage() {
 
   const ochirildi = () => {
     const ochirilganMfyId = ochirishModal?.tur === 'mfy' ? ochirishModal.id : null;
-    setXabar({ turi: 'yaxshi', matn: 'Muvaffaqiyatli o\'chirildi.' });
+    setXabar({ turi: 'yaxshi', matn: tr('Muvaffaqiyatli o\'chirildi.') });
     setOchirishModal(null);
     if (ochirilganMfyId) {
       closeSheet();
@@ -164,7 +167,7 @@ export default function HududPage() {
       <div className="card p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-[#0F2033]">
-            Mahalla fuqarolar yig'inlari{' '}
+            {tr("Mahalla fuqarolar yig'inlari")}{' '}
             <span className="tabular-nums text-slate-400">({filteredMfylar.length})</span>
           </h2>
           <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -174,25 +177,25 @@ export default function HududPage() {
                 className="input pl-10 text-sm"
                 value={mfyQidiruv}
                 onChange={e => setMfyQidiruv(e.target.value)}
-                placeholder="MFY nomi yoki raqami..."
+                placeholder={tr('MFY nomi yoki raqami...')}
               />
             </div>
             {canManage && (
               <button onClick={() => setMfyModal({ rejim: 'qoshish' })} className="btn-primary gap-2 text-sm">
                 <Plus className="h-4 w-4" />
-                Yangi MFY
+                {tr('Yangi MFY')}
               </button>
             )}
           </div>
         </div>
 
         {loadingMfy ? (
-          <p className="text-sm text-slate-400">Yuklanmoqda...</p>
+          <p className="text-sm text-slate-400">{tr('Yuklanmoqda...')}</p>
         ) : filteredMfylar.length === 0 ? (
           <div className="empty-state">
             <Landmark className="mx-auto h-8 w-8 text-slate-300" />
             <p className="mt-2 text-sm text-slate-400">
-              {mfyQidiruv ? 'Qidiruv bo\'yicha MFY topilmadi' : 'MFY lar topilmadi'}
+              {mfyQidiruv ? tr('Qidiruv bo\'yicha MFY topilmadi') : tr('MFY lar topilmadi')}
             </p>
           </div>
         ) : (

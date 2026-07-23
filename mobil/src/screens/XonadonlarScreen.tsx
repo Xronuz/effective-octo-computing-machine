@@ -7,8 +7,10 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import api from '../services/api';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, tabBarContentPadding } from '../theme';
 import type { ApiResponse, Paginated, XonadonSummary } from '../types';
+import { useAlifbo } from '../contexts/AlifboContext';
 
 export default function XonadonlarScreen({ navigation }: any) {
+  const { tr } = useAlifbo();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<XonadonSummary[]>([]);
   const [page, setPage] = useState(1);
@@ -64,7 +66,7 @@ export default function XonadonlarScreen({ navigation }: any) {
         </View>
         <View style={styles.cardInfo}>
           <Text style={styles.cardTitle} numberOfLines={1}>
-            {item.full_address || "Manzil mavjud emas"}
+            {item.full_address || tr('Manzil mavjud emas')}
           </Text>
           <View style={styles.cardMeta}>
             <View style={styles.metaItem}>
@@ -88,9 +90,9 @@ export default function XonadonlarScreen({ navigation }: any) {
         <View style={styles.emptyIcon}>
           <MaterialCommunityIcons name="home-search-outline" size={36} color={Colors.textMuted} />
         </View>
-        <Text style={styles.emptyTitle}>Xonadonlar topilmadi</Text>
+        <Text style={styles.emptyTitle}>{tr('Xonadonlar topilmadi')}</Text>
         <Text style={styles.emptyText}>
-          Qidiruv bo'yicha hech narsa topilmadi yoki xonadonlar hali ro'yxatga olinmagan
+          {tr("Qidiruv bo'yicha hech narsa topilmadi yoki xonadonlar hali ro'yxatga olinmagan")}
         </Text>
       </View>
     ) : null
@@ -100,7 +102,7 @@ export default function XonadonlarScreen({ navigation }: any) {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Xonadonlar</Text>
+        <Text style={styles.headerTitle}>{tr('Xonadonlar')}</Text>
       </View>
 
       {/* Search */}
@@ -111,7 +113,7 @@ export default function XonadonlarScreen({ navigation }: any) {
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder="Manzil bo'yicha qidirish..."
+            placeholder={tr("Manzil bo'yicha qidirish...")}
             placeholderTextColor={Colors.textMuted}
             returnKeyType="search"
             onSubmitEditing={onSearch}
@@ -138,7 +140,7 @@ export default function XonadonlarScreen({ navigation }: any) {
         activeOpacity={0.85}
       >
         <MaterialCommunityIcons name="plus" size={26} color={Colors.textInverse} />
-        <Text style={styles.fabText}>Muammo yaratish</Text>
+        <Text style={styles.fabText}>{tr('Muammo yaratish')}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

@@ -6,10 +6,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlifbo } from '../contexts/AlifboContext';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
 
 export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
+  const { tr } = useAlifbo();
   const [gr, setGr] = useState('');
   const [parol, setParol] = useState('');
   const [error, setError] = useState('');
@@ -19,7 +21,7 @@ export default function LoginScreen({ navigation }: any) {
   const handleLogin = async () => {
     setError('');
     if (!gr.trim() || !parol.trim()) {
-      setError("Guvohnoma raqami va parolni kiriting");
+      setError(tr("Guvohnoma raqami va parolni kiriting"));
       return;
     }
     setLoading(true);
@@ -37,8 +39,8 @@ export default function LoginScreen({ navigation }: any) {
             <View style={styles.logoBlock}>
               <MaterialCommunityIcons name="shield-home" size={44} color={Colors.accent} />
             </View>
-            <Text style={styles.title}>XAVFSIZ XONADON</Text>
-            <Text style={styles.subtitle}>Yong'in va gaz xavfsizligi nazorati tizimi</Text>
+            <Text style={styles.title}>{tr('XAVFSIZ XONADON')}</Text>
+            <Text style={styles.subtitle}>{tr("Yong'in va gaz xavfsizligi nazorati tizimi")}</Text>
           </View>
 
           {/* Form */}
@@ -50,7 +52,7 @@ export default function LoginScreen({ navigation }: any) {
                 style={styles.input}
                 value={gr}
                 onChangeText={setGr}
-                placeholder="Guvohnoma raqami"
+                placeholder={tr('Guvohnoma raqami')}
                 placeholderTextColor={Colors.textMuted}
                 autoCapitalize="characters"
                 autoCorrect={false}
@@ -68,7 +70,7 @@ export default function LoginScreen({ navigation }: any) {
                 style={styles.input}
                 value={parol}
                 onChangeText={setParol}
-                placeholder="Parol"
+                placeholder={tr('Parol')}
                 placeholderTextColor={Colors.textMuted}
                 secureTextEntry
                 editable={!loading}
@@ -97,7 +99,7 @@ export default function LoginScreen({ navigation }: any) {
               ) : (
                 <>
                   <MaterialCommunityIcons name="login" size={20} color={Colors.textInverse} style={{ marginRight: 8 }} />
-                  <Text style={styles.buttonText}>Kirish</Text>
+                  <Text style={styles.buttonText}>{tr('Kirish')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -110,7 +112,7 @@ export default function LoginScreen({ navigation }: any) {
               activeOpacity={0.7}
             >
               <Text style={styles.registerLinkText}>
-                Hisobingiz yo'qmi? <Text style={styles.registerLinkBold}>Ro'yxatdan o'tish</Text>
+                {tr("Hisobingiz yo'qmi? ")}<Text style={styles.registerLinkBold}>{tr("Ro'yxatdan o'tish")}</Text>
               </Text>
             </TouchableOpacity>
           </View>

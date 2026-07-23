@@ -10,6 +10,7 @@ import FormField from '../components/FormField';
 import Button from '../components/Button';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, tabBarContentPadding } from '../theme';
 import type { ApiResponse, Paginated, MfyBrief, KochaBrief, XonadonSummary } from '../types';
+import { useAlifbo } from '../contexts/AlifboContext';
 
 interface KochaDetail extends KochaBrief {
   expanded: boolean;
@@ -33,6 +34,7 @@ interface YangiXonadonForm {
 const EMPTY_FORM: YangiXonadonForm = { uy_raqami: '', egasi_fio: '', egasi_tel: '', izoh: '' };
 
 export default function HududScreen({ navigation }: any) {
+  const { tr } = useAlifbo();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<MfyDetail[]>([]);
   const [loading, setLoading] = useState(false);
@@ -180,19 +182,19 @@ export default function HududScreen({ navigation }: any) {
             ),
           }))
         );
-        Alert.alert('Muvaffaqiyat', `№${yangi.uy_raqami} uy qo'shildi`, [
-          { text: 'Yopish', style: 'cancel' },
-          { text: 'Muammo yaratish', onPress: () => navigation.navigate('MuammoYaratish', { xonadonId: yangi.id }) },
+        Alert.alert('Muvaffaqiyat', tr(`№${yangi.uy_raqami} uy qo'shildi`), [
+          { text: tr('Yopish'), style: 'cancel' },
+          { text: tr('Muammo yaratish'), onPress: () => navigation.navigate('MuammoYaratish', { xonadonId: yangi.id }) },
         ]);
       } else {
-        setFormError(data.xato || "Xonadon qo'shishda xatolik");
+        setFormError(data.xato || tr("Xonadon qo'shishda xatolik"));
       }
     } catch (err: any) {
       const msg =
         err?.response?.data?.xato ||
         err?.response?.data?.detail ||
         "Server bilan bog'lanishda xatolik";
-      setFormError(typeof msg === 'string' ? msg : "Xonadon qo'shishda xatolik");
+      setFormError(typeof msg === 'string' ? msg : tr("Xonadon qo'shishda xatolik"));
     } finally {
       setSaving(false);
     }
@@ -208,7 +210,7 @@ export default function HududScreen({ navigation }: any) {
       <View style={styles.xonadonLeft}>
         <MaterialCommunityIcons name="home-outline" size={16} color={Colors.primary} style={{ marginRight: 8 }} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.xonadonTitle}>№{x.uy_raqami} uy</Text>
+          <Text style={styles.xonadonTitle}>{tr('Uy')} №{x.uy_raqami}</Text>
           {x.egasi_fio ? <Text style={styles.xonadonMeta}>{x.egasi_fio}</Text> : null}
         </View>
       </View>
@@ -384,14 +386,14 @@ export default function HududScreen({ navigation }: any) {
                 label="Uy raqami *"
                 value={form.uy_raqami}
                 onChangeText={(v) => setForm((p) => ({ ...p, uy_raqami: v }))}
-                placeholder="Masalan: 12 yoki 45-A"
+                placeholder={tr('Masalan: 12 yoki 45-A')}
                 editable={!saving}
               />
               <FormField
                 label="Egasi F.I.O."
                 value={form.egasi_fio}
                 onChangeText={(v) => setForm((p) => ({ ...p, egasi_fio: v }))}
-                placeholder="Xonadon egasining ismi"
+                placeholder={tr('Xonadon egasining ismi')}
                 autoCapitalize="words"
                 editable={!saving}
               />
@@ -399,7 +401,7 @@ export default function HududScreen({ navigation }: any) {
                 label="Egasi telefoni"
                 value={form.egasi_tel}
                 onChangeText={(v) => setForm((p) => ({ ...p, egasi_tel: v }))}
-                placeholder="+998 90 123 45 67"
+                placeholder={tr('+998 90 123 45 67')}
                 keyboardType="phone-pad"
                 editable={!saving}
               />
@@ -407,7 +409,7 @@ export default function HududScreen({ navigation }: any) {
                 label="Izoh"
                 value={form.izoh}
                 onChangeText={(v) => setForm((p) => ({ ...p, izoh: v }))}
-                placeholder="Qo'shimcha ma'lumot"
+                placeholder={tr("Qo'shimcha ma'lumot")}
                 multiline
                 editable={!saving}
               />
@@ -420,7 +422,7 @@ export default function HududScreen({ navigation }: any) {
               ) : null}
 
               <Button
-                title="Saqlash"
+                title={tr('Saqlash')}
                 icon="content-save-outline"
                 loading={saving}
                 onPress={handleCreateXonadon}

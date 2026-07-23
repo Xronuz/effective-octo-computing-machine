@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Users, X } from 'lucide-react';
 import { apiGet, apiPatch, apiPost } from '@/api';
 import { useAuth } from '@/auth';
+import { useAlifbo } from '@/alifbo';
+import { krilldanLotinga } from '@/lib/alifbo';
 import { SkeletonTable } from '@/components/Skeleton';
 import type { Foydalanuvchi, Paginated, MfyBrief } from '@/types';
 
@@ -42,6 +44,7 @@ interface MfyModalProps {
 }
 
 function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
+  const { tr } = useAlifbo();
   const [allMfy, setAllMfy] = useState<MfyBrief[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -84,7 +87,7 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
       onSaved();
       onClose();
     } else {
-      alert(res.xato || 'Saqlashda xatolik');
+      alert(res.xato || tr('Saqlashda xatolik'));
     }
   };
 
@@ -94,12 +97,12 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <h3 className="text-base font-semibold text-[#0F2033]">
-            MFY biriktirish — {user.full_name}
+            {tr('MFY biriktirish')} — {user.full_name}
           </h3>
           <button
             onClick={onClose}
             className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-            aria-label="Yopish"
+            aria-label={tr('Yopish')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -108,9 +111,9 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
         {/* Body — scrollable checkbox list */}
         <div className="flex-1 space-y-2 overflow-y-auto px-6 py-4">
           {loading ? (
-            <div className="py-8 text-center text-slate-400">Yuklanmoqda...</div>
+            <div className="py-8 text-center text-slate-400">{tr('Yuklanmoqda...')}</div>
           ) : allMfy.length === 0 ? (
-            <div className="py-8 text-center text-slate-400">MFY lar topilmadi</div>
+            <div className="py-8 text-center text-slate-400">{tr('MFY lar topilmadi')}</div>
           ) : (
             allMfy.map((mfy) => (
               <label
@@ -124,7 +127,7 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
                   className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                 />
                 <span className="text-sm text-slate-700">
-                  {mfy.raqami}-son — {mfy.nomi}
+                  {mfy.raqami}-{tr('son')} — {mfy.nomi}
                 </span>
               </label>
             ))
@@ -134,10 +137,10 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
           <button onClick={onClose} className="btn-ghost" disabled={saving}>
-            Bekor qilish
+            {tr('Bekor qilish')}
           </button>
           <button onClick={handleSave} className="btn-primary" disabled={saving || loading}>
-            {saving ? 'Saqlanmoqda...' : 'Saqlash'}
+            {saving ? tr('Saqlanmoqda...') : tr('Saqlash')}
           </button>
         </div>
       </div>
@@ -149,6 +152,7 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
 
 export default function BoshqaruvPage() {
   const { isSuperadmin } = useAuth();
+  const { tr } = useAlifbo();
 
   // Filters
   const [rolFilter, setRolFilter] = useState('');
@@ -171,7 +175,7 @@ export default function BoshqaruvPage() {
     const params = new URLSearchParams();
     if (rolFilter) params.set('rol', rolFilter);
     if (holatFilter) params.set('holat', holatFilter);
-    if (qidiruv.trim()) params.set('qidiruv', qidiruv.trim());
+    if (qidiruv.trim()) params.set('qidiruv', krilldanLotinga(qidiruv.trim()));
     params.set('page', String(page));
     params.set('size', '20');
 
@@ -199,7 +203,7 @@ export default function BoshqaruvPage() {
     if (res.ok) {
       fetchUsers();
     } else {
-      alert(res.xato || 'Tasdiqlashda xatolik');
+      alert(res.xato || tr('Tasdiqlashda xatolik'));
     }
   };
 
@@ -208,7 +212,7 @@ export default function BoshqaruvPage() {
     if (res.ok) {
       fetchUsers();
     } else {
-      alert(res.xato || 'Bloklashda xatolik');
+      alert(res.xato || tr('Bloklashda xatolik'));
     }
   };
 
@@ -239,16 +243,16 @@ export default function BoshqaruvPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {/* Rol filter */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Rol</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Rol')}</label>
             <select
               className="select"
               value={rolFilter}
               onChange={(e) => { setRolFilter(e.target.value); setPage(1); }}
             >
-              <option value="">Barcha</option>
-              <option value="xodim">Xodim</option>
-              <option value="rahbar">Rahbar</option>
-              {isSuperadmin && <option value="superadmin">Superadmin</option>}
+              <option value="">{tr('Barcha')}</option>
+              <option value="xodim">{tr('Xodim')}</option>
+              <option value="rahbar">{tr('Rahbar')}</option>
+              {isSuperadmin && <option value="superadmin">{tr('Superadmin')}</option>}
             </select>
           </div>
 

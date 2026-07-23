@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Camera, Check, Pencil } from 'lucide-react';
 import { apiGet, apiPatch, apiPost } from '@/api';
 import { useAuth } from '@/auth';
+import { useAlifbo } from '@/alifbo';
 import type { MuammoDetail } from '@/types';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -24,6 +25,7 @@ const XAVF_BADGE: Record<string, string> = {
 export default function MuammoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { isRahbar, isSuperadmin, user } = useAuth();
+  const { tr } = useAlifbo();
 
   const [muammo, setMuammo] = useState<MuammoDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export default function MuammoDetailPage() {
       if (res.xato?.includes('topilmadi') || (res as any).status === 404) {
         setNotFound(true);
       } else {
-        setError(res.xato || "Ma'lumotlarni yuklashda xatolik");
+        setError(res.xato || tr("Ma'lumotlarni yuklashda xatolik"));
       }
     } else {
       setMuammo(res.data);
@@ -92,7 +94,7 @@ export default function MuammoDetailPage() {
       setMuammo(res.data);
       setEditing(false);
     } else {
-      setEditError(res.xato || 'Yangilashda xatolik');
+      setEditError(res.xato || tr('Yangilashda xatolik'));
     }
   };
 
@@ -110,12 +112,12 @@ export default function MuammoDetailPage() {
     }
   };
 
-  if (loading) return <div className="p-12 text-center text-sm text-slate-400">Yuklanmoqda...</div>;
+  if (loading) return <div className="p-12 text-center text-sm text-slate-400">{tr('Yuklanmoqda...')}</div>;
   if (notFound) {
     return (
       <div className="empty-state card">
-        <p className="text-lg font-medium text-slate-600">Muammo topilmadi</p>
-        <Link to="/muammolar" className="btn-soft mt-4">Ro'yxatga qaytish</Link>
+        <p className="text-lg font-medium text-slate-600">{tr('Muammo topilmadi')}</p>
+        <Link to="/muammolar" className="btn-soft mt-4">{tr("Ro'yxatga qaytish")}</Link>
       </div>
     );
   }
@@ -139,58 +141,58 @@ export default function MuammoDetailPage() {
         className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-[#0F2033]"
       >
         <ArrowLeft className="h-4 w-4" />
-        Muammolar ro'yxatiga qaytish
+        {tr("Muammolar ro'yxatiga qaytish")}
       </Link>
 
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-[#0F2033] sm:text-2xl">
-          {muammo.turi_nomi || TURI_LABEL[muammo.turi] || muammo.turi} — {muammo.xonadon_manzili || `Xonadon #${muammo.xonadon_id}`}
+          {muammo.turi_nomi || (TURI_LABEL[muammo.turi] ? tr(TURI_LABEL[muammo.turi]) : muammo.turi)} — {muammo.xonadon_manzili || `${tr('Xonadon')} #${muammo.xonadon_id}`}
         </h1>
         <div className="flex items-center gap-3">
-          <span className={STATUS_BADGE[muammo.status] || 'badge-gray'}>{STATUS_LABEL[muammo.status] || muammo.status}</span>
-          {muammo.shubhali && <span className="badge-purple">Shubhali</span>}
+          <span className={STATUS_BADGE[muammo.status] || 'badge-gray'}>{STATUS_LABEL[muammo.status] ? tr(STATUS_LABEL[muammo.status]) : muammo.status}</span>
+          {muammo.shubhali && <span className="badge-purple">{tr('Shubhali')}</span>}
         </div>
       </div>
 
       {/* Edit form */}
       {editing && (
         <div className="card space-y-4 p-6">
-          <h3 className="text-base font-semibold text-[#0F2033]">Ma'lumotlarni yangilash</h3>
+          <h3 className="text-base font-semibold text-[#0F2033]">{tr("Ma'lumotlarni yangilash")}</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Holat</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Holat')}</label>
               <select className="select" value={editStatus} onChange={e => setEditStatus(e.target.value)}>
-                <option value="ochiq">Ochiq</option>
-                <option value="jarayonda">Jarayonda</option>
-                <option value="yopilgan">Yopilgan</option>
+                <option value="ochiq">{tr('Ochiq')}</option>
+                <option value="jarayonda">{tr('Jarayonda')}</option>
+                <option value="yopilgan">{tr('Yopilgan')}</option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Xavf darajasi</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Xavf darajasi')}</label>
               <select className="select" value={editXavf} onChange={e => setEditXavf(e.target.value)}>
-                <option value="past">Past</option>
-                <option value="orta">O'rta</option>
-                <option value="yuqori">Yuqori</option>
+                <option value="past">{tr('Past')}</option>
+                <option value="orta">{tr("O'rta")}</option>
+                <option value="yuqori">{tr('Yuqori')}</option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Muddat</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Muddat')}</label>
               <input type="date" className="input" value={editMuddat} onChange={e => setEditMuddat(e.target.value)} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Tashkilot</label>
-              <input className="input" value={editTashkilot} onChange={e => setEditTashkilot(e.target.value)} placeholder="Tashkilot nomi..." />
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Tashkilot')}</label>
+              <input className="input" value={editTashkilot} onChange={e => setEditTashkilot(e.target.value)} placeholder={tr('Tashkilot nomi...')} />
             </div>
           </div>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={editOrnida} onChange={e => setEditOrnida(e.target.checked)} className="rounded" />
-            <span className="text-sm">O'rnida bartaraf etilgan</span>
+            <span className="text-sm">{tr("O'rnida bartaraf etilgan")}</span>
           </label>
           {editError && <p className="text-sm text-[#C0392B]">{editError}</p>}
           <div className="flex gap-3">
-            <button onClick={handleUpdate} disabled={saving} className="btn-primary">{saving ? 'Saqlanmoqda...' : 'Saqlash'}</button>
-            <button onClick={() => setEditing(false)} className="btn-ghost">Bekor qilish</button>
+            <button onClick={handleUpdate} disabled={saving} className="btn-primary">{saving ? tr('Saqlanmoqda...') : tr('Saqlash')}</button>
+            <button onClick={() => setEditing(false)} className="btn-ghost">{tr('Bekor qilish')}</button>
           </div>
         </div>
       )}
@@ -198,18 +200,18 @@ export default function MuammoDetailPage() {
       {/* Close form */}
       {showClose && (
         <div className="card space-y-4 border-2 border-[#2E9E6B]/40 p-6">
-          <h3 className="text-base font-semibold text-[#2E9E6B]">Muammoni yopish</h3>
+          <h3 className="text-base font-semibold text-[#2E9E6B]">{tr('Muammoni yopish')}</h3>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={closeOrnida} onChange={e => setCloseOrnida(e.target.checked)} className="rounded" />
-            <span className="text-sm font-medium">O'rnida bartaraf etilgan</span>
+            <span className="text-sm font-medium">{tr("O'rnida bartaraf etilgan")}</span>
           </label>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Izoh</label>
-            <textarea className="input" rows={2} value={closeIzoh} onChange={e => setCloseIzoh(e.target.value)} placeholder="Yopish izohi..." />
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Izoh')}</label>
+            <textarea className="input" rows={2} value={closeIzoh} onChange={e => setCloseIzoh(e.target.value)} placeholder={tr('Yopish izohi...')} />
           </div>
           <div className="flex gap-3">
-            <button onClick={handleClose} disabled={closing} className="btn-primary">{closing ? 'Yopilmoqda...' : 'Yopish'}</button>
-            <button onClick={() => setShowClose(false)} className="btn-ghost">Bekor qilish</button>
+            <button onClick={handleClose} disabled={closing} className="btn-primary">{closing ? tr('Yopilmoqda...') : tr('Yopish')}</button>
+            <button onClick={() => setShowClose(false)} className="btn-ghost">{tr('Bekor qilish')}</button>
           </div>
         </div>
       )}
@@ -218,32 +220,32 @@ export default function MuammoDetailPage() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Asosiy ma'lumot */}
         <div className="card space-y-4 p-6">
-          <h3 className="text-base font-semibold text-[#0F2033]">Asosiy ma'lumot</h3>
+          <h3 className="text-base font-semibold text-[#0F2033]">{tr("Asosiy ma'lumot")}</h3>
           <div className="space-y-3">
-            <Row label="Turi" value={muammo.turi_nomi || TURI_LABEL[muammo.turi] || muammo.turi} />
+            <Row label="Turi" value={muammo.turi_nomi || (TURI_LABEL[muammo.turi] ? tr(TURI_LABEL[muammo.turi]) : muammo.turi)} />
             <Row label="Xavf darajasi">
-              <span className={XAVF_BADGE[muammo.xavf] || 'badge-gray'}>{XAVF_LABEL[muammo.xavf] || muammo.xavf}</span>
+              <span className={XAVF_BADGE[muammo.xavf] || 'badge-gray'}>{XAVF_LABEL[muammo.xavf] ? tr(XAVF_LABEL[muammo.xavf]) : muammo.xavf}</span>
             </Row>
-            <Row label="Status" value={STATUS_LABEL[muammo.status] || muammo.status} />
-            <Row label="O'rnida bartaraf" value={muammo.ornida_bartaraf ? 'Ha' : "Yo'q"} />
+            <Row label="Status" value={STATUS_LABEL[muammo.status] ? tr(STATUS_LABEL[muammo.status]) : muammo.status} />
+            <Row label="O'rnida bartaraf" value={muammo.ornida_bartaraf ? tr('Ha') : tr("Yo'q")} />
             {muammo.muddat && (
               <Row label="Muddat" value={
-                <span>{new Date(muammo.muddat).toLocaleDateString('uz-UZ')} {muammo.muddat_qolgan_kun != null && (
+                <span>{tr(new Date(muammo.muddat).toLocaleDateString('uz-UZ'))} {muammo.muddat_qolgan_kun != null && (
                   <span className={muammo.muddat_qolgan_kun < 0 ? 'ml-1 text-[#C0392B]' : muammo.muddat_qolgan_kun < 3 ? 'ml-1 text-[#D9A441]' : 'ml-1 text-[#2E9E6B]'}>
-                    ({muammo.muddat_qolgan_kun < 0 ? `${Math.abs(muammo.muddat_qolgan_kun)} kun o'tgan` : `${muammo.muddat_qolgan_kun} kun qolgan`})
+                    ({muammo.muddat_qolgan_kun < 0 ? `${Math.abs(muammo.muddat_qolgan_kun)} ${tr("kun o'tgan")}` : `${muammo.muddat_qolgan_kun} ${tr('kun qolgan')}`})
                   </span>
                 )}</span>
               } />
             )}
             {muammo.tashkilot && <Row label="Tashkilot" value={muammo.tashkilot} />}
-            {muammo.yopilgan_sana && <Row label="Yopilgan sana" value={new Date(muammo.yopilgan_sana).toLocaleDateString('uz-UZ')} />}
-            <Row label="Yaratilgan" value={new Date(muammo.sinxron_vaqti).toLocaleString('uz-UZ')} />
+            {muammo.yopilgan_sana && <Row label="Yopilgan sana" value={tr(new Date(muammo.yopilgan_sana).toLocaleDateString('uz-UZ'))} />}
+            <Row label="Yaratilgan" value={tr(new Date(muammo.sinxron_vaqti).toLocaleString('uz-UZ'))} />
           </div>
         </div>
 
         {/* Bog'langanlar */}
         <div className="card space-y-4 p-6">
-          <h3 className="text-base font-semibold text-[#0F2033]">Bog'langanlar</h3>
+          <h3 className="text-base font-semibold text-[#0F2033]">{tr("Bog'langanlar")}</h3>
           <div className="space-y-3">
             <Row label="Xonadon" value={<Link to={`/xonadonlar/${muammo.xonadon_id}`} className="text-[#3D6FB4] hover:underline">{muammo.xonadon_manzili || `#${muammo.xonadon_id}`}</Link>} />
             <Row label="Xodim" value={muammo.xodim_fio || `#${muammo.xodim_id}`} />
@@ -252,8 +254,8 @@ export default function MuammoDetailPage() {
             )}
             {muammo.gps_aniqlik != null && <Row label="GPS aniqlik" value={`${muammo.gps_aniqlik}m`} />}
             {muammo.mock_gps && <Row label="Mock GPS" value={<span className="badge-yellow">Mock</span>} />}
-            <Row label="Qurilma vaqti" value={new Date(muammo.qurilma_vaqti).toLocaleString('uz-UZ')} />
-            <Row label="Sinxron vaqti" value={new Date(muammo.sinxron_vaqti).toLocaleString('uz-UZ')} />
+            <Row label="Qurilma vaqti" value={tr(new Date(muammo.qurilma_vaqti).toLocaleString('uz-UZ'))} />
+            <Row label="Sinxron vaqti" value={tr(new Date(muammo.sinxron_vaqti).toLocaleString('uz-UZ'))} />
           </div>
         </div>
       </div>
@@ -261,7 +263,7 @@ export default function MuammoDetailPage() {
       {/* Tavsif */}
       {muammo.tavsif && (
         <div className="card p-6">
-          <h3 className="mb-2 text-base font-semibold text-[#0F2033]">Tavsif</h3>
+          <h3 className="mb-2 text-base font-semibold text-[#0F2033]">{tr('Tavsif')}</h3>
           <p className="whitespace-pre-wrap text-sm text-slate-600">{muammo.tavsif}</p>
         </div>
       )}
@@ -270,7 +272,7 @@ export default function MuammoDetailPage() {
       {muammo.fotolar.length > 0 && (
         <div className="card p-6">
           <h3 className="mb-4 text-base font-semibold text-[#0F2033]">
-            Fotolar <span className="tabular-nums text-slate-400">({muammo.fotolar.length})</span>
+            {tr('Fotolar')} <span className="tabular-nums text-slate-400">({muammo.fotolar.length})</span>
           </h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FotoBlok sarlavha="Oldin" fotolar={oldinFotolar} />
@@ -297,13 +299,13 @@ export default function MuammoDetailPage() {
         {canEdit && !editing && (
           <button onClick={startEdit} className="btn-soft gap-2">
             <Pencil className="h-4 w-4" />
-            Tahrirlash
+            {tr('Tahrirlash')}
           </button>
         )}
         {canClose && (canEdit || isAssigned) && !showClose && (
           <button onClick={() => setShowClose(true)} className="btn-primary gap-2">
             <Check className="h-4 w-4" />
-            Yopish
+            {tr('Yopish')}
           </button>
         )}
       </div>
@@ -312,13 +314,14 @@ export default function MuammoDetailPage() {
 }
 
 function FotoBlok({ sarlavha, fotolar }: { sarlavha: string; fotolar: MuammoDetail['fotolar'] }) {
+  const { tr } = useAlifbo();
   return (
     <div className="rounded-xl border border-slate-200 p-4">
-      <p className="mb-3 text-sm font-semibold text-[#0F2033]">{sarlavha}</p>
+      <p className="mb-3 text-sm font-semibold text-[#0F2033]">{tr(sarlavha)}</p>
       {fotolar.length === 0 ? (
         <div className="flex h-40 flex-col items-center justify-center rounded-lg bg-slate-50 text-slate-400">
           <Camera className="h-6 w-6" />
-          <span className="mt-1.5 text-xs">Foto mavjud emas</span>
+          <span className="mt-1.5 text-xs">{tr('Foto mavjud emas')}</span>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
@@ -326,7 +329,7 @@ function FotoBlok({ sarlavha, fotolar }: { sarlavha: string; fotolar: MuammoDeta
             <img
               key={f.id}
               src={f.url}
-              alt={`${sarlavha} foto`}
+              alt={`${tr(sarlavha)} ${tr('foto')}`}
               className="h-40 w-full rounded-lg border border-slate-200 object-cover"
               loading="lazy"
             />
@@ -338,9 +341,10 @@ function FotoBlok({ sarlavha, fotolar }: { sarlavha: string; fotolar: MuammoDeta
 }
 
 function Row({ label, value, children }: { label: string; value?: React.ReactNode; children?: React.ReactNode }) {
+  const { tr } = useAlifbo();
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="shrink-0 text-sm text-slate-500">{label}</span>
+      <span className="shrink-0 text-sm text-slate-500">{tr(label)}</span>
       <span className="text-right text-sm font-medium text-[#0F2033]">{children ?? value ?? '—'}</span>
     </div>
   );

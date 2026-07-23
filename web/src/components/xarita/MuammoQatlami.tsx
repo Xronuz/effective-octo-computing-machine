@@ -15,10 +15,12 @@ import {
   SHUBHALI_RANG,
   type MuammoFeature,
 } from './xaritaTypes';
+import { useAlifbo } from '@/alifbo';
 
 const NOMA_LUM_RANG = '#6b7280';
 
 export function MuammoQatlami({ features }: { features: MuammoFeature[] }) {
+  const { tr } = useAlifbo();
   const map = useMap();
   const groupRef = useRef<L.MarkerClusterGroup | null>(null);
 
@@ -59,10 +61,10 @@ export function MuammoQatlami({ features }: { features: MuammoFeature[] }) {
       const statusNomi = STATUS_NOMLARI[p.status ?? ''] ?? p.status ?? '';
       marker.bindTooltip(
         `<div style="font-size:12px;line-height:1.5">` +
-          `<b>#${p.id} — ${turiNomi}</b><br/>` +
-          `${statusNomi}` +
+          `<b>#${p.id} — ${tr(turiNomi)}</b><br/>` +
+          `${tr(statusNomi)}` +
           (p.shubhali
-            ? ` · <span style="color:${SHUBHALI_RANG};font-weight:600">shubhali</span>`
+            ? ` · <span style="color:${SHUBHALI_RANG};font-weight:600">${tr('shubhali')}</span>`
             : '') +
           `</div>`,
       );
@@ -70,7 +72,7 @@ export function MuammoQatlami({ features }: { features: MuammoFeature[] }) {
     });
 
     group.addLayers(layers);
-  }, [features]);
+  }, [features, tr]);
 
   return null;
 }

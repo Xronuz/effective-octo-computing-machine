@@ -6,6 +6,7 @@
 import { Polygon, Tooltip } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { MfyXarita } from './xaritaTypes';
+import { useAlifbo } from '@/alifbo';
 
 /** GeoJSON [lng, lat] → Leaflet [lat, lng] */
 function polygonLatLngs(mfy: MfyXarita): LatLngExpression[][][] {
@@ -23,6 +24,7 @@ function polygonLatLngs(mfy: MfyXarita): LatLngExpression[][][] {
 }
 
 export function MfyQatlami({ mfylar, tanlanganId }: { mfylar: MfyXarita[]; tanlanganId?: number | null }) {
+  const { tr } = useAlifbo();
   return (
     <>
       {mfylar.flatMap((mfy) =>
@@ -40,7 +42,7 @@ export function MfyQatlami({ mfylar, tanlanganId }: { mfylar: MfyXarita[]; tanla
             >
               <Tooltip sticky>
                 <span style={{ fontSize: 12 }}>
-                  MFY #{mfy.raqami} — {mfy.nomi}
+                  {tr('MFY')} #{mfy.raqami} — {mfy.nomi}
                 </span>
               </Tooltip>
             </Polygon>

@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlifbo } from '../contexts/AlifboContext';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, tabBarContentPadding } from '../theme';
 
 interface InfoRow {
@@ -14,14 +15,15 @@ interface InfoRow {
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
+  const { krill, setKrill, tr } = useAlifbo();
   const [loggingOut, setLoggingOut] = useState(false);
   const insets = useSafeAreaInsets();
 
   const handleLogout = () => {
-    Alert.alert('Tizimdan chiqish', 'Chiqmoqchimisiz?', [
-      { text: "Yo'q", style: 'cancel' },
+    Alert.alert(tr('Tizimdan chiqish'), tr('Chiqmoqchimisiz?'), [
+      { text: tr("Yo'q"), style: 'cancel' },
       {
-        text: 'Ha, chiqish',
+        text: tr('Ha, chiqish'),
         style: 'destructive',
         onPress: async () => {
           setLoggingOut(true);
@@ -32,9 +34,9 @@ export default function SettingsScreen() {
   };
 
   const infoRows: InfoRow[] = [
-    { icon: 'card-account-details-outline', label: 'Guvohnoma raqami', value: user?.guvohnoma_raqami || '-' },
-    { icon: 'briefcase-outline', label: 'Lavozim', value: user?.lavozim || '-' },
-    { icon: 'phone-outline', label: 'Telefon', value: user?.telefon || '-' },
+    { icon: 'card-account-details-outline', label: tr('Guvohnoma raqami'), value: user?.guvohnoma_raqami || '-' },
+    { icon: 'briefcase-outline', label: tr('Lavozim'), value: user?.lavozim || '-' },
+    { icon: 'phone-outline', label: tr('Telefon'), value: user?.telefon || '-' },
   ];
 
   return (
@@ -42,7 +44,7 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarContentPadding(insets.bottom) }]}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Sozlamalar</Text>
+          <Text style={styles.headerTitle}>{tr('Sozlamalar')}</Text>
         </View>
 
         {/* Profile card */}
@@ -61,7 +63,7 @@ export default function SettingsScreen() {
 
         {/* Info Section */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Shaxsiy ma'lumotlar</Text>
+          <Text style={styles.sectionTitle}>{tr("Shaxsiy ma'lumotlar")}</Text>
           {infoRows.map((row, i) => (
             <View key={row.label}>
               <View style={styles.infoRow}>
@@ -76,14 +78,45 @@ export default function SettingsScreen() {
           ))}
         </View>
 
+        {/* Alifbo tanlovi */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>{tr('Alifbo')}</Text>
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <MaterialCommunityIcons name="translate" size={18} color={Colors.primary} />
+            </View>
+            <Text style={styles.infoLabel}>{tr('Rejim')}</Text>
+            <View style={styles.alifboToggle}>
+              <TouchableOpacity
+                style={[styles.alifboBtn, !krill && styles.alifboBtnActive]}
+                onPress={() => setKrill(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.alifboBtnText, !krill && styles.alifboBtnTextActive]}>
+                  Lotin
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.alifboBtn, krill && styles.alifboBtnActive]}
+                onPress={() => setKrill(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.alifboBtnText, krill && styles.alifboBtnTextActive]}>
+                  Кирилл
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
         {/* App Info */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Ilova haqida</Text>
+          <Text style={styles.sectionTitle}>{tr('Ilova haqida')}</Text>
           <View style={styles.infoRow}>
             <View style={styles.infoIcon}>
               <MaterialCommunityIcons name="information-outline" size={18} color={Colors.textMuted} />
             </View>
-            <Text style={styles.infoLabel}>Versiya</Text>
+            <Text style={styles.infoLabel}>{tr('Versiya')}</Text>
             <Text style={styles.infoValue}>1.0.0</Text>
           </View>
           <View style={styles.divider} />
@@ -91,7 +124,7 @@ export default function SettingsScreen() {
             <View style={styles.infoIcon}>
               <MaterialCommunityIcons name="devices" size={18} color={Colors.textMuted} />
             </View>
-            <Text style={styles.infoLabel}>Platforma</Text>
+            <Text style={styles.infoLabel}>{tr('Platforma')}</Text>
             <Text style={styles.infoValue}>Expo SDK {Constants.expoConfig?.sdkVersion?.split('.')[0] || '54'}</Text>
           </View>
         </View>
@@ -108,7 +141,7 @@ export default function SettingsScreen() {
           ) : (
             <View style={styles.logoutContent}>
               <MaterialCommunityIcons name="logout" size={20} color={Colors.textInverse} style={{ marginRight: 8 }} />
-              <Text style={styles.logoutText}>Tizimdan chiqish</Text>
+              <Text style={styles.logoutText}>{tr('Tizimdan chiqish')}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -168,6 +201,29 @@ const styles = StyleSheet.create({
   infoLabel: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textSecondary, width: 125 },
   infoValue: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textPrimary, flex: 1, fontWeight: FontWeights.medium, textAlign: 'right' },
   divider: { height: 1, backgroundColor: Colors.borderLight, marginLeft: 46 },
+  alifboToggle: {
+    flexDirection: 'row',
+    backgroundColor: Colors.background,
+    borderRadius: Radius.full,
+    padding: 2,
+  },
+  alifboBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+  },
+  alifboBtnActive: {
+    backgroundColor: Colors.primary,
+  },
+  alifboBtnText: {
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.body,
+    color: Colors.textSecondary,
+  },
+  alifboBtnTextActive: {
+    color: Colors.textInverse,
+  },
   logoutBtn: {
     backgroundColor: Colors.danger, borderRadius: Radius.lg,
     padding: 17, alignItems: 'center', ...Shadows.md, marginTop: Spacing.sm,

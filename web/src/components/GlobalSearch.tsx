@@ -11,6 +11,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiGet } from '@/api';
 import type { Paginated, XonadonBrief, MuammoBrief } from '@/types';
+import { useAlifbo } from '@/alifbo';
+import { krilldanLotinga } from '@/lib/alifbo';
 
 const DEBOUNCE_MS = 300;
 const LIMIT = 5;
@@ -20,6 +22,7 @@ type Natija =
   | { tur: 'muammo'; id: number; sarlavha: string; osti: string };
 
 export default function GlobalSearch() {
+  const { tr } = useAlifbo();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [sorov, setSorov] = useState('');
@@ -69,7 +72,7 @@ export default function GlobalSearch() {
   // ── Qidiruv (debounce 300ms) ───────────────────────────────────────
   useEffect(() => {
     if (!open) return;
-    const q = sorov.trim();
+    const q = krilldanLotinga(sorov.trim());
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!q) {
       setXonadonlar([]);
@@ -105,13 +108,13 @@ export default function GlobalSearch() {
     ...xonadonlar.map((x) => ({
       tur: 'xonadon' as const,
       id: x.id,
-      sarlavha: x.full_address || `${x.uy_raqami}-uy, ${x.kocha_nomi || ''}`,
+      sarlavha: x.full_address || `${x.uy_raqami}-${tr('uy')}, ${x.kocha_nomi || ''}`,
       osti: [x.mfy_nomi, x.egasi_fio].filter(Boolean).join(' · ') || '—',
     })),
     ...muammolar.map((m) => ({
       tur: 'muammo' as const,
       id: m.id,
-      sarlavha: m.tavsif || `${m.turi} muammosi — #${m.id}`,
+      sarlavha: m.tavsif || `${m.turi} ${tr('muammosi')} — #${m.id}`,
       osti: m.xonadon_manzil || '—',
     })),
   ];
@@ -151,7 +154,7 @@ export default function GlobalSearch() {
         className="w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl border border-gray-200"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
-        aria-label="Global qidiruv"
+        aria-label={tr('Global qidiruv')}
       >
         {/* Input */}
         <div className="flex items-center gap-3 border-b border-gray-200 px-4">
@@ -161,7 +164,7 @@ export default function GlobalSearch() {
             value={sorov}
             onChange={(e) => setSorov(e.target.value)}
             onKeyDown={onInputKey}
-            placeholder="Xonadon yoki muammo qidirish..."
+            placeholder={tr('Xonadon yoki muammo qidirish...')}
             className="w-full py-3.5 text-sm outline-none placeholder:text-gray-400"
           />
           <kbd className="hidden sm:inline-block rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[10px] text-gray-400">
@@ -173,18 +176,18 @@ export default function GlobalSearch() {
         <div className="max-h-[50vh] overflow-y-auto p-2">
           {sorov.trim() === '' ? (
             <p className="px-3 py-6 text-center text-sm text-gray-400">
-              Qidirish uchun yozing — xonadon manzili, egasi yoki muammo tavsifi
+              {tr('Qidirish uchun yozing — xonadon manzili, egasi yoki muammo tavsifi')}
             </p>
           ) : qidiryapti ? (
-            <p className="px-3 py-6 text-center text-sm text-gray-400">Qidirilmoqda...</p>
+            <p className="px-3 py-6 text-center text-sm text-gray-400">{tr('Qidirilmoqda...')}</p>
           ) : natijalar.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-gray-400">Hech narsa topilmadi</p>
+            <p className="px-3 py-6 text-center text-sm text-gray-400">{tr('Hech narsa topilmadi')}</p>
           ) : (
             <>
               {xonadonlar.length > 0 && (
                 <div className="mb-2">
                   <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                    Xonadonlar
+                    {tr('Xonadonlar')}
                   </p>
                   {xonadonlar.map((x) => {
                     qator += 1;

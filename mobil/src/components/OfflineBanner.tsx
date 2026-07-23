@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useAlifbo } from '../contexts/AlifboContext';
 import { Colors, Fonts, FontSizes, FontWeights } from '../theme';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function OfflineBanner({ isOffline, pendingCount }: Props) {
+  const { tr } = useAlifbo();
   if (!isOffline && (!pendingCount || pendingCount === 0)) return null;
 
   return (
@@ -21,8 +23,8 @@ export default function OfflineBanner({ isOffline, pendingCount }: Props) {
       />
       <Text style={styles.text}>
         {isOffline
-          ? "Internet aloqasi yo'q — ma'lumotlar qurilmada saqlanadi"
-          : `${pendingCount} ta yozuv sinxronlanishi kutilmoqda`}
+          ? tr("Internet aloqasi yo'q — ma'lumotlar qurilmada saqlanadi")
+          : tr('{count} ta yozuv sinxronlanishi kutilmoqda').replace('{count}', String(pendingCount))}
       </Text>
     </View>
   );

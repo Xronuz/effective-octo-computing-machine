@@ -5,6 +5,7 @@
 import { Fragment } from 'react';
 import { Marker, Popup, Circle } from 'react-leaflet';
 import L from 'leaflet';
+import { useAlifbo } from '@/alifbo';
 import {
   vaqtOldin,
   boshHarflar,
@@ -42,6 +43,7 @@ interface Props {
 }
 
 export function XodimQatlami({ aktivlar, pulsingIds }: Props) {
+  const { tr } = useAlifbo();
   return (
     <>
       {aktivlar.map((x) => {
@@ -58,10 +60,10 @@ export function XodimQatlami({ aktivlar, pulsingIds }: Props) {
                     {x.xodim_fio}
                   </div>
                   <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>
-                    <div>🕐 {vaqtOldin(x.ohirgi_vaqt)}</div>
-                    <div>🔋 Batareya: {x.batareya ?? "noma'lum"}%</div>
+                    <div>🕐 {tr(vaqtOldin(x.ohirgi_vaqt))}</div>
+                    <div>🔋 {tr('Batareya')}: {x.batareya ?? tr("noma'lum")}%</div>
                     <div>
-                      🎯 Aniqlik: {x.aniqlik ? `${x.aniqlik.toFixed(0)}m` : '-'}
+                      🎯 {tr('Aniqlik')}: {x.aniqlik ? `${x.aniqlik.toFixed(0)}m` : '-'}
                     </div>
                     <div>
                       📍 {x.lat.toFixed(5)}, {x.lng.toFixed(5)}

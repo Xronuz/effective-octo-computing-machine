@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, StatusColors, tabBarContentPadding } from '../theme';
 import type { ApiResponse, Paginated } from '../types';
+import { useAlifbo } from '../contexts/AlifboContext';
 
 interface Topshiriq {
   id: number;
@@ -30,12 +31,12 @@ interface Topshiriq {
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-const STATUS_CFG: Record<string, { label: string; bg: string; text: string; icon: IconName }> = {
-  yangi: { label: 'Yangi', bg: Colors.infoSurface, text: Colors.info, icon: 'star-circle-outline' },
-  korildi: { label: "Ko'rildi", bg: StatusColors.jarayonda.bg, text: StatusColors.jarayonda.text, icon: 'eye-outline' },
-  bajarildi: { label: 'Bajarildi', bg: Colors.successSurface, text: Colors.success, icon: 'check-circle' },
-  kechikkan: { label: 'Kechikkan', bg: Colors.dangerSurface, text: Colors.danger, icon: 'clock-alert-outline' },
-};
+const STATUS_CFG = (tr: (s: string) => string): Record<string, { label: string; bg: string; text: string; icon: IconName }> => ({
+  yangi: { label: tr('Yangi'), bg: Colors.infoSurface, text: Colors.info, icon: 'star-circle-outline' },
+  korildi: { label: tr("Ko'rildi"), bg: StatusColors.jarayonda.bg, text: StatusColors.jarayonda.text, icon: 'eye-outline' },
+  bajarildi: { label: tr('Bajarildi'), bg: Colors.successSurface, text: Colors.success, icon: 'check-circle' },
+  kechikkan: { label: tr('Kechikkan'), bg: Colors.dangerSurface, text: Colors.danger, icon: 'clock-alert-outline' },
+});
 
 function formatDate(iso: string | null): string {
   if (!iso) return '-';
@@ -48,6 +49,7 @@ function formatDate(iso: string | null): string {
 }
 
 export default function TopshiriqlarScreen() {
+  const { tr } = useAlifbo();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<Topshiriq[]>([]);
@@ -87,11 +89,11 @@ export default function TopshiriqlarScreen() {
       if (data.ok && data.data) {
         setItems((prev) => prev.map((t) => (t.id === item.id ? { ...t, ...data.data! } : t)));
       } else {
-        Alert.alert('Xatolik', data.xato || 'Statusni yangilashda xatolik');
+        Alert.alert(tr('Xatolik'), data.xato || tr('Statusni yangilashda xatolik'));
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.xato || err?.response?.data?.detail || 'Server bilan bog\'lanishda xatolik';
-      Alert.alert('Xatolik', typeof msg === 'string' ? msg : 'Statusni yangilashda xatolik');
+      const msg = err?.response?.data?.xato || err?.response?.data?.detail || tr('Server bilan bog\'lanishda xatolik');
+      Alert.alert(tr('Xatolik'), typeof msg === 'string' ? msg : tr('Statusni yangilashda xatolik'));
     } finally {
       setActionId(null);
     }
@@ -99,17 +101,17 @@ export default function TopshiriqlarScreen() {
 
   const confirmBajarildi = (item: Topshiriq) => {
     Alert.alert(
-      'Topshiriqni yakunlash',
-      `"${item.sarlavha}" topshirig'ini bajarildi deb belgilaysizmi?`,
+      tr('Topshiriqni yakunlash'),
+      tr(`"${item.sarlavha}" topshirig'ini bajarildi deb belgilaysizmi?`),
       [
-        { text: 'Bekor qilish', style: 'cancel' },
-        { text: 'Bajarildi', onPress: () => updateStatus(item, 'bajarildi') },
+        { text: tr('Bekor qilish'), style: 'cancel' },
+        { text: tr('Bajarildi'), onPress: () => updateStatus(item, 'bajarildi') },
       ],
     );
   };
 
   const renderItem = ({ item }: { item: Topshiriq }) => {
-    const cfg = STATUS_CFG[item.status] || { label: item.status, bg: Colors.borderLight, text: Colors.textMuted, icon: 'help-circle-outline' as IconName };
+    const cfg = STATUS_CFG(tr)[item.status] || { label: item.status, bg: Colors.borderLight, text: Colors.textMuted, icon: 'help-circle-outline' as IconName };
     const busy = actionId === item.id;
     const isLate = item.status !== 'bajarildi' && item.muddat && new Date(item.muddat) < new Date(new Date().toDateString());
 
@@ -164,7 +166,7 @@ export default function TopshiriqlarScreen() {
                 ) : (
                   <>
                     <MaterialCommunityIcons name="eye-check-outline" size={18} color={Colors.primary} style={{ marginRight: 6 }} />
-                    <Text style={styles.actionOutlineText}>Ko'rildi</Text>
+                    <Text style={styles.actionOutlineText}>{tr("Ko'rildi")}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -180,7 +182,7 @@ export default function TopshiriqlarScreen() {
               ) : (
                 <>
                   <MaterialCommunityIcons name="check-bold" size={18} color={Colors.textInverse} style={{ marginRight: 6 }} />
-                  <Text style={styles.actionPrimaryText}>Bajarildi</Text>
+                  <Text style={styles.actionPrimaryText}>{tr('Bajarildi')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -194,7 +196,7 @@ export default function TopshiriqlarScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Topshiriqlarim</Text>
+        <Text style={styles.headerTitle}>{tr('Topshiriqlarim')}</Text>
       </View>
 
       <FlatList
@@ -213,8 +215,8 @@ export default function TopshiriqlarScreen() {
               <View style={styles.emptyIcon}>
                 <MaterialCommunityIcons name="clipboard-check-outline" size={36} color={Colors.textMuted} />
               </View>
-              <Text style={styles.emptyTitle}>Topshiriqlar yo'q</Text>
-              <Text style={styles.emptyText}>Sizga biriktirilgan topshiriqlar hali mavjud emas</Text>
+              <Text style={styles.emptyTitle}>{tr("Topshiriqlar yo'q")}</Text>
+              <Text style={styles.emptyText}>{tr('Sizga biriktirilgan topshiriqlar hali mavjud emas')}</Text>
             </View>
           )
         }

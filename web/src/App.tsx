@@ -3,6 +3,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/auth';
+import { useAlifbo } from '@/alifbo';
 import { AppLayout } from '@/components/AppLayout';
 import { Skeleton } from '@/components/Skeleton';
 import LoginPage from '@/pages/LoginPage';
@@ -58,13 +59,14 @@ export default function App() {
 }
 
 function PageFallback() {
+  const { tr } = useAlifbo();
   return (
-    <div role="status" aria-label="Sahifa yuklanmoqda" className="p-6 space-y-4">
+    <div role="status" aria-label={tr('Sahifa yuklanmoqda')} className="p-6 space-y-4">
       <Skeleton className="h-8 w-48" />
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-2/3" />
-      <span className="sr-only">Sahifa yuklanmoqda...</span>
+      <span className="sr-only">{tr('Sahifa yuklanmoqda...')}</span>
     </div>
   );
 }

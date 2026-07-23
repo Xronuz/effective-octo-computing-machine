@@ -11,6 +11,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { AlifboProvider } from './src/contexts/AlifboContext';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, Layout } from './src/theme';
 import { initDB, getKutilmaganSoni } from './src/services/db';
 import { setupAutoSync } from './src/services/sync';
@@ -273,8 +274,10 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="dark" />
-        {renderApp()}
+        <AlifboProvider>
+          <StatusBar style="dark" />
+          {renderApp()}
+        </AlifboProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

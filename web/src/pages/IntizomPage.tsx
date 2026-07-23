@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { apiGet, apiPost } from '@/api';
 import { useAuth } from '@/auth';
+import { useAlifbo } from '@/alifbo';
 import type { MuammoBrief, Paginated, XodimStatistika } from '@/types';
 
 // Backend IntizomResponse (app/schemas/topshiriq_intizom.py) bilan mos
@@ -71,13 +72,14 @@ interface SababModalProps {
 }
 
 function SababModal({ sarlavha, turi, xodimId, muammoId, onClose, onSaved }: SababModalProps) {
+  const { tr } = useAlifbo();
   const [sabab, setSabab] = useState('');
   const [saving, setSaving] = useState(false);
   const [xato, setXato] = useState<string | null>(null);
 
   const handleSave = async () => {
     if (!sabab.trim()) {
-      setXato('Sababni kiriting.');
+      setXato(tr('Sababni kiriting.'));
       return;
     }
     setSaving(true);
@@ -94,7 +96,7 @@ function SababModal({ sarlavha, turi, xodimId, muammoId, onClose, onSaved }: Sab
       onSaved();
       onClose();
     } else {
-      setXato(res.xato || 'Saqlashda xatolik yuz berdi.');
+      setXato(tr(res.xato || 'Saqlashda xatolik yuz berdi.'));
     }
   };
 
@@ -107,7 +109,7 @@ function SababModal({ sarlavha, turi, xodimId, muammoId, onClose, onSaved }: Sab
           <button
             onClick={onClose}
             className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-            aria-label="Yopish"
+            aria-label={tr('Yopish')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -116,12 +118,12 @@ function SababModal({ sarlavha, turi, xodimId, muammoId, onClose, onSaved }: Sab
         {/* Body */}
         <div className="px-6 py-4">
           <label className="mb-1 block text-xs font-medium text-slate-500">
-            Sabab <span className="text-[#C0392B]">*</span>
+            {tr('Sabab')} <span className="text-[#C0392B]">*</span>
           </label>
           <textarea
             className="input min-h-[100px] resize-y"
             maxLength={2000}
-            placeholder="Sababni batafsil yozing..."
+            placeholder={tr('Sababni batafsil yozing...')}
             value={sabab}
             onChange={(e) => setSabab(e.target.value)}
             autoFocus
@@ -132,14 +134,14 @@ function SababModal({ sarlavha, turi, xodimId, muammoId, onClose, onSaved }: Sab
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
           <button onClick={onClose} className="btn-ghost" disabled={saving}>
-            Bekor qilish
+            {tr('Bekor qilish')}
           </button>
           <button
             onClick={handleSave}
             className={turi === 'ragbat' ? 'btn-primary' : 'btn-danger'}
             disabled={saving}
           >
-            {saving ? 'Saqlanmoqda...' : 'Saqlash'}
+            {saving ? tr('Saqlanmoqda...') : tr('Saqlash')}
           </button>
         </div>
       </div>
@@ -151,6 +153,7 @@ function SababModal({ sarlavha, turi, xodimId, muammoId, onClose, onSaved }: Sab
 
 export default function IntizomPage() {
   const { isRahbar } = useAuth();
+  const { tr } = useAlifbo();
 
   // Muddati o'tgan muammolar
   const [muammolar, setMuammolar] = useState<MuammoBrief[]>([]);
@@ -478,7 +481,7 @@ export default function IntizomPage() {
                   </td>
                   <td className="whitespace-nowrap">
                     <span className={turiRangi[i.turi] || 'badge-gray'}>
-                      {turiLabels[i.turi] || i.turi}
+                      {tr(turiLabels[i.turi]) || i.turi}
                     </span>
                   </td>
                   <td className="max-w-[320px] text-slate-500">

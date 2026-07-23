@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, ClipboardList, FilterX } from 'lucide-react'
 import { apiGet } from '@/api';
 import { SkeletonTable } from '@/components/Skeleton';
 import { sanaVaqt } from '@/lib/sana';
+import { useAlifbo } from '@/alifbo';
+import { krilldanLotinga } from '@/lib/alifbo';
 import type { Paginated, MuammoBrief } from '@/types';
 
 const STATUS_OPTIONS = ['ochiq', 'jarayonda', 'yopilgan', 'muddati_otgan'] as const;
@@ -12,6 +14,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function MuammolarPage() {
+  const { tr } = useAlifbo();
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<Paginated<MuammoBrief> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +39,7 @@ export default function MuammolarPage() {
     if (holat) params.set('status', holat);
     if (shubhali) params.set('shubhali', shubhali);
     if (hudud_id) params.set('hudud_id', hudud_id);
-    if (qidiruv) params.set('qidiruv', qidiruv);
+    if (qidiruv) params.set('qidiruv', krilldanLotinga(qidiruv));
     const res = await apiGet<Paginated<MuammoBrief>>(`/muammolar?${params}`);
     if (res.ok) setData(res.data);
     setLoading(false);
@@ -51,7 +54,7 @@ export default function MuammolarPage() {
       ochiq: 'badge-blue', jarayonda: 'badge-yellow',
       yopilgan: 'badge-green', muddati_otgan: 'badge-red',
     };
-    return <span className={colors[h] || 'badge-gray'}>{STATUS_LABELS[h] || h}</span>;
+    return <span className={colors[h] || 'badge-gray'}>{tr(STATUS_LABELS[h] || h)}</span>;
   };
 
   return (
@@ -59,37 +62,37 @@ export default function MuammolarPage() {
       {/* Filters */}
       <div className="card flex flex-wrap items-end gap-3 p-4">
         <div className="min-w-[140px]">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Holat</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Holat')}</label>
           <select className="select" value={holat} onChange={e => updateFilter('holat', e.target.value)}>
-            <option value="">Barcha holatlar</option>
-            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+            <option value="">{tr('Barcha holatlar')}</option>
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{tr(STATUS_LABELS[s])}</option>)}
           </select>
         </div>
         <div className="min-w-[130px]">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Shubhalilik</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Shubhalilik')}</label>
           <select className="select" value={shubhali} onChange={e => updateFilter('shubhali', e.target.value)}>
-            <option value="">Barchasi</option>
-            <option value="true">Shubhali</option>
-            <option value="false">Oddiy</option>
+            <option value="">{tr('Barchasi')}</option>
+            <option value="true">{tr('Shubhali')}</option>
+            <option value="false">{tr('Oddiy')}</option>
           </select>
         </div>
         <div className="min-w-[180px] flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Qidiruv</label>
-          <input className="input" value={qidiruv} onChange={e => updateFilter('qidiruv', e.target.value)} placeholder="Tavsif yoki manzil..." />
+          <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Qidiruv')}</label>
+          <input className="input" value={qidiruv} onChange={e => updateFilter('qidiruv', e.target.value)} placeholder={tr('Tavsif yoki manzil...')} />
         </div>
         <button onClick={() => setSearchParams({})} className="btn-soft gap-2 text-xs">
           <FilterX className="h-4 w-4" />
-          Tozalash
+          {tr('Tozalash')}
         </button>
       </div>
 
       {/* Table */}
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-[#0F2033]">Muammolar ro'yxati</h2>
+          <h2 className="text-base font-semibold text-[#0F2033]">{tr("Muammolar ro'yxati")}</h2>
           {data && (
             <span className="text-sm text-slate-500">
-              Jami <span className="font-semibold tabular-nums text-[#0F2033]">{data.total}</span> ta
+              {tr('Jami')} <span className="font-semibold tabular-nums text-[#0F2033]">{data.total}</span> {tr('ta')}
             </span>
           )}
         </div>
@@ -98,8 +101,8 @@ export default function MuammolarPage() {
         ) : !data || data.items.length === 0 ? (
           <div className="empty-state">
             <ClipboardList className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm font-medium text-slate-600">Muammolar topilmadi</p>
-            <p className="mt-1 text-xs text-slate-400">Filtrlarni o'zgartirib qayta urinib ko'ring</p>
+            <p className="mt-2 text-sm font-medium text-slate-600">{tr('Muammolar topilmadi')}</p>
+            <p className="mt-1 text-xs text-slate-400">{tr("Filtrlarni o'zgartirib qayta urinib ko'ring")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -107,12 +110,12 @@ export default function MuammolarPage() {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Tavsif</th>
-                  <th>Manzil</th>
-                  <th className="text-center">Holat</th>
-                  <th className="text-center">Shubhali</th>
-                  <th>Sana</th>
-                  <th className="text-right">Amallar</th>
+                  <th>{tr('Tavsif')}</th>
+                  <th>{tr('Manzil')}</th>
+                  <th className="text-center">{tr('Holat')}</th>
+                  <th className="text-center">{tr('Shubhali')}</th>
+                  <th>{tr('Sana')}</th>
+                  <th className="text-right">{tr('Amallar')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -123,16 +126,16 @@ export default function MuammolarPage() {
                       <Link to={`/muammolar/${m.id}`} className="line-clamp-2 font-medium text-[#3D6FB4] hover:underline">
                         {m.tavsif || `${m.turi} — #${m.id}`}
                       </Link>
-                      {m.shubhali && <span className="badge-purple ml-2 text-[10px]">Shubhali</span>}
+                      {m.shubhali && <span className="badge-purple ml-2 text-[10px]">{tr('Shubhali')}</span>}
                     </td>
                     <td className="text-xs text-slate-500">{m.xonadon_manzil || '—'}</td>
                     <td className="text-center">{statusBadge(m.status)}</td>
                     <td className="text-center">
-                      {m.shubhali ? <span className="badge-purple">Shubhali</span> : <span className="badge-green">Oddiy</span>}
+                      {m.shubhali ? <span className="badge-purple">{tr('Shubhali')}</span> : <span className="badge-green">{tr('Oddiy')}</span>}
                     </td>
-                    <td className="whitespace-nowrap text-xs text-slate-500">{sanaVaqt(m.yaratilgan)}</td>
+                    <td className="whitespace-nowrap text-xs text-slate-500">{tr(sanaVaqt(m.yaratilgan))}</td>
                     <td className="text-right">
-                      <Link to={`/muammolar/${m.id}`} className="btn-soft px-2 py-1 text-xs">Batafsil</Link>
+                      <Link to={`/muammolar/${m.id}`} className="btn-soft px-2 py-1 text-xs">{tr('Batafsil')}</Link>
                     </td>
                   </tr>
                 ))}

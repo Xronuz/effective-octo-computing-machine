@@ -21,6 +21,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { useAuth } from '@/auth';
+import { useAlifbo } from '@/alifbo';
 import GlobalSearch from '@/components/GlobalSearch';
 
 const ICON_PROPS = { size: 20, strokeWidth: 1.8 } as const;
@@ -57,6 +58,7 @@ function pageTitle(pathname: string): string {
 
 export function AppLayout() {
   const { user, logout, isRahbar } = useAuth();
+  const { krill, setKrill, tr } = useAlifbo();
   const navigate = useNavigate();
   const location = useLocation();
   const [expanded, setExpanded] = useState(false);
@@ -92,10 +94,10 @@ export function AppLayout() {
         to={item.to}
         end={item.to === '/'}
         className={navLinkClass}
-        title={expanded ? undefined : item.label}
+        title={expanded ? undefined : tr(item.label)}
       >
         <item.icon {...ICON_PROPS} className="flex-shrink-0" />
-        {expanded && <span className="truncate">{item.label}</span>}
+        {expanded && <span className="truncate">{tr(item.label)}</span>}
       </NavLink>
     ));
 
@@ -103,6 +105,18 @@ export function AppLayout() {
     ...navItems,
     ...(isRahbar ? adminNavItems : []),
   ];
+
+  const navContent = (
+    <>
+      {renderNav(navItems)}
+      {isRahbar && (
+        <>
+          <div className="mx-2 my-3 border-t border-white/[0.08]" aria-hidden />
+          {renderNav(adminNavItems)}
+        </>
+      )}
+    </>
+  );
 
   return (
     <div className="min-h-screen">
@@ -124,27 +138,28 @@ export function AppLayout() {
           {expanded && (
             <span className="min-w-0">
               <span className="block truncate text-[13px] font-semibold leading-tight tracking-wide text-white">
-                XAVFSIZ XONADON
+                {tr('XAVFSIZ XONADON')}
               </span>
               <span className="block text-[10px] font-medium uppercase tracking-[0.14em] text-white/40">
-                FVV monitoring
+                {tr('FVV monitoring')}
               </span>
             </span>
           )}
         </div>
 
-        {/* Nav — yig'iq holatda ikonkalar pill bo'yicha vertikal markazda */}
+        {/* Nav — yig'iq holatda ikonkalar pill bo'yicha vertikal markazda.
+            my-auto (justify-center EMAS): kontent sig'hmaganda yuqori ikonkalar
+            kesilib qolmaydi, nav yuqoridan boshlab scroll bo'ladi.
+            Scrollbar yashiringan — Windows'da tor pill ichida chizilib ketmasligi uchun. */}
         <nav
-          className={`flex-1 space-y-1 overflow-y-auto px-3 py-2 ${
-            expanded ? '' : 'flex flex-col justify-center'
+          className={`flex-1 overflow-y-auto px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+            expanded ? 'space-y-1' : 'flex flex-col'
           }`}
         >
-          {renderNav(navItems)}
-          {isRahbar && (
-            <>
-              <div className="mx-2 my-3 border-t border-white/[0.08]" aria-hidden />
-              {renderNav(adminNavItems)}
-            </>
+          {expanded ? (
+            navContent
+          ) : (
+            <div className="my-auto space-y-1">{navContent}</div>
           )}
         </nav>
 
@@ -163,18 +178,18 @@ export function AppLayout() {
             ) : (
               <ChevronRight {...ICON_PROPS} className="flex-shrink-0" />
             )}
-            {expanded && <span>Yig'ish</span>}
+            {expanded && <span>{tr("Yig'ish")}</span>}
           </button>
           <button
             type="button"
             onClick={handleLogout}
-            title={expanded ? undefined : 'Chiqish'}
+            title={expanded ? undefined : tr('Chiqish')}
             className={`flex w-full items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium text-white/60 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white ${
               expanded ? '' : 'justify-center px-0'
             }`}
           >
             <LogOut {...ICON_PROPS} className="flex-shrink-0" />
-            {expanded && <span>Chiqish</span>}
+            {expanded && <span>{tr('Chiqish')}</span>}
           </button>
         </div>
       </aside>
@@ -189,7 +204,7 @@ export function AppLayout() {
             key={item.to}
             to={item.to}
             end={item.to === '/'}
-            title={item.label}
+            title={tr(item.label)}
             className={({ isActive }) =>
               `flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-150 ${
                 isActive ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-white/60'
@@ -202,8 +217,8 @@ export function AppLayout() {
         <button
           type="button"
           onClick={handleLogout}
-          title="Chiqish"
-          aria-label="Chiqish"
+          title={tr('Chiqish')}
+          aria-label={tr('Chiqish')}
           className="flex h-10 w-10 items-center justify-center rounded-full text-white/60 transition-colors duration-150"
         >
           <LogOut {...ICON_PROPS} />
@@ -220,7 +235,7 @@ export function AppLayout() {
         <header className="sticky top-4 z-30 mx-auto mt-4 max-w-[1440px] px-6">
           <div className="flex h-16 items-center gap-4 rounded-full border border-[var(--border)] bg-[var(--bg-surface)] px-5 shadow-lift">
             <h1 className="min-w-0 flex-shrink-0 truncate text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              {pageTitle(location.pathname)}
+              {tr(pageTitle(location.pathname))}
             </h1>
 
             {/* Search pill */}
@@ -231,15 +246,42 @@ export function AppLayout() {
                 className="flex w-full max-w-md items-center gap-2.5 rounded-full bg-[var(--bg-subtle)] px-4 py-2 text-sm text-[var(--text-muted)] transition-colors duration-150 hover:bg-[var(--border)]"
               >
                 <Search size={16} strokeWidth={1.8} />
-                <span className="flex-1 truncate text-left">Qidirish...</span>
+                <span className="flex-1 truncate text-left">{tr('Qidirish...')}</span>
                 <kbd className="hidden rounded-md border border-[var(--border)] bg-[var(--bg-subtle)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-muted)] sm:inline-block">
                   ⌘K
                 </kbd>
               </button>
             </div>
 
-            {/* O'ng tomon: bell + user chip */}
+            {/* O'ng tomon: alifbo + bell + user chip */}
             <div className="flex flex-shrink-0 items-center gap-2">
+              {/* Alifbo tanlovi: lotin / krill */}
+              <div
+                className="flex items-center rounded-full bg-[var(--bg-subtle)] p-1"
+                role="group"
+                aria-label="Alifbo tanlovi"
+              >
+                {(['lotin', 'krill'] as const).map((rejim) => {
+                  const faol = rejim === 'krill' ? krill : !krill;
+                  return (
+                    <button
+                      key={rejim}
+                      type="button"
+                      onClick={() => setKrill(rejim === 'krill')}
+                      title={rejim === 'krill' ? 'Кирилл' : 'Lotin'}
+                      aria-pressed={faol}
+                      className={`flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold transition-colors duration-150 ${
+                        faol
+                          ? 'bg-navy-800 text-white shadow-sm'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      {rejim === 'krill' ? 'Аа' : 'Aa'}
+                    </button>
+                  );
+                })}
+              </div>
+
               <button
                 type="button"
                 aria-label="Bildirishnomalar"
@@ -265,7 +307,7 @@ export function AppLayout() {
                     {user?.full_name}
                   </span>
                   <span className="block text-[11px] text-[var(--text-muted)]">
-                    {ROL_LABELS[user?.rol ?? ''] ?? user?.rol}
+                    {tr(ROL_LABELS[user?.rol ?? ''] ?? user?.rol ?? '')}
                   </span>
                 </span>
               </div>

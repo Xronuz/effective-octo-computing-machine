@@ -9,6 +9,7 @@ import type { Map as LeafletMap, LatLngBounds } from 'leaflet';
 import { RefreshCw, Users, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import { apiGet, getAccessToken } from '@/api';
+import { useAlifbo } from '@/alifbo';
 import { MfyQatlami } from '@/components/xarita/MfyQatlami';
 import { MuammoQatlami } from '@/components/xarita/MuammoQatlami';
 import { XodimQatlami } from '@/components/xarita/XodimQatlami';
@@ -117,17 +118,19 @@ const TANLANGAN_MFY_ICON = divIcon({
 
 /** Tanlangan MFY — oltin pulsli pin + doimiy nom yorlig'i */
 function TanlanganMfyMarker({ mfy }: { mfy: MfyXarita }) {
+  const { tr } = useAlifbo();
   if (mfy.markaz_lat === null || mfy.markaz_lng === null) return null;
   return (
     <Marker position={[mfy.markaz_lat, mfy.markaz_lng]} icon={TANLANGAN_MFY_ICON}>
       <Tooltip permanent direction="top" offset={[0, -12]} className="mfy-tooltip">
-        MFY #{mfy.raqami} — {mfy.nomi}
+        {tr('MFY')} #{mfy.raqami} — {mfy.nomi}
       </Tooltip>
     </Marker>
   );
 }
 
 export default function XaritaPage() {
+  const { tr } = useAlifbo();
   const token = getAccessToken();
   const [aktivlar, setAktivlar] = useState<XaritaXodim[]>([]);
   const [mfylar, setMfylar] = useState<MfyXarita[]>([]);
@@ -277,7 +280,7 @@ export default function XaritaPage() {
         if (msg.type === 'lokatsiya_yangilandi') {
           const xodim: XaritaXodim = {
             xodim_id: d.xodim_id,
-            xodim_fio: d.xodim_fio ?? "Noma'lum",
+            xodim_fio: d.xodim_fio ?? tr("Noma'lum"),
             lat: d.lat,
             lng: d.lng,
             aniqlik: d.aniqlik ?? null,
@@ -290,17 +293,17 @@ export default function XaritaPage() {
             xodim,
           ]);
           pulse(xodim.xodim_id);
-          addHodisa(msg.type, `${xodim.xodim_fio} joylashuvi yangilandi`);
+          addHodisa(msg.type, `${xodim.xodim_fio} ${tr('joylashuvi yangilandi')}`);
         } else if (msg.type === 'yangi_muammo') {
           const turiNomi = TURI_NOMLARI[d.turi ?? ''] ?? d.turi ?? 'muammo';
-          addHodisa(msg.type, `Yangi muammo: #${d.id ?? d.muammo_id ?? '?'} — ${turiNomi}`);
+          addHodisa(msg.type, `${tr('Yangi muammo')}: #${d.id ?? d.muammo_id ?? '?'} — ${tr(turiNomi)}`);
           // Yangi nuqta xaritada darhol ko'rinishi uchun
           if (boundsRef.current) fetchMuammolarRef.current(boundsRef.current);
         } else if (msg.type === 'muddat_otdi') {
-          addHodisa(msg.type, `#${d.muammo_id ?? d.id ?? '?'} muammo muddati o'tdi`);
+          addHodisa(msg.type, `#${d.muammo_id ?? d.id ?? '?'} ${tr("muammo muddati o'tdi")}`);
           if (boundsRef.current) fetchMuammolarRef.current(boundsRef.current);
         } else if (msg.type === 'shubhali') {
-          addHodisa(msg.type, `#${d.muammo_id ?? d.id ?? '?'} shubhali deb belgilandi`);
+          addHodisa(msg.type, `#${d.muammo_id ?? d.id ?? '?'} ${tr('shubhali deb belgilandi')}`);
           if (boundsRef.current) fetchMuammolarRef.current(boundsRef.current);
         }
         // ping/pong va noma'lum type'lar — e'tiborsiz

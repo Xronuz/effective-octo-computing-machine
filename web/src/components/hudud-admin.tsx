@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { apiPost, apiPatch, apiDelete } from '@/api';
 import type { MfyBrief, KochaInMfy } from '@/types';
+import { useAlifbo } from '@/alifbo';
 
 // ── Umumiy turlar ────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ export type OchirishModal =
 // ── Toast xabar (yuqori o'ng burchakda, o'zi yo'qoladi) ──────────────
 
 export function Toast({ xabar, onYopish }: { xabar: NonNullable<Xabar>; onYopish: () => void }) {
+  const { tr } = useAlifbo();
   const yaxshi = xabar.turi === 'yaxshi';
   return (
     <div
@@ -59,7 +61,7 @@ export function Toast({ xabar, onYopish }: { xabar: NonNullable<Xabar>; onYopish
       <p className="text-base font-medium leading-snug">{xabar.matn}</p>
       <button
         onClick={onYopish}
-        aria-label="Yopish"
+        aria-label={tr('Yopish')}
         className="ml-1 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
       >
         <X className="h-5 w-5" />
@@ -79,6 +81,7 @@ export function ModalQuti({
   onYopish: () => void;
   children: React.ReactNode;
 }) {
+  const { tr } = useAlifbo();
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -92,7 +95,7 @@ export function ModalQuti({
           <h3 className="text-lg font-semibold text-[#0F2033]">{sarlavha}</h3>
           <button
             onClick={onYopish}
-            aria-label="Yopish"
+            aria-label={tr('Yopish')}
             className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
           >
             <X className="h-5 w-5" />
@@ -115,6 +118,7 @@ export function MfyForma({
   onYopish: () => void;
   onSaqlandi: () => void;
 }) {
+  const { tr } = useAlifbo();
   const tahrirlash = modal.rejim === 'tahrirlash';
   const [raqami, setRaqami] = useState(
     tahrirlash ? String(modal.mfy.raqami) : '',
@@ -129,11 +133,11 @@ export function MfyForma({
 
     const raqam = parseInt(raqami, 10);
     if (!raqami.trim() || isNaN(raqam) || raqam < 1) {
-      setXato("MFY raqamini kiriting (1 yoki undan katta son).");
+      setXato(tr("MFY raqamini kiriting (1 yoki undan katta son)."));
       return;
     }
     if (!nomi.trim()) {
-      setXato('MFY nomini kiriting.');
+      setXato(tr('MFY nomini kiriting.'));
       return;
     }
 
@@ -152,26 +156,26 @@ export function MfyForma({
     if (res.ok) {
       onSaqlandi();
     } else {
-      setXato(res.xato || 'Saqlashda xatolik yuz berdi. Qayta urinib ko\'ring.');
+      setXato(res.xato || tr('Saqlashda xatolik yuz berdi. Qayta urinib ko\'ring.'));
     }
   };
 
   return (
     <ModalQuti
-      sarlavha={tahrirlash ? 'MFY ni tahrirlash' : 'Yangi MFY qo\'shish'}
+      sarlavha={tahrirlash ? tr('MFY ni tahrirlash') : tr('Yangi MFY qo\'shish')}
       onYopish={onYopish}
     >
       <form onSubmit={yuborish} className="space-y-4">
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-600">
-            MFY raqami
+            {tr('MFY raqami')}
           </label>
           <input
             className="input py-3 text-base"
             type="number"
             min={1}
             inputMode="numeric"
-            placeholder="Masalan: 12"
+            placeholder={tr('Masalan: 12')}
             value={raqami}
             onChange={(e) => setRaqami(e.target.value)}
             autoFocus
@@ -179,13 +183,13 @@ export function MfyForma({
         </div>
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-600">
-            MFY nomi
+            {tr('MFY nomi')}
           </label>
           <input
             className="input py-3 text-base"
             type="text"
             maxLength={150}
-            placeholder="Masalan: Navoiy"
+            placeholder={tr('Masalan: Navoiy')}
             value={nomi}
             onChange={(e) => setNomi(e.target.value)}
           />
@@ -200,11 +204,11 @@ export function MfyForma({
 
         <div className="flex items-center justify-end gap-3 pt-2">
           <button type="button" className="btn-soft px-5 py-3 text-base" onClick={onYopish}>
-            Bekor qilish
+            {tr('Bekor qilish')}
           </button>
           <button type="submit" className="btn-primary px-5 py-3 text-base" disabled={saqlanmoqda}>
             {saqlanmoqda && <Loader2 className="h-5 w-5 animate-spin" />}
-            {saqlanmoqda ? 'Saqlanmoqda...' : 'Saqlash'}
+            {saqlanmoqda ? tr('Saqlanmoqda...') : tr('Saqlash')}
           </button>
         </div>
       </form>

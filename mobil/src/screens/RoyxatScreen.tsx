@@ -11,6 +11,7 @@ import FormField from '../components/FormField';
 import Button from '../components/Button';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
 import type { ApiResponse } from '../types';
+import { useAlifbo } from '../contexts/AlifboContext';
 
 interface RoyxatResponse {
   id: number;
@@ -42,6 +43,7 @@ const INITIAL_FORM: FormState = {
 };
 
 export default function RoyxatScreen({ navigation }: any) {
+  const { tr } = useAlifbo();
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [serverError, setServerError] = useState('');
@@ -61,17 +63,17 @@ export default function RoyxatScreen({ navigation }: any) {
 
   const validate = (): boolean => {
     const e: Partial<FormState> = {};
-    if (!form.familiya.trim()) e.familiya = 'Familiyani kiriting';
-    if (!form.ism.trim()) e.ism = 'Ismingizni kiriting';
-    if (form.lavozim.trim().length < 2) e.lavozim = 'Lavozimingizni kiriting';
+    if (!form.familiya.trim()) e.familiya = tr('Familiyani kiriting');
+    if (!form.ism.trim()) e.ism = tr('Ismingizni kiriting');
+    if (form.lavozim.trim().length < 2) e.lavozim = tr('Lavozimingizni kiriting');
     if (!/^[A-Z0-9]{3,20}$/.test(form.guvohnoma_raqami.trim().toUpperCase())) {
-      e.guvohnoma_raqami = "Guvohnoma raqami 3-20 ta harf/raqamdan iborat bo'lsin";
+      e.guvohnoma_raqami = tr("Guvohnoma raqami 3-20 ta harf/raqamdan iborat bo'lsin");
     }
-    if (form.parol.length < 8) e.parol = "Parol kamida 8 ta belgidan iborat bo'lsin";
+    if (form.parol.length < 8) e.parol = tr("Parol kamida 8 ta belgidan iborat bo'lsin");
     else if (!/[A-Za-z]/.test(form.parol) || !/[0-9]/.test(form.parol)) {
-      e.parol = "Parol kamida bitta harf va bitta raqamdan iborat bo'lsin";
+      e.parol = tr("Parol kamida bitta harf va bitta raqamdan iborat bo'lsin");
     }
-    if (form.parol !== form.parol_tasdiq) e.parol_tasdiq = 'Parollar bir xil emas';
+    if (form.parol !== form.parol_tasdiq) e.parol_tasdiq = tr('Parollar bir xil emas');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -200,8 +202,8 @@ export default function RoyxatScreen({ navigation }: any) {
             <View style={styles.logoCircle}>
               <MaterialCommunityIcons name="account-plus" size={36} color={Colors.accent} />
             </View>
-            <Text style={styles.title}>Ro'yxatdan o'tish</Text>
-            <Text style={styles.subtitle}>Yangi xodim hisobi yarating</Text>
+            <Text style={styles.title}>{tr("Ro'yxatdan o'tish")}</Text>
+            <Text style={styles.subtitle}>{tr('Yangi xodim hisobi yarating')}</Text>
           </View>
 
           <View style={styles.card}>
@@ -209,7 +211,7 @@ export default function RoyxatScreen({ navigation }: any) {
               label="Familiya *"
               value={form.familiya}
               onChangeText={(v) => setField('familiya', v)}
-              placeholder="Familiyangiz"
+              placeholder={tr('Familiyangiz')}
               autoCapitalize="words"
               error={errors.familiya}
               editable={!loading}
@@ -218,7 +220,7 @@ export default function RoyxatScreen({ navigation }: any) {
               label="Ism *"
               value={form.ism}
               onChangeText={(v) => setField('ism', v)}
-              placeholder="Ismingiz"
+              placeholder={tr('Ismingiz')}
               autoCapitalize="words"
               error={errors.ism}
               editable={!loading}
@@ -227,7 +229,7 @@ export default function RoyxatScreen({ navigation }: any) {
               label="Sharif"
               value={form.sharif}
               onChangeText={(v) => setField('sharif', v)}
-              placeholder="Otangizning ismi"
+              placeholder={tr('Otangizning ismi')}
               autoCapitalize="words"
               editable={!loading}
             />
@@ -235,7 +237,7 @@ export default function RoyxatScreen({ navigation }: any) {
               label="Lavozim *"
               value={form.lavozim}
               onChangeText={(v) => setField('lavozim', v)}
-              placeholder="Masalan: MFY inspektori"
+              placeholder={tr('Masalan: MFY inspektori')}
               error={errors.lavozim}
               editable={!loading}
             />
@@ -243,7 +245,7 @@ export default function RoyxatScreen({ navigation }: any) {
               label="Telefon"
               value={form.telefon}
               onChangeText={(v) => setField('telefon', v)}
-              placeholder="+998 90 123 45 67"
+              placeholder={tr('+998 90 123 45 67')}
               keyboardType="phone-pad"
               editable={!loading}
             />
@@ -251,7 +253,7 @@ export default function RoyxatScreen({ navigation }: any) {
               label="Guvohnoma raqami *"
               value={form.guvohnoma_raqami}
               onChangeText={(v) => setField('guvohnoma_raqami', v)}
-              placeholder="Masalan: AB1234567"
+              placeholder={tr('Masalan: AB1234567')}
               autoCapitalize="characters"
               autoCorrect={false}
               error={errors.guvohnoma_raqami}
@@ -261,7 +263,7 @@ export default function RoyxatScreen({ navigation }: any) {
               label="Parol *"
               value={form.parol}
               onChangeText={(v) => setField('parol', v)}
-              placeholder="Kamida 8 belgi, harf va raqam"
+              placeholder={tr('Kamida 8 belgi, harf va raqam')}
               secureTextEntry
               error={errors.parol}
               editable={!loading}
@@ -270,7 +272,7 @@ export default function RoyxatScreen({ navigation }: any) {
               label="Parolni tasdiqlang *"
               value={form.parol_tasdiq}
               onChangeText={(v) => setField('parol_tasdiq', v)}
-              placeholder="Parolni qayta kiriting"
+              placeholder={tr('Parolni qayta kiriting')}
               secureTextEntry
               error={errors.parol_tasdiq}
               editable={!loading}
@@ -278,20 +280,20 @@ export default function RoyxatScreen({ navigation }: any) {
 
             {/* Selfi bloki */}
             <View style={styles.selfiBlock}>
-              <Text style={styles.selfiLabel}>Selfi (oldingi kamera) *</Text>
+              <Text style={styles.selfiLabel}>{tr('Selfi (oldingi kamera) *')}</Text>
               {selfiUri ? (
                 <View style={styles.selfiPreviewRow}>
                   <Image source={{ uri: selfiUri }} style={styles.selfiPreview} />
                   <TouchableOpacity style={styles.selfiRetake} onPress={openCamera} activeOpacity={0.8}>
                     <MaterialCommunityIcons name="camera-retake" size={18} color={Colors.primary} />
-                    <Text style={styles.selfiRetakeText}>Qayta olish</Text>
+                    <Text style={styles.selfiRetakeText}>{tr('Qayta olish')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
                 <TouchableOpacity style={styles.selfiButton} onPress={openCamera} activeOpacity={0.8}>
                   <MaterialCommunityIcons name="camera-front" size={28} color={Colors.primary} />
-                  <Text style={styles.selfiButtonText}>Selfi olish</Text>
-                  <Text style={styles.selfiButtonHint}>Faqat oldingi kamera orqali</Text>
+                  <Text style={styles.selfiButtonText}>{tr('Selfi olish')}</Text>
+                  <Text style={styles.selfiButtonHint}>{tr('Faqat oldingi kamera orqali')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -305,7 +307,7 @@ export default function RoyxatScreen({ navigation }: any) {
             ) : null}
 
             <Button
-              title="Ro'yxatdan o'tish"
+              title={tr("Ro'yxatdan o'tish")}
               icon="account-check"
               loading={loading}
               onPress={handleSubmit}
@@ -318,7 +320,7 @@ export default function RoyxatScreen({ navigation }: any) {
               activeOpacity={0.7}
             >
               <MaterialCommunityIcons name="arrow-left" size={16} color={Colors.textLink} />
-              <Text style={styles.backLinkText}>Kirish sahifasiga qaytish</Text>
+              <Text style={styles.backLinkText}>{tr('Kirish sahifasiga qaytish')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -342,10 +344,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes['2xl'], fontWeight: FontWeights.extrabold,
     fontFamily: Fonts.heading, color: Colors.textPrimary,
   },
-  subtitle: {
-    fontSize: FontSizes.base, fontFamily: Fonts.body,
-    color: Colors.textSecondary, marginTop: 4,
-  },
+  subtitle: { fontSize: FontSizes.base, fontFamily: Fonts.body, color: Colors.textSecondary, marginTop: 4 },
   card: {
     backgroundColor: Colors.surface, borderRadius: Radius.xl,
     padding: Spacing.xl, gap: Spacing.base,

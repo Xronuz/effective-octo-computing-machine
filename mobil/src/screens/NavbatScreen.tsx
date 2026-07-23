@@ -9,14 +9,15 @@ import { getNavbatYozuvlari, setNavbatStatus, type NavbatYozuvi } from '../servi
 import { syncNow } from '../services/sync';
 import Button from '../components/Button';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, XavfColors, StatusColors } from '../theme';
+import { useAlifbo } from '../contexts/AlifboContext';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-const STATUS_CFG: Record<NavbatYozuvi['status'], { label: string; color: string; bg: string; icon: IconName }> = {
-  kutilmoqda: { label: 'Kutilmoqda', color: StatusColors.jarayonda.text, bg: StatusColors.jarayonda.bg, icon: 'clock-outline' },
-  yuborilgan: { label: 'Yuborilgan', color: Colors.success, bg: Colors.successSurface, icon: 'check-circle' },
-  xato: { label: 'Xato', color: Colors.danger, bg: Colors.dangerSurface, icon: 'close-circle' },
-};
+const STATUS_CFG = (tr: (s: string) => string): Record<NavbatYozuvi['status'], { label: string; color: string; bg: string; icon: IconName }> => ({
+  kutilmoqda: { label: tr('Kutilmoqda'), color: StatusColors.jarayonda.text, bg: StatusColors.jarayonda.bg, icon: 'clock-outline' },
+  yuborilgan: { label: tr('Yuborilgan'), color: Colors.success, bg: Colors.successSurface, icon: 'check-circle' },
+  xato: { label: tr('Xato'), color: Colors.danger, bg: Colors.dangerSurface, icon: 'close-circle' },
+});
 
 function formatDateTime(iso: string): string {
   try {
@@ -31,6 +32,7 @@ function formatDateTime(iso: string): string {
 }
 
 export default function NavbatScreen() {
+  const { tr } = useAlifbo();
   const [items, setItems] = useState<NavbatYozuvi[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,16 +65,16 @@ export default function NavbatScreen() {
       const natija = await syncNow();
       if (natija.xato > 0) {
         Alert.alert(
-          'Sinxronlash yakunlandi',
-          `${natija.yuborildi} ta yozuv yuborildi, ${natija.xato} tasida xatolik yuz berdi.`,
+          tr('Sinxronlash yakunlandi'),
+          tr(`${natija.yuborildi} ta yozuv yuborildi, ${natija.xato} tasida xatolik yuz berdi.`),
         );
       } else if (natija.yuborildi > 0) {
-        Alert.alert('Sinxronlash yakunlandi', `${natija.yuborildi} ta yozuv muvaffaqiyatli yuborildi.`);
+        Alert.alert(tr('Sinxronlash yakunlandi'), tr(`${natija.yuborildi} ta yozuv muvaffaqiyatli yuborildi.`));
       } else {
-        Alert.alert('Sinxronlash', 'Yuborilishi kerak bo\'lgan yozuvlar yo\'q.');
+        Alert.alert(tr('Sinxronlash'), tr("Yuborilishi kerak bo'lgan yozuvlar yo'q."));
       }
     } catch {
-      Alert.alert('Xatolik', 'Sinxronlashda xatolik yuz berdi. Internet aloqasini tekshiring.');
+      Alert.alert(tr('Xatolik'), tr('Sinxronlashda xatolik yuz berdi. Internet aloqasini tekshiring.'));
     } finally {
       setSyncing(false);
       loadNavbat();
@@ -85,14 +87,14 @@ export default function NavbatScreen() {
       await setNavbatStatus(item.client_uuid, 'kutilmoqda');
       await loadNavbat();
     } catch {
-      Alert.alert('Xatolik', 'Yozuvni qayta navbatga qo\'yishda xatolik');
+      Alert.alert(tr('Xatolik'), tr("Yozuvni qayta navbatga qo'yishda xatolik"));
     } finally {
       setRetryingId(null);
     }
   };
 
   const renderItem = ({ item }: { item: NavbatYozuvi }) => {
-    const cfg = STATUS_CFG[item.status] || STATUS_CFG.kutilmoqda;
+    const cfg = STATUS_CFG(tr)[item.status] || STATUS_CFG(tr).kutilmoqda;
     const xavfCfg = XavfColors[item.xavf];
     const busy = retryingId === item.client_uuid;
 
@@ -109,7 +111,7 @@ export default function NavbatScreen() {
         <View style={styles.cardBody}>
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="home-outline" size={15} color={Colors.textMuted} />
-            <Text style={styles.infoText}>Xonadon #{item.xonadon_id}</Text>
+            <Text style={styles.infoText}>{tr('Xonadon')} #{item.xonadon_id}</Text>
             {xavfCfg ? (
               <View style={[styles.xavfBadge, { backgroundColor: xavfCfg.bg, borderColor: xavfCfg.border }]}>
                 <Text style={[styles.xavfText, { color: xavfCfg.text }]}>{item.xavf}</Text>
@@ -123,7 +125,7 @@ export default function NavbatScreen() {
 
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="camera-outline" size={13} color={Colors.textMuted} />
-            <Text style={styles.metaText}>{item.foto_paths?.length || 0} ta foto</Text>
+            <Text style={styles.metaText}>{item.foto_paths?.length || 0} {tr('ta foto')}</Text>
             <MaterialCommunityIcons name="map-marker-outline" size={13} color={Colors.textMuted} style={{ marginLeft: 10 }} />
             <Text style={styles.metaText}>{item.lat.toFixed(5)}, {item.lng.toFixed(5)}</Text>
           </View>
@@ -147,7 +149,7 @@ export default function NavbatScreen() {
               ) : (
                 <>
                   <MaterialCommunityIcons name="refresh" size={18} color={Colors.primary} style={{ marginRight: 6 }} />
-                  <Text style={styles.retryText}>Qayta urinish</Text>
+                  <Text style={styles.retryText}>{tr('Qayta urinish')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -164,10 +166,10 @@ export default function NavbatScreen() {
       <View style={styles.syncBar}>
         <View style={styles.syncInfo}>
           <Text style={styles.syncCount}>{kutilmoqdaSoni}</Text>
-          <Text style={styles.syncLabel}>ta yozuv navbatda</Text>
+          <Text style={styles.syncLabel}>{tr('ta yozuv navbatda')}</Text>
         </View>
         <Button
-          title="Hozir yuborish"
+          title={tr('Hozir yuborish')}
           icon="cloud-upload-outline"
           loading={syncing}
           onPress={handleSyncNow}
@@ -189,8 +191,8 @@ export default function NavbatScreen() {
           ) : (
             <View style={styles.emptyBox}>
               <MaterialCommunityIcons name="cloud-check-outline" size={48} color={Colors.textMuted} />
-              <Text style={styles.emptyTitle}>Navbat bo'sh</Text>
-              <Text style={styles.emptyText}>Sinxronlanishi kerak bo'lgan yozuvlar yo'q</Text>
+              <Text style={styles.emptyTitle}>{tr("Navbat bo'sh")}</Text>
+              <Text style={styles.emptyText}>{tr("Sinxronlanishi kerak bo'lgan yozuvlar yo'q")}</Text>
             </View>
           )
         }

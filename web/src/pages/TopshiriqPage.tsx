@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, ClipboardList, Send, ShieldAlert } from 'lucide-react';
 import { apiGet, apiPost } from '@/api';
 import { useAuth } from '@/auth';
+import { useAlifbo } from '@/alifbo';
 import type { Foydalanuvchi, MfyBrief, Paginated } from '@/types';
 
 // Backend TopshiriqResponse (app/schemas/topshiriq_intizom.py) bilan mos
@@ -48,6 +49,7 @@ const sanaFormat = (iso: string) => {
 
 export default function TopshiriqPage() {
   const { isRahbar } = useAuth();
+  const { tr } = useAlifbo();
 
   // Forma holati
   const [xodimId, setXodimId] = useState('');
@@ -113,9 +115,9 @@ export default function TopshiriqPage() {
     setFormaXato(null);
     setFormaXabar(null);
 
-    if (!xodimId) return setFormaXato('Xodimni tanlang.');
-    if (!sarlavha.trim()) return setFormaXato('Sarlavhani kiriting.');
-    if (!muddat) return setFormaXato('Muddatni tanlang.');
+    if (!xodimId) return setFormaXato(tr('Xodimni tanlang.'));
+    if (!sarlavha.trim()) return setFormaXato(tr('Sarlavhani kiriting.'));
+    if (!muddat) return setFormaXato(tr('Muddatni tanlang.'));
 
     setYuborilmoqda(true);
     // TopshiriqCreate: xodim_id, mfy_id?, muammo_id?, sarlavha, matn?, muddat (YYYY-MM-DD)
@@ -129,7 +131,7 @@ export default function TopshiriqPage() {
     setYuborilmoqda(false);
 
     if (res.ok) {
-      setFormaXabar('Topshiriq muvaffaqiyatli yuborildi.');
+      setFormaXabar(tr('Topshiriq muvaffaqiyatli yuborildi.'));
       setXodimId('');
       setMfyId('');
       setSarlavha('');
@@ -138,7 +140,7 @@ export default function TopshiriqPage() {
       setPage(1);
       fetchTopshiriqlar();
     } else {
-      setFormaXato(res.xato || 'Yuborishda xatolik yuz berdi.');
+      setFormaXato(res.xato || tr('Yuborishda xatolik yuz berdi.'));
     }
   };
 
@@ -148,7 +150,7 @@ export default function TopshiriqPage() {
       <div className="empty-state card">
         <ShieldAlert className="mx-auto h-8 w-8 text-slate-300" />
         <p className="mt-2 text-sm text-slate-500">
-          Bu sahifa faqat rahbar va superadmin uchun.
+          {tr('Bu sahifa faqat rahbar va superadmin uchun.')}
         </p>
       </div>
     );
@@ -160,13 +162,13 @@ export default function TopshiriqPage() {
     <div className="space-y-6">
       {/* Yangi topshiriq formasi */}
       <div className="card p-6">
-        <h2 className="mb-4 text-base font-semibold text-[#0F2033]">Yangi topshiriq</h2>
+        <h2 className="mb-4 text-base font-semibold text-[#0F2033]">{tr('Yangi topshiriq')}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {/* Xodim */}
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">
-                Xodim <span className="text-[#C0392B]">*</span>
+                {tr('Xodim')} <span className="text-[#C0392B]">*</span>
               </label>
               <select
                 className="select"
@@ -174,7 +176,7 @@ export default function TopshiriqPage() {
                 onChange={(e) => setXodimId(e.target.value)}
                 required
               >
-                <option value="">— Xodimni tanlang —</option>
+                <option value="">{tr('— Xodimni tanlang —')}</option>
                 {xodimlar.map((x) => (
                   <option key={x.id} value={x.id}>
                     {x.full_name}
@@ -186,17 +188,17 @@ export default function TopshiriqPage() {
             {/* MFY (ixtiyoriy) */}
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">
-                MFY (ixtiyoriy)
+                {tr('MFY (ixtiyoriy)')}
               </label>
               <select
                 className="select"
                 value={mfyId}
                 onChange={(e) => setMfyId(e.target.value)}
               >
-                <option value="">— Barcha MFY lar —</option>
+                <option value="">{tr('— Barcha MFY lar —')}</option>
                 {mfylar.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.raqami}-son — {m.nomi}
+                    {m.raqami}-{tr('son')} — {m.nomi}
                   </option>
                 ))}
               </select>
@@ -206,13 +208,13 @@ export default function TopshiriqPage() {
           {/* Sarlavha */}
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">
-              Sarlavha <span className="text-[#C0392B]">*</span>
+              {tr('Sarlavha')} <span className="text-[#C0392B]">*</span>
             </label>
             <input
               className="input"
               type="text"
               maxLength={200}
-              placeholder="Masalan: 12-son MFY bo'yicha gaz tekshiruvini yakunlash"
+              placeholder={tr("Masalan: 12-son MFY bo'yicha gaz tekshiruvini yakunlash")}
               value={sarlavha}
               onChange={(e) => setSarlavha(e.target.value)}
               required
@@ -222,12 +224,12 @@ export default function TopshiriqPage() {
           {/* Matn */}
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">
-              Topshiriq matni (ixtiyoriy)
+              {tr('Topshiriq matni (ixtiyoriy)')}
             </label>
             <textarea
               className="input min-h-[100px] resize-y"
               maxLength={2000}
-              placeholder="Batafsil tavsif, talablar va izohlar..."
+              placeholder={tr('Batafsil tavsif, talablar va izohlar...')}
               value={matn}
               onChange={(e) => setMatn(e.target.value)}
             />
@@ -320,7 +322,7 @@ export default function TopshiriqPage() {
                   </td>
                   <td className="whitespace-nowrap">
                     <span className={statusRangi[t.status] || 'badge-gray'}>
-                      {statusLabels[t.status] || t.status}
+                      {tr(statusLabels[t.status]) || t.status}
                     </span>
                   </td>
                 </tr>

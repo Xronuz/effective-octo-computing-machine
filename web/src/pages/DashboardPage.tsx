@@ -25,6 +25,7 @@ import {
   YAxis,
 } from 'recharts';
 import { apiGet } from '@/api';
+import { useAlifbo } from '@/alifbo';
 import { SkeletonCards } from '@/components/Skeleton';
 import { sanaVaqt } from '@/lib/sana';
 import type {
@@ -79,6 +80,7 @@ function qanchaVaqtOldin(iso: string | null | undefined): string {
 }
 
 export default function DashboardPage() {
+  const { tr } = useAlifbo();
   const [xonadonTotal, setXonadonTotal] = useState<number>(0);
   const [statistika, setStatistika] = useState<StatistikaResponse | null>(null);
   const [songgiMuammolar, setSonggiMuammolar] = useState<MuammoBrief[]>([]);
@@ -106,7 +108,7 @@ export default function DashboardPage() {
       } catch (err) {
         if (cancelled) return;
         const message =
-          err instanceof Error ? err.message : 'Maʼlumotlarni yuklashda xatolik yuz berdi';
+          err instanceof Error ? err.message : tr('Maʼlumotlarni yuklashda xatolik yuz berdi');
         setError(message);
       } finally {
         if (!cancelled) {
@@ -163,7 +165,7 @@ export default function DashboardPage() {
           role="alert"
           className="rounded-xl border border-[#C0392B]/20 bg-[#C0392B]/5 p-6 text-[#C0392B]"
         >
-          <h2 className="text-base font-semibold">Xatolik yuz berdi</h2>
+          <h2 className="text-base font-semibold">{tr('Xatolik yuz berdi')}</h2>
           <p className="mt-1 text-sm">{error}</p>
         </div>
       ) : loading ? (
@@ -172,7 +174,7 @@ export default function DashboardPage() {
         <>
           {/* Statistik kartalar */}
           <section
-            aria-label="Asosiy statistika"
+            aria-label={tr('Asosiy statistika')}
             className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
           >
             {stats.map((stat) => (
@@ -186,7 +188,7 @@ export default function DashboardPage() {
                   <stat.icon className="h-5 w-5" strokeWidth={1.8} />
                 </span>
                 <div className="min-w-0">
-                  <div className="truncate text-sm text-slate-500">{stat.label}</div>
+                  <div className="truncate text-sm text-slate-500">{tr(stat.label)}</div>
                   <div className="mt-0.5 text-3xl font-bold leading-tight tabular-nums text-[#0F2033]">
                     {stat.value}
                   </div>
@@ -202,28 +204,28 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Oylik dinamika */}
-            <section className="card lg:col-span-2" aria-label="Oylik dinamika">
+            <section className="card lg:col-span-2" aria-label={tr('Oylik dinamika')}>
               <div className="flex items-center justify-between gap-3 px-6 pt-5">
                 <div>
                   <h2 className="text-base font-semibold text-[#0F2033]">
-                    Muammolar dinamikasi
+                    {tr('Muammolar dinamikasi')}
                   </h2>
                   <p className="mt-0.5 text-xs text-slate-500">
-                    Ochilgan va yopilgan muammolar — oylar kesimida
+                    {tr('Ochilgan va yopilgan muammolar — oylar kesimida')}
                   </p>
                 </div>
                 <Link
                   to="/analitika"
                   className="text-sm font-medium text-[#3D6FB4] hover:underline"
                 >
-                  Batafsil analitika
+                  {tr('Batafsil analitika')}
                 </Link>
               </div>
               <div className="px-4 pb-4 pt-4">
                 {!statistika || statistika.vaqt_dinamika.length === 0 ? (
                   <div className="empty-state">
                     <BarChart3 className="mx-auto h-8 w-8 text-slate-300" />
-                    <p className="mt-2 text-sm text-slate-400">Ma'lumot hali mavjud emas</p>
+                    <p className="mt-2 text-sm text-slate-400">{tr("Ma'lumot hali mavjud emas")}</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={280}>
@@ -257,7 +259,7 @@ export default function DashboardPage() {
                       <Area
                         type="monotone"
                         dataKey="ochilgan"
-                        name="Ochilgan"
+                        name={tr('Ochilgan')}
                         stroke="#3D6FB4"
                         strokeWidth={2}
                         fill="url(#gradOchilgan)"
@@ -266,7 +268,7 @@ export default function DashboardPage() {
                       <Area
                         type="monotone"
                         dataKey="yopilgan"
-                        name="Yopilgan"
+                        name={tr('Yopilgan')}
                         stroke="#C9A227"
                         strokeWidth={2}
                         fill="url(#gradYopilgan)"
@@ -279,21 +281,21 @@ export default function DashboardPage() {
             </section>
 
             {/* Tezkor amallar */}
-            <section className="card p-6" aria-label="Tezkor amallar">
-              <h2 className="text-base font-semibold text-[#0F2033]">Tezkor amallar</h2>
-              <p className="mt-0.5 text-xs text-slate-500">Asosiy bo'limlarga o'tish</p>
+            <section className="card p-6" aria-label={tr('Tezkor amallar')}>
+              <h2 className="text-base font-semibold text-[#0F2033]">{tr('Tezkor amallar')}</h2>
+              <p className="mt-0.5 text-xs text-slate-500">{tr("Asosiy bo'limlarga o'tish")}</p>
               <div className="mt-4 flex flex-col gap-2.5">
                 <Link to="/muammolar" className="btn-soft justify-start gap-2.5">
                   <ClipboardList className="h-4 w-4" />
-                  Muammolar ro'yxati
+                  {tr("Muammolar ro'yxati")}
                 </Link>
                 <Link to="/xarita" className="btn-soft justify-start gap-2.5">
                   <Map className="h-4 w-4" />
-                  Xarita
+                  {tr('Xarita')}
                 </Link>
                 <Link to="/analitika" className="btn-soft justify-start gap-2.5">
                   <BarChart3 className="h-4 w-4" />
-                  Analitika
+                  {tr('Analitika')}
                 </Link>
               </div>
             </section>

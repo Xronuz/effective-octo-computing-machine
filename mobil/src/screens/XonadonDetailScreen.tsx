@@ -5,6 +5,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import api from '../services/api';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
 import type { ApiResponse, Xonadon } from '../types';
+import { useAlifbo } from '../contexts/AlifboContext';
 
 interface InfoRow {
   label: string;
@@ -13,6 +14,7 @@ interface InfoRow {
 }
 
 export default function XonadonDetailScreen({ route, navigation }: any) {
+  const { tr } = useAlifbo();
   const { id } = route.params;
   const [xonadon, setXonadon] = useState<Xonadon | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,15 +41,15 @@ export default function XonadonDetailScreen({ route, navigation }: any) {
     return (
       <SafeAreaView style={styles.center}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Yuklanmoqda...</Text>
+        <Text style={styles.loadingText}>{tr('Yuklanmoqda...')}</Text>
       </SafeAreaView>
     );
   }
 
   const infoRows: InfoRow[] = [
-    { label: 'MFY', icon: 'map-marker', value: xonadon?.mfy_nomi || '-' },
-    { label: 'Xonadon raqami', icon: 'home-outline', value: xonadon?.uy_raqami || '-' },
-    { label: 'Ochiq muammolar', icon: 'alert-circle-outline', value: String(xonadon?.ochiq_muammolar_soni || 0) },
+    { label: tr('MFY'), icon: 'map-marker', value: xonadon?.mfy_nomi || '-' },
+    { label: tr('Xonadon raqami'), icon: 'home-outline', value: xonadon?.uy_raqami || '-' },
+    { label: tr('Ochiq muammolar'), icon: 'alert-circle-outline', value: String(xonadon?.ochiq_muammolar_soni || 0) },
   ];
 
   return (
@@ -61,7 +63,7 @@ export default function XonadonDetailScreen({ route, navigation }: any) {
           <View style={styles.addressRow}>
             <MaterialCommunityIcons name="home-map-marker" size={28} color={Colors.primary} />
             <Text style={styles.address} numberOfLines={2}>
-              {xonadon?.full_address || "Manzil mavjud emas"}
+              {xonadon?.full_address || tr('Manzil mavjud emas')}
             </Text>
           </View>
         </View>
@@ -75,7 +77,7 @@ export default function XonadonDetailScreen({ route, navigation }: any) {
                   <MaterialCommunityIcons name={row.icon} size={18} color={Colors.primary} />
                 </View>
                 <Text style={styles.infoLabel}>{row.label}</Text>
-                <Text style={[styles.infoValue, row.label === 'Ochiq muammolar' && {
+                <Text style={[styles.infoValue, row.label === tr('Ochiq muammolar') && {
                   color: (xonadon?.ochiq_muammolar_soni || 0) > 0 ? Colors.danger : Colors.success,
                   fontWeight: FontWeights.bold,
                 }]}>{row.value}</Text>
@@ -90,7 +92,7 @@ export default function XonadonDetailScreen({ route, navigation }: any) {
           <View style={styles.sectionTitleBox}>
             <MaterialCommunityIcons name="alert-octagon-outline" size={20} color={Colors.primary} />
             <Text style={styles.sectionTitle}>
-              Muammolar ({xonadon?.ochiq_muammolar_soni || 0} ochiq)
+              {tr('Muammolar')} ({xonadon?.ochiq_muammolar_soni || 0} {tr('ochiq')})
             </Text>
           </View>
           <TouchableOpacity
@@ -99,7 +101,7 @@ export default function XonadonDetailScreen({ route, navigation }: any) {
             activeOpacity={0.7}
           >
             <MaterialCommunityIcons name="plus-circle-outline" size={18} color={Colors.textInverse} style={{ marginRight: 4 }} />
-            <Text style={styles.addBtnText}>Yangi muammo</Text>
+            <Text style={styles.addBtnText}>{tr('Yangi muammo')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -107,7 +109,7 @@ export default function XonadonDetailScreen({ route, navigation }: any) {
         <View style={styles.emptyBox}>
           <MaterialCommunityIcons name="information-outline" size={36} color={Colors.textMuted} />
           <Text style={styles.emptyText}>
-            Muammolarni ko'rish uchun veb-dashboarddan foydalaning yoki yangi muammo qo'shing.
+            {tr("Muammolarni ko'rish uchun veb-dashboarddan foydalaning yoki yangi muammo qo'shing.")}
           </Text>
         </View>
       </ScrollView>

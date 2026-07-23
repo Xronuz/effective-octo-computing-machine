@@ -16,6 +16,7 @@ import {
   Users,
 } from 'lucide-react';
 import { sanaVaqt } from '@/lib/sana';
+import { useAlifbo } from '@/alifbo';
 import type { StatistikaResponse, XodimStatistika, MfyBrief } from '@/types';
 import {
   BarChart,
@@ -74,6 +75,7 @@ const STATUS_COLORS: Record<string, string> = {
 const HEAT_COLORS = ['#DCE7F4', '#9DBBDD', BLUE, YELLOW, RED];
 
 export default function AnalitikaPage() {
+  const { tr } = useAlifbo();
   const [data, setData] = useState<StatistikaResponse | null>(null);
   const [xodimlar, setXodimlar] = useState<XodimStatistika[]>([]);
   const [mfyMarkazlar, setMfyMarkazlar] = useState<MfyBrief[]>([]);
@@ -96,12 +98,12 @@ export default function AnalitikaPage() {
       const mfyData = mfyRes.data;
       setMfyMarkazlar(Array.isArray(mfyData) ? mfyData : mfyData.items ?? []);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Ma'lumotlarni yuklashda xatolik";
+      const msg = err instanceof Error ? err.message : tr("Ma'lumotlarni yuklashda xatolik");
       setError(msg);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tr]);
 
   useEffect(() => {
     loadData();
@@ -122,7 +124,7 @@ export default function AnalitikaPage() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      alert(`${format.toUpperCase()} eksportda xatolik yuz berdi`);
+      alert(`${format.toUpperCase()} ${tr('eksportda xatolik yuz berdi')}`);
     } finally {
       setExporting(null);
     }
@@ -140,11 +142,11 @@ export default function AnalitikaPage() {
     return (
       <div className="card p-8 text-center">
         <AlertTriangle className="mx-auto h-8 w-8 text-[#C0392B]" />
-        <h2 className="mt-3 text-lg font-semibold text-[#0F2033]">Xatolik yuz berdi</h2>
-        <p className="mt-1 text-sm text-slate-500">{error || "Ma'lumot topilmadi"}</p>
+        <h2 className="mt-3 text-lg font-semibold text-[#0F2033]">{tr('Xatolik yuz berdi')}</h2>
+        <p className="mt-1 text-sm text-slate-500">{error || tr("Ma'lumot topilmadi")}</p>
         <button onClick={loadData} className="btn-primary mt-5 gap-2">
           <RefreshCw className="h-4 w-4" />
-          Qayta urinish
+          {tr('Qayta urinish')}
         </button>
       </div>
     );
@@ -153,17 +155,17 @@ export default function AnalitikaPage() {
   const { umumiy, muammo_turlari, muammo_xavf, muammo_status, mfylar, topshiriqlar, intizom, vaqt_dinamika } = data;
 
   const turiChart = muammo_turlari.map((t) => ({
-    name: MUAMMO_TURI_LABELS[t.turi] || t.turi,
+    name: MUAMMO_TURI_LABELS[t.turi] ? tr(MUAMMO_TURI_LABELS[t.turi]) : t.turi,
     soni: t.soni,
   }));
 
   const xavfChart = muammo_xavf.map((x) => ({
-    name: XAVF_LABELS[x.xavf] || x.xavf,
+    name: XAVF_LABELS[x.xavf] ? tr(XAVF_LABELS[x.xavf]) : x.xavf,
     value: x.soni,
   }));
 
   const statusChart = muammo_status.map((s) => ({
-    name: MUAMMO_STATUS_LABELS[s.status] || s.status,
+    name: MUAMMO_STATUS_LABELS[s.status] ? tr(MUAMMO_STATUS_LABELS[s.status]) : s.status,
     soni: s.soni,
     rang: STATUS_COLORS[s.status] || BLUE,
   }));
@@ -205,9 +207,9 @@ export default function AnalitikaPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-[#0F2033] sm:text-2xl">Analitika</h1>
+          <h1 className="text-xl font-semibold text-[#0F2033] sm:text-2xl">{tr('Analitika')}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Tizim bo'yicha to'liq statistika va hisobotlar
+            {tr("Tizim bo'yicha to'liq statistika va hisobotlar")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -217,7 +219,7 @@ export default function AnalitikaPage() {
             className="btn-soft gap-2"
           >
             <FileSpreadsheet className="h-4 w-4" />
-            {exporting === 'excel' ? 'Yuklanmoqda...' : 'Excel'}
+            {exporting === 'excel' ? tr('Yuklanmoqda...') : 'Excel'}
           </button>
           <button
             onClick={() => handleExport('pdf')}
@@ -225,7 +227,7 @@ export default function AnalitikaPage() {
             className="btn-soft gap-2"
           >
             <FileText className="h-4 w-4" />
-            {exporting === 'pdf' ? 'Yuklanmoqda...' : 'PDF'}
+            {exporting === 'pdf' ? tr('Yuklanmoqda...') : 'PDF'}
           </button>
         </div>
       </div>

@@ -14,6 +14,7 @@ import OfflineBanner from '../components/OfflineBanner';
 import SyncIndicator from '../components/SyncIndicator';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, XavfColors } from '../theme';
 import type { MuammoTuri, XavfDarajasi } from '../types';
+import { useAlifbo } from '../contexts/AlifboContext';
 
 // GPS is loaded dynamically since it requires a native module
 let Location: any = null;
@@ -59,23 +60,23 @@ function isValidMuddat(s: string): boolean {
   return !isNaN(d.getTime());
 }
 
-const TUR_OPTIONS: { key: MuammoTuri; label: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'] }[] = [
-  { key: 'ochiq_elektr_simi', label: 'Ochiq elektr simi', icon: 'lightning-bolt-outline' },
-  { key: 'elektr_shchit_nosoz', label: 'Elektr shchit nosoz', icon: 'electric-switch' },
-  { key: 'gaz_shlangi_nosoz', label: 'Gaz shlangi nosoz', icon: 'gas-cylinder' },
-  { key: 'gaz_hidi', label: 'Gaz hidi', icon: 'smoke-detector' },
-  { key: 'isitish_uskunasi', label: 'Isitish uskunasi', icon: 'radiator' },
-  { key: 'mo_ri_tozalanmagan', label: "Mo'ri tozalanmagan", icon: 'air-filter' },
-  { key: 'ot_ochirgich_yoq', label: "O't o'chirgich yo'q", icon: 'fire-extinguisher' },
-  { key: 'evakuatsiya_yoli_yopiq', label: 'Evakuatsiya yo\'li yopiq', icon: 'exit-run' },
-  { key: 'boshqa', label: 'Boshqa', icon: 'dots-horizontal-circle-outline' },
+const TUR_OPTIONS = (tr: (s: string) => string): { key: MuammoTuri; label: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'] }[] => [
+  { key: 'ochiq_elektr_simi', label: tr('Ochiq elektr simi'), icon: 'lightning-bolt-outline' },
+  { key: 'elektr_shchit_nosoz', label: tr('Elektr shchit nosoz'), icon: 'electric-switch' },
+  { key: 'gaz_shlangi_nosoz', label: tr('Gaz shlangi nosoz'), icon: 'gas-cylinder' },
+  { key: 'gaz_hidi', label: tr('Gaz hidi'), icon: 'smoke-detector' },
+  { key: 'isitish_uskunasi', label: tr('Isitish uskunasi'), icon: 'radiator' },
+  { key: 'mo_ri_tozalanmagan', label: tr("Mo'ri tozalanmagan"), icon: 'air-filter' },
+  { key: 'ot_ochirgich_yoq', label: tr("O't o'chirgich yo'q"), icon: 'fire-extinguisher' },
+  { key: 'evakuatsiya_yoli_yopiq', label: tr("Evakuatsiya yo'li yopiq"), icon: 'exit-run' },
+  { key: 'boshqa', label: tr('Boshqa'), icon: 'dots-horizontal-circle-outline' },
 ];
 
-const XAVF_OPTIONS: { value: XavfDarajasi; label: string; color: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'] }[] = [
-  { value: 'past', label: 'Past', color: XavfColors.past.text, icon: 'circle-small' },
-  { value: 'orta', label: "O'rta", color: '#D9A441', icon: 'circle-medium' },
-  { value: 'yuqori', label: 'Yuqori', color: XavfColors.yuqori.text, icon: 'circle' },
-  { value: 'kritik', label: 'Kritik', color: XavfColors.kritik.text, icon: 'alert-circle' },
+const XAVF_OPTIONS = (tr: (s: string) => string): { value: XavfDarajasi; label: string; color: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'] }[] => [
+  { value: 'past', label: tr('Past'), color: XavfColors.past.text, icon: 'circle-small' },
+  { value: 'orta', label: tr("O'rta"), color: '#D9A441', icon: 'circle-medium' },
+  { value: 'yuqori', label: tr('Yuqori'), color: XavfColors.yuqori.text, icon: 'circle' },
+  { value: 'kritik', label: tr('Kritik'), color: XavfColors.kritik.text, icon: 'alert-circle' },
 ];
 
 interface Photo {
@@ -83,6 +84,7 @@ interface Photo {
 }
 
 export default function MuammoYaratishScreen({ route, navigation }: any) {
+  const { tr } = useAlifbo();
   const xonadonId = route.params?.xonadonId as number | undefined;
 
   const [selectedXonadonId, setSelectedXonadonId] = useState<string>(xonadonId ? String(xonadonId) : '');
@@ -140,7 +142,7 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
               setMockGps(true);
               if (!mockWarnedRef.current) {
                 mockWarnedRef.current = true;
-                Alert.alert('Diqqat', 'Soxta (mock) GPS aniqlandi. Yozuv shubhali deb belgilanadi.');
+                Alert.alert(tr('Diqqat'), tr('Soxta (mock) GPS aniqlandi. Yozuv shubhali deb belgilanadi.'));
               }
             }
             if (accuracy < GPS_YAXSHI_ANIQLIK_M) {
@@ -152,7 +154,7 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
           },
         );
       } catch (err: any) {
-        setLocError(err.message || 'GPS xatoligi');
+        setLocError(err.message || tr('GPS xatoligi'));
       }
     })();
 
@@ -192,8 +194,8 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
       const perm = await requestCameraPermission();
       if (!perm.granted) {
         Alert.alert(
-          'Ruxsat yo\'q',
-          'Rasm olish uchun kamera ruxsati kerak. Iltimos, qurilma sozlamalaridan kamera ruxsatini yoqing.'
+          tr("Ruxsat yo'q"),
+          tr('Rasm olish uchun kamera ruxsati kerak. Iltimos, qurilma sozlamalaridan kamera ruxsatini yoqing.')
         );
         return;
       }
@@ -212,7 +214,7 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
         setCameraVisible(false);
       }
     } catch (err: any) {
-      Alert.alert('Kamera xatoligi', err.message || 'Rasm olishda xatolik yuz berdi');
+      Alert.alert(tr('Kamera xatoligi'), err.message || tr('Rasm olishda xatolik yuz berdi'));
     } finally {
       setCapturing(false);
     }
@@ -223,24 +225,24 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
   };
 
   const handleSubmit = async () => {
-    if (!selectedXonadonId.trim()) { Alert.alert('Xatolik', 'Xonadon ID sini kiriting'); return; }
-    if (!tavsif.trim()) { Alert.alert('Xatolik', 'Tavsifni kiriting'); return; }
-    if (!location) { Alert.alert('Xatolik', 'GPS koordinatalari hali aniqlanmadi. Iltimos, kuting.'); return; }
+    if (!selectedXonadonId.trim()) { Alert.alert(tr('Xatolik'), tr('Xonadon ID sini kiriting')); return; }
+    if (!tavsif.trim()) { Alert.alert(tr('Xatolik'), tr('Tavsifni kiriting')); return; }
+    if (!location) { Alert.alert(tr('Xatolik'), tr('GPS koordinatalari hali aniqlanmadi. Iltimos, kuting.')); return; }
     if (!gpsLocked) {
       Alert.alert(
-        'Xatolik',
+        tr('Xatolik'),
         gpsTimedOut
-          ? 'GPS aniqligi past. Davom etish uchun "Shu aniqlik bilan davom etish" tugmasini bosing.'
-          : 'GPS qulflanishi kutilmoqda (aniqlik 50 m dan yaxshi bo\'lishi kerak).'
+          ? tr('GPS aniqligi past. Davom etish uchun "Shu aniqlik bilan davom etish" tugmasini bosing.')
+          : tr("GPS qulflanishi kutilmoqda (aniqlik 50 m dan yaxshi bo'lishi kerak).")
       );
       return;
     }
     if (ornidaBartaraf && photos.length === 0) {
-      Alert.alert('Xatolik', "O'rnida bartaraf etilgan muammo uchun 'keyin' foto majburiy.");
+      Alert.alert(tr('Xatolik'), tr("O'rnida bartaraf etilgan muammo uchun 'keyin' foto majburiy."));
       return;
     }
     if (!ornidaBartaraf && !isValidMuddat(muddat.trim())) {
-      Alert.alert('Xatolik', "Bartaraf etish muddatini YYYY-MM-DD formatida kiriting (masalan, 2025-01-31).");
+      Alert.alert(tr('Xatolik'), tr("Bartaraf etish muddatini YYYY-MM-DD formatida kiriting (masalan, 2025-01-31)."));
       return;
     }
 
@@ -270,14 +272,14 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
       setPendingCount(await getKutilmaganSoni());
 
       Alert.alert(
-        'Saqlandi',
-        "Muammo qurilmaga saqlandi. Internet bo'lsa avtomatik yuboriladi.",
+        tr('Saqlandi'),
+        tr("Muammo qurilmaga saqlandi. Internet bo'lsa avtomatik yuboriladi."),
         [{ text: 'OK', onPress: () => navigation.goBack() }],
       );
       // Net bo'lsa darhol yuborishga urinamiz (natijani kutmagan holda)
       syncNow();
     } catch (err: any) {
-      Alert.alert('Xatolik', err.message || 'Saqlashda xatolik yuz berdi');
+      Alert.alert(tr('Xatolik'), err.message || tr('Saqlashda xatolik yuz berdi'));
     } finally {
       setSubmitting(false);
     }
@@ -290,7 +292,7 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
       <OfflineBanner isOffline={isOffline} pendingCount={pendingCount} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {/* Xonadon ID */}
-        <Text style={styles.label}>Xonadon ID</Text>
+        <Text style={styles.label}>{tr('Xonadon ID')}</Text>
         <View style={styles.inputWrapper}>
           <MaterialCommunityIcons name="identifier" size={20} color={Colors.textMuted} style={styles.inputIcon} />
           <TextInput
@@ -305,9 +307,9 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
         </View>
 
         {/* Turi */}
-        <Text style={styles.label}>Muammo turi</Text>
+        <Text style={styles.label}>{tr('Muammo turi')}</Text>
         <View style={styles.chipRow}>
-          {TUR_OPTIONS.map(t => {
+          {TUR_OPTIONS(tr).map(t => {
             const active = turi === t.key;
             return (
               <TouchableOpacity
@@ -332,9 +334,9 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
         </View>
 
         {/* Xavf */}
-        <Text style={styles.label}>Xavf darajasi</Text>
+        <Text style={styles.label}>{tr('Xavf darajasi')}</Text>
         <View style={styles.xavfRow}>
-          {XAVF_OPTIONS.map(x => {
+          {XAVF_OPTIONS(tr).map(x => {
             const active = xavf === x.value;
             return (
               <TouchableOpacity
@@ -359,13 +361,13 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
         </View>
 
         {/* Tavsif */}
-        <Text style={styles.label}>Tavsif</Text>
+        <Text style={styles.label}>{tr('Tavsif')}</Text>
         <View style={[styles.inputWrapper, styles.textareaWrapper]}>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={tavsif}
             onChangeText={setTavsif}
-            placeholder="Muammo haqida batafsil yozing..."
+            placeholder={tr('Muammo haqida batafsil yozing...')}
             placeholderTextColor={Colors.textMuted}
             multiline
             numberOfLines={4}
@@ -376,11 +378,11 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
         {/* O'rnida bartaraf */}
         <View style={styles.toggleRow}>
           <View style={{ flex: 1, marginRight: 12 }}>
-            <Text style={styles.label}>O'rnida bartaraf etildimi?</Text>
+            <Text style={styles.label}>{tr("O'rnida bartaraf etildimi?")}</Text>
             <Text style={styles.toggleHint}>
               {ornidaBartaraf
-                ? "'Keyin' foto majburiy, muddat kerak emas"
-                : 'Bartaraf etish muddati majburiy'}
+                ? tr("'Keyin' foto majburiy, muddat kerak emas")
+                : tr('Bartaraf etish muddati majburiy')}
             </Text>
           </View>
           <Switch
@@ -397,7 +399,7 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
         {/* Muddat */}
         {!ornidaBartaraf && (
           <>
-            <Text style={styles.label}>Bartaraf etish muddati</Text>
+            <Text style={styles.label}>{tr('Bartaraf etish muddati')}</Text>
             <View style={styles.inputWrapper}>
               <MaterialCommunityIcons name="calendar-clock" size={20} color={Colors.textMuted} style={styles.inputIcon} />
               <TextInput
@@ -415,7 +417,7 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
         )}
 
         {/* GPS */}
-        <Text style={styles.label}>GPS koordinatalari</Text>
+        <Text style={styles.label}>{tr('GPS koordinatalari')}</Text>
         <View style={[styles.gpsBox, { borderLeftColor: gpsStatusColor }]}>
           {locError ? (
             <View style={styles.gpsContent}>
@@ -437,7 +439,7 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
                   </Text>
                   <Text style={styles.gpsAccuracy}>
                     Aniqlik: ±{location.accuracy.toFixed(0)} m —{' '}
-                    {gpsLocked ? 'qulflangan' : 'aniqlanmoqda...'}
+                    {gpsLocked ? tr('qulflangan') : tr('aniqlanmoqda...')}
                   </Text>
                 </View>
                 {!gpsLocked && <ActivityIndicator size="small" color={Colors.primary} />}
@@ -445,16 +447,16 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
               {mockGps && (
                 <View style={[styles.gpsContent, { marginTop: 6 }]}>
                   <MaterialCommunityIcons name="alert" size={14} color={Colors.danger} style={{ marginRight: 6 }} />
-                  <Text style={styles.gpsError}>Soxta (mock) GPS aniqlandi</Text>
+                  <Text style={styles.gpsError}>{tr('Soxta (mock) GPS aniqlandi')}</Text>
                 </View>
               )}
               {gpsTimedOut && !gpsLocked && (
                 <View style={styles.gpsTimeoutBox}>
                   <Text style={styles.gpsTimeoutText}>
-                    20 soniyada yuqori aniqlikka erishilmadi.
+                    {tr('20 soniyada yuqori aniqlikka erishilmadi.')}
                   </Text>
                   <TouchableOpacity style={styles.gpsTimeoutBtn} onPress={continueWithLowAccuracy} activeOpacity={0.8}>
-                    <Text style={styles.gpsTimeoutBtnText}>Shu aniqlik bilan davom etish</Text>
+                    <Text style={styles.gpsTimeoutBtnText}>{tr('Shu aniqlik bilan davom etish')}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -462,14 +464,14 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
           ) : (
             <View style={styles.gpsContent}>
               <ActivityIndicator size="small" color={Colors.primary} style={{ marginRight: 8 }} />
-              <Text style={styles.gpsAccuracy}>GPS aniqlanmoqda...</Text>
+              <Text style={styles.gpsAccuracy}>{tr('GPS aniqlanmoqda...')}</Text>
             </View>
           )}
         </View>
 
         {/* Photos */}
         <Text style={styles.label}>
-          Fotosuratlar ({photos.length}){ornidaBartaraf ? ' — majburiy' : ''}
+          {tr('Fotosuratlar')} ({photos.length}){ornidaBartaraf ? tr(' — majburiy') : ''}
         </Text>
         <View style={styles.photoRow}>
           {photos.map((p, i) => (
@@ -484,7 +486,7 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
           ))}
           <TouchableOpacity style={styles.cameraBtn} onPress={takePhoto} activeOpacity={0.7}>
             <MaterialCommunityIcons name="camera-plus" size={26} color={Colors.primary} />
-            <Text style={styles.cameraLabel}>Rasm olish</Text>
+            <Text style={styles.cameraLabel}>{tr('Rasm olish')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -500,7 +502,7 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
           ) : (
             <View style={styles.submitContent}>
               <MaterialCommunityIcons name="content-save" size={20} color={Colors.textInverse} style={{ marginRight: 8 }} />
-              <Text style={styles.submitText}>Muammoni saqlash</Text>
+              <Text style={styles.submitText}>{tr('Muammoni saqlash')}</Text>
             </View>
           )}
         </TouchableOpacity>

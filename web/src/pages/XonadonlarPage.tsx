@@ -3,11 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, FilterX, Home, Plus, Search } from 'lucide-react';
 import { apiGet, apiPost, apiDelete } from '@/api';
 import { useAuth } from '@/auth';
+import { useAlifbo } from '@/alifbo';
+import { krilldanLotinga } from '@/lib/alifbo';
 import { SkeletonTable } from '@/components/Skeleton';
 import type { Paginated, XonadonBrief, MfyBrief, KochaBrief, XonadonCreatePayload } from '@/types';
 
 export default function XonadonlarPage() {
   const { isSuperadmin, isRahbar } = useAuth();
+  const { tr } = useAlifbo();
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<Paginated<XonadonBrief> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +42,7 @@ export default function XonadonlarPage() {
     if (mfy_id) params.set('mfy_id', mfy_id);
     if (kocha_id) params.set('kocha_id', kocha_id);
     if (ochiq_muammo) params.set('ochiq_muammo', ochiq_muammo);
-    if (qidiruv) params.set('qidiruv', qidiruv);
+    if (qidiruv) params.set('qidiruv', krilldanLotinga(qidiruv));
     const res = await apiGet<Paginated<XonadonBrief>>(`/xonadonlar?${params}`);
     if (res.ok) setData(res.data);
     setLoading(false);
@@ -59,7 +62,7 @@ export default function XonadonlarPage() {
 
   const handleCreate = async () => {
     if (!createForm.kocha_id || !createForm.uy_raqami.trim()) {
-      setCreateError('Ko\'cha va uy raqami majburiy');
+      setCreateError(tr('Ko\'cha va uy raqami majburiy'));
       return;
     }
     setCreating(true);
@@ -71,7 +74,7 @@ export default function XonadonlarPage() {
       setCreateForm({ kocha_id: 0, uy_raqami: '' });
       fetchData();
     } else {
-      setCreateError(res.xato || 'Xatolik yuz berdi');
+      setCreateError(res.xato || tr('Xatolik yuz berdi'));
     }
   };
 
@@ -89,13 +92,13 @@ export default function XonadonlarPage() {
       {/* Create form */}
       {showCreate && (
         <div className="card space-y-4 p-6">
-          <h3 className="text-base font-semibold text-[#0F2033]">Yangi xonadon qo'shish</h3>
+          <h3 className="text-base font-semibold text-[#0F2033]">{tr("Yangi xonadon qo'shish")}</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Ko'cha *</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Ko'cha")} *</label>
               <select className="select" value={createForm.kocha_id || ''} onChange={e => setCreateForm({...createForm, kocha_id: Number(e.target.value)})}>
-                <option value="">Tanlang</option>
-                {kochalar.map(k => <option key={k.id} value={k.id}>{k.nomi}</option>)}
+                <option value="">{tr('Tanlang')}</option>
+                {kochalar.map(k => <option key={k.id} value={k.id}>{tr(k.nomi)}</option>)}
               </select>
             </div>
             <div>
