@@ -1,0 +1,47 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: mchs-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, mchs]
+    timeout-minutes: 20
+    steps:
+      - name: Pull latest main
+        run: |
+          set -e
+          cd /opt/MCHS
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Build & deploy (docker compose)
+        run: |
+          set -e
+          cd /opt/MCHS
+          docker compose -f docker-compose.prod.yml build backend
+          docker compose -f docker-compose.prod.yml up -d postgres redis backend web-builder nginx
+
+      - name: Wait for backend health
+        run: |
+          set -e
+          for i in $(seq 1 30); do
+            status=$(docker inspect --format='{{.State.Health.Status}}' xavfsiz-backend-prod 2>/dev/null || echo "starting")
+            if [ "$status" = "healthy" ]; then
+              echo "Backend healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become healthy in time"
+          docker logs xavfsiz-backend-prod --tail 100
+          exit 1
+
+      - name: Prune old images
+        run: docker image prune -f
