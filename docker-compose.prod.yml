@@ -133,7 +133,7 @@ services:
       - web_dist_prod:/app/dist
     command: >
       sh -c "
-        npm ci &&
+        npm install --no-audit --no-fund &&
         npm run build &&
         echo 'Web build completed'
       "
@@ -146,8 +146,10 @@ services:
     container_name: xavfsiz-nginx-prod
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"   # TLS keyin qo'shilsa
+      # Host'dagi asosiy nginx (boshqa loyihalar) 80/443 portlarini band qilgani
+      # uchun bu konteyner faqat localhost'da ichki portga bog'lanadi;
+      # tashqi trafik /etc/nginx/sites-available/mchs.xron.uz orqali keladi.
+      - "127.0.0.1:8091:80"
     depends_on:
       backend:
         condition: service_started
@@ -159,7 +161,7 @@ services:
       - uploads_prod:/app/uploads:ro
     healthcheck:
       # nginx:alpine imijida curl yo'q — busybox wget ishlatiladi
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 5s
       retries: 3
