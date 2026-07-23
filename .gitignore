@@ -1,0 +1,71 @@
+# ============ XAVFSIZ XONADON — .gitignore ============
+
+# Muhit
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Uploads
+uploads/
+/app/uploads/
+
+# Backups
+backups/
+*.sql
+*.dump
+
+# Node (web/)
+web/node_modules/
+web/dist/
+mobil/node_modules/
+mobil/dist/
+mobil/.expo/
+
+# Test upload chiqindilari
+tests/test_uploads/
+
+# Logs
+*.log
+logs/
+
+# Alembic
+backend/alembic/versions/__pycache__/
+
+# Secrets
+*.pem
+*.key
+
+# Test cache
+.pytest_cache/
+
+# Workspace tooling
+.xagent/

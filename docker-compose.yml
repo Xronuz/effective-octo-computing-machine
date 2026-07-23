@@ -1,0 +1,86 @@
+# ============================================================
+# XAVFSIZ XONADON — Docker Compose (ishlab chiqish muhiti)
+# Uychi tumani FVV bo'limi uchun raqamli nazorat platformasi
+# ============================================================
+
+version: "3.9"
+
+services:
+  # ============ PostgreSQL 16 + PostGIS 3.4 ============
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: xavfsiz-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-xavfsiz_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-almashtirilsin_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-xavfsiz_xonadon}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Seed skriptlar avtomatik bajarilishi uchun:
+      - ./backend/scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-xavfsiz_user} -d ${POSTGRES_DB:-xavfsiz_xonadon}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============ FastAPI backend ============
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: xavfsiz-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-xavfsiz_user}:${POSTGRES_PASSWORD:-almashtirilsin_2026}@postgres:5432/${POSTGRES_DB:-xavfsiz_xonadon}"
+      JWT_SECRET: ${JWT_SECRET:-0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2}
+      APP_ENV: development
+      DEBUG: "true"
+      CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
+      UPLOAD_DIR: /app/uploads
+      # Faqat dev uchun standart superadmin paroli — prod'da .env orqali kuchli parol bering
+      SUPERADMIN_PAROL: ${SUPERADMIN_PAROL:-XavfsizDev123}
+      # Telegram bot tokeni — .env dan olinadi (bo'sh bo'lsa bot ishga tushmaydi)
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/app/uploads
+      - ./backend:/app:ro  # kodni bog'lash (hot reload uchun)
+    command: >
+      sh -c "
+        echo 'Waiting for PostgreSQL...' &&
+        sleep 3 &&
+        alembic upgrade head &&
+        echo 'Running seed...' &&
+        python scripts/seed_mfy.py &&
+        echo 'Creating superadmin...' &&
+        python scripts/create_superadmin.py &&
+        echo 'Starting FastAPI...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  # ============ Adminer (DB boshqaruvi) ============
+  adminer:
+    image: adminer:latest
+    container_name: xavfsiz-adminer
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads:
+    driver: local

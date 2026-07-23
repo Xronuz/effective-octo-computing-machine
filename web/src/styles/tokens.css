@@ -1,0 +1,67 @@
+/*
+ * XAVFSIZ XONADON — Dizayn tokenlari (premium light theme)
+ *
+ * Davlat korxonasi (FVV) uchun vazmin yorug' palitra:
+ * chuqur navy + oltin aksent, past saturatsiya.
+ * Barcha sahifalar va komponentlar shu o'zgaruvchilarga tayanadi.
+ */
+
+:root {
+  /* ── Fonlar ─────────────────────────────────────────────── */
+  --bg-app: #edf0f5;       /* asosiy fon, sal sovuq kulrang */
+  --bg-surface: #ffffff;   /* kartalar */
+  --bg-subtle: #f6f8fb;    /* ichki yuzalar, hover */
+
+  /* ── Matn ───────────────────────────────────────────────── */
+  --text-primary: #0f2033;
+  --text-secondary: #51637a;
+  --text-muted: #8595ab;
+  --text-inverse: #ffffff;
+
+  /* ── Chegaralar ─────────────────────────────────────────── */
+  --border: #e3e9f0;
+  --border-strong: #cbd5e1;
+
+  /* ── Brend (navy) ───────────────────────────────────────── */
+  --navy-900: #0a1e3c;     /* sidebar, logo blok */
+  --navy-800: #12294a;     /* primary tugmalar */
+  --navy-700: #1b3a66;     /* primary hover */
+  --navy-600: #2b4e8a;
+
+  /* ── Aksent (oltin — FAQAT kichik urg'ular) ─────────────── */
+  --accent: #c9a227;
+  --accent-hover: #b3901f;
+  --accent-soft: rgba(201, 162, 39, 0.12);
+
+  /* ── Statuslar ──────────────────────────────────────────── */
+  --st-yopilgan: #2e9e6b;
+  --st-jarayonda: #d9a441;
+  --st-ochiq: #3d6fb4;
+  --st-muddati-otgan: #c0392b;
+  --st-shubhali: #8e44ad;
+
+  /* ── Semantik ───────────────────────────────────────────── */
+  --success: var(--st-yopilgan);
+  --warning: var(--st-jarayonda);
+  --danger: var(--st-muddati-otgan);
+  --info: var(--st-ochiq);
+
+  /* ── Radiuslar ──────────────────────────────────────────── */
+  --radius-card: 20px;
+  --radius-inner: 12px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+
+  /* ── Soyalar (navy tintli, qora EMAS) ───────────────────── */
+  --shadow-sm: 0 1px 2px rgba(10, 30, 60, 0.05);
+  --shadow-card: 0 4px 20px rgba(10, 30, 60, 0.07);
+  --shadow-lift: 0 8px 30px rgba(10, 30, 60, 0.12);
+
+  /* ── Shriftlar ──────────────────────────────────────────── */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* ── Sidebar ────────────────────────────────────────────── */
+  --sidebar-w-collapsed: 76px;
+  --sidebar-w-expanded: 248px;
+}

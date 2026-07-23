@@ -1,0 +1,261 @@
+@import './styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3, h4 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  /* Yupqa, vazmin scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c7d2e0;
+    border-radius: 999px;
+    border: 3px solid var(--bg-app);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer utilities {
+  /* Raqamli qiymatlar (kartalar, jadvallar) uchun tekis kenglikli raqamlar */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer components {
+  /* ── Tugmalar ─────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98];
+    border-radius: var(--radius-control);
+  }
+  .btn-primary {
+    @apply btn text-white;
+    background-color: var(--navy-800);
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--navy-700);
+  }
+  .btn-primary:focus-visible {
+    --tw-ring-color: rgba(43, 78, 138, 0.45);
+  }
+  .btn-danger {
+    @apply btn text-white;
+    background-color: var(--st-muddati-otgan);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background-color: #a93226;
+  }
+  .btn-ghost {
+    @apply btn;
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background-color: var(--bg-subtle);
+    color: var(--text-primary);
+  }
+  .btn-soft {
+    @apply btn;
+    background-color: var(--bg-subtle);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+  .btn-soft:hover:not(:disabled) {
+    background-color: #eef2f7;
+  }
+  .btn-outline {
+    @apply btn;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    background-color: var(--bg-surface);
+  }
+  .btn-outline:hover:not(:disabled) {
+    background-color: var(--bg-subtle);
+    color: var(--text-primary);
+  }
+
+  /* ── Forma elementlari ────────────────────────────────── */
+  .input {
+    @apply block w-full px-3.5 py-2.5 text-sm transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed;
+    background-color: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    color: var(--text-primary);
+  }
+  .input::placeholder {
+    color: var(--text-muted);
+  }
+  .input:focus {
+    outline: none;
+    background-color: var(--bg-surface);
+    border-color: var(--navy-600);
+    box-shadow: 0 0 0 3px rgba(43, 78, 138, 0.15);
+  }
+  .select {
+    @apply input appearance-none pr-9;
+  }
+
+  /* ── Karta ────────────────────────────────────────────── */
+  .card {
+    @apply p-6;
+    background-color: var(--bg-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* ── Badge'lar (soft fon + to'q matn) ─────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium;
+    border-radius: var(--radius-pill);
+  }
+  .badge-green {
+    @apply badge;
+    background-color: rgba(46, 158, 107, 0.12);
+    color: #1e7a4f;
+  }
+  .badge-yellow {
+    @apply badge;
+    background-color: rgba(217, 164, 65, 0.14);
+    color: #8a621b;
+  }
+  .badge-blue {
+    @apply badge;
+    background-color: rgba(61, 111, 180, 0.12);
+    color: #2a5489;
+  }
+  .badge-red {
+    @apply badge;
+    background-color: rgba(192, 57, 43, 0.12);
+    color: #96291f;
+  }
+  .badge-purple {
+    @apply badge;
+    background-color: rgba(142, 68, 173, 0.12);
+    color: #6e3389;
+  }
+  .badge-gray {
+    @apply badge;
+    background-color: var(--bg-subtle);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+
+  /* ── Statistika kartasi ───────────────────────────────── */
+  .stat-card {
+    @apply card flex items-center gap-4 p-5;
+  }
+  .stat-card-icon {
+    @apply flex h-12 w-12 flex-shrink-0 items-center justify-center;
+    border-radius: var(--radius-inner);
+    background-color: rgba(18, 41, 74, 0.06);
+    color: var(--navy-700);
+  }
+  .stat-card-label {
+    @apply text-xs font-medium;
+    color: var(--text-muted);
+  }
+  .stat-card-value {
+    @apply text-2xl font-semibold tabular-nums;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+  .stat-card-trend {
+    @apply inline-flex items-center gap-1 text-xs font-medium tabular-nums;
+  }
+  .stat-card-trend-up {
+    @apply stat-card-trend;
+    color: var(--st-yopilgan);
+  }
+  .stat-card-trend-down {
+    @apply stat-card-trend;
+    color: var(--st-muddati-otgan);
+  }
+
+  /* ── Jadval ───────────────────────────────────────────── */
+  .table {
+    @apply w-full text-sm;
+    border-collapse: collapse;
+  }
+  .table thead th {
+    @apply px-4 py-3 text-left text-xs font-medium;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+  }
+  .table tbody td {
+    @apply px-4 py-3;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border);
+  }
+  .table tbody tr {
+    transition: background-color 150ms ease;
+  }
+  .table tbody tr:hover {
+    background-color: var(--bg-subtle);
+  }
+  .table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* ── Bo'sh holat ──────────────────────────────────────── */
+  .empty-state {
+    @apply flex flex-col items-center justify-center gap-2 py-14 text-center;
+  }
+  .empty-state-icon {
+    @apply mb-1 flex h-14 w-14 items-center justify-center;
+    border-radius: var(--radius-pill);
+    background-color: var(--bg-subtle);
+    color: var(--text-muted);
+  }
+  .empty-state-title {
+    @apply text-sm font-semibold;
+    color: var(--text-primary);
+  }
+  .empty-state-text {
+    @apply max-w-sm text-sm;
+    color: var(--text-muted);
+  }
+}
+
+/* Leaflet fix */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Bottom-sheet animatsiyalari */
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes sheet-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.sheet-backdrop { animation: sheet-fade-in 200ms ease-out; }
+.sheet-panel { animation: sheet-slide-up 280ms cubic-bezier(0.32, 0.72, 0, 1); }

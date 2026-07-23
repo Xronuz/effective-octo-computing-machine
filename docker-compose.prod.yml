@@ -1,0 +1,199 @@
+# ============================================================
+# XAVFSIZ XONADON — Docker Compose (ishlab chiqarish muhiti)
+# Uychi tumani FVV bo'limi uchun raqamli nazorat platformasi
+# ============================================================
+#
+# Ishlatish:
+#   1. cp .env.example .env  →  barcha o'zgaruvchilarni to'ldiring
+#   2. docker compose -f docker-compose.prod.yml up -d
+#   3. Superadmin: docker compose -f docker-compose.prod.yml exec backend python scripts/create_superadmin.py
+#   4. MFY seed:   docker compose -f docker-compose.prod.yml exec backend python scripts/seed_mfy.py
+#
+# ============================================================
+
+services:
+  # ============ PostgreSQL 16 + PostGIS 3.4 ============
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: xavfsiz-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Production: port ochiq emas (faqat internal network orqali)
+    expose:
+      - "5432"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./backend/scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - xavfsiz-net
+
+  # ============ Redis (rate limiting, future caching) ============
+  redis:
+    image: redis:7-alpine
+    container_name: xavfsiz-redis-prod
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning --maxmemory 128mb --maxmemory-policy allkeys-lru
+    expose:
+      - "6379"
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - xavfsiz-net
+
+  # ============ FastAPI backend ============
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: xavfsiz-backend-prod
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+      JWT_SECRET: ${JWT_SECRET}
+      APP_ENV: production
+      DEBUG: "false"
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      UPLOAD_DIR: /app/uploads
+      BACKUP_DIR: /backups
+      BACKUP_ENCRYPT_PASSWORD: ${BACKUP_ENCRYPT_PASSWORD}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_GROUP_CHAT_ID: ${TELEGRAM_GROUP_CHAT_ID}
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN}
+      ISH_BOSHLANISH_SOAT: ${ISH_BOSHLANISH_SOAT:-9}
+      ISH_TUGASH_SOAT: ${ISH_TUGASH_SOAT:-18}
+      LOKATSIYA_SAQLASH_KUN: ${LOKATSIYA_SAQLASH_KUN:-90}
+      LOGIN_RATE_LIMIT: ${LOGIN_RATE_LIMIT:-5/15m}
+      REDIS_URL: redis://redis:6379/0
+    expose:
+      - "8000"
+    volumes:
+      - uploads_prod:/app/uploads
+      - backups_prod:/backups
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - xavfsiz-net
+
+  # ============ Backup (crond: har kuni 02:00 Asia/Tashkent) ============
+  # pg_dump + uploads fotolari + MAJBURIY gpg shifrlash → backups_prod
+  backup:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile.backup
+    container_name: xavfsiz-backup-prod
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      TZ: Asia/Tashkent
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      UPLOAD_DIR: /uploads
+      BACKUP_DIR: /backups
+      BACKUP_ENCRYPT_PASSWORD: ${BACKUP_ENCRYPT_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - uploads_prod:/uploads:ro
+      - backups_prod:/backups
+    networks:
+      - xavfsiz-net
+
+  # ============ Web dashboard (build) ============
+  web-builder:
+    image: node:22-alpine
+    container_name: xavfsiz-web-builder
+    working_dir: /app
+    volumes:
+      - ./web:/app
+      - web_dist_prod:/app/dist
+    command: >
+      sh -c "
+        npm ci &&
+        npm run build &&
+        echo 'Web build completed'
+      "
+    networks:
+      - xavfsiz-net
+
+  # ============ Nginx (reverse proxy + static) ============
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: xavfsiz-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"   # TLS keyin qo'shilsa
+    depends_on:
+      backend:
+        condition: service_started
+      web-builder:
+        condition: service_completed_successfully
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - web_dist_prod:/usr/share/nginx/html:ro
+      - uploads_prod:/app/uploads:ro
+    healthcheck:
+      # nginx:alpine imijida curl yo'q — busybox wget ishlatiladi
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - xavfsiz-net
+
+  # ============ Cloudflare Tunnel (asosiy prod yo'li) ============
+  # TLS Cloudflare tomonidan tugatiladi; cloudflared ichki tarmoqda
+  # nginx:80 ga ulanadi, shu sabab tashqi port ochish shart emas.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: xavfsiz-cloudflared-prod
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on:
+      nginx:
+        condition: service_started
+    networks:
+      - xavfsiz-net
+
+volumes:
+  postgres_prod_data:
+    driver: local
+  redis_prod_data:
+    driver: local
+  uploads_prod:
+    driver: local
+  backups_prod:
+    driver: local
+  web_dist_prod:
+    driver: local
+
+networks:
+  xavfsiz-net:
+    driver: bridge

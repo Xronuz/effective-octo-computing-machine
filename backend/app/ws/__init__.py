@@ -1,0 +1,1 @@
+"""XAVFSIZ XONADON — WebSocket xizmatlari."""

@@ -1,0 +1,26 @@
+# ============================================================
+# XAVFSIZ XONADON — Backup konteyneri (prod)
+# pg_dump (postgresql16-client) + gpg + crond
+# Build context: ./scripts
+# ============================================================
+FROM alpine:3.20
+
+RUN apk add --no-cache \
+        bash \
+        postgresql16-client \
+        gnupg \
+        tar \
+        gzip \
+        tzdata
+
+WORKDIR /app
+
+COPY backup.sh restore.sh /app/
+RUN chmod +x /app/backup.sh /app/restore.sh
+
+# Har kuni 02:00 (TZ=Asia/Tashkent) — busybox crond
+COPY backup.crontab /etc/crontabs/root
+
+ENV TZ=Asia/Tashkent
+
+CMD ["crond", "-f", "-l", "8"]

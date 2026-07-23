@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Xavfsiz Xonadon",
+    "slug": "xavfsiz-xonadon-mobil",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#0A1E3C"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "uz.uychi.xavfsizxonadon",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ],
+        "NSLocationWhenInUseUsageDescription": "Ish vaqtida joylashuvingizni kuzatish uchun lokatsiya ruxsati kerak",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Ish vaqtida joylashuvingizni fonda kuzatish uchun doimiy lokatsiya ruxsati kerak",
+        "NSLocationAlwaysUsageDescription": "Ish vaqtida joylashuvingizni fonda kuzatish uchun doimiy lokatsiya ruxsati kerak"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A1E3C"
+      },
+      "package": "uz.uychi.xavfsizxonadon",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Muammoni suratga olish uchun kamera ruxsati kerak"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Ish vaqtida joylashuvingizni fonda kuzatish uchun doimiy lokatsiya ruxsati kerak",
+          "locationAlwaysPermission": "Ish vaqtida joylashuvingizni fonda kuzatish uchun doimiy lokatsiya ruxsati kerak",
+          "locationWhenInUsePermission": "Ish vaqtida joylashuvingizni kuzatish uchun lokatsiya ruxsati kerak",
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      "expo-asset",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-notifications"
+    ],
+    "extra": {
+      "apiUrl": "http://10.161.209.52:8000/api"
+    }
+  }
+}

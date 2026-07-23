@@ -1,0 +1,34 @@
+# ============================================================
+# XAVFSIZ XONADON — Backend .dockerignore
+# Dockerfile dagi `COPY . .` imijga tushmasligi kerak bo'lgan fayllar
+# ============================================================
+
+# Muhit o'zgaruvchilari (secret'lar imijga tushmasligi shart)
+.env
+.env.*
+
+# Virtual muhit
+venv/
+.venv/
+
+# Runtime papkalar (compose'da volume sifatida mount qilinadi)
+uploads/
+backups/
+
+# Python kesh
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# VCS
+.git
+.gitignore
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
