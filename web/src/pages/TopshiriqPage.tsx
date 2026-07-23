@@ -290,11 +290,11 @@ export default function TopshiriqPage() {
             <thead>
               <tr>
                 <th className="w-10">#</th>
-                <th>Sarlavha</th>
-                <th>Xodim</th>
-                <th>MFY</th>
-                <th>Muddat</th>
-                <th>Holat</th>
+                <th>{tr('Sarlavha')}</th>
+                <th>{tr('Xodim')}</th>
+                <th>{tr('MFY')}</th>
+                <th>{tr('Muddat')}</th>
+                <th>{tr('Holat')}</th>
               </tr>
             </thead>
             <tbody>

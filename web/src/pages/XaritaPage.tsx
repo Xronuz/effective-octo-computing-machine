@@ -436,7 +436,7 @@ export default function XaritaPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="select !w-auto !py-1.5 text-sm"
           >
-            <option value="">Barchasi</option>
+            <option value="">{tr('Barchasi')}</option>
             {Object.entries(STATUS_NOMLARI).map(([value, nomi]) => (
               <option key={value} value={value}>
                 {nomi}
@@ -452,7 +452,7 @@ export default function XaritaPage() {
             onChange={(e) => handleMfyTanlash(e.target.value)}
             className="select !w-auto !py-1.5 text-sm max-w-[260px]"
           >
-            <option value="">Tanlang…</option>
+            <option value="">{tr('Tanlang…')}</option>
             {mfylar.map((m) => (
               <option key={m.id} value={m.id}>
                 MFY #{m.raqami} — {m.nomi}

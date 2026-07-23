@@ -270,7 +270,7 @@ export default function IntizomPage() {
       {/* Muddati o'tgan muammolar */}
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-[#0F2033]">Muddati o'tgan muammolar</h2>
+          <h2 className="text-base font-semibold text-[#0F2033]">{tr("Muddati o'tgan muammolar")}</h2>
           <span className="text-sm text-slate-500">
             Jami <span className="font-semibold tabular-nums text-[#0F2033]">{mTotal}</span> ta
           </span>
@@ -281,7 +281,7 @@ export default function IntizomPage() {
           <div className="empty-state">
             <AlertTriangle className="mx-auto h-8 w-8 text-slate-300" />
             <p className="mt-2 text-sm font-medium text-slate-600">
-              Muddati o'tgan muammolar topilmadi
+              {tr("Muddati o'tgan muammolar topilmadi")}
             </p>
           </div>
         ) : (
@@ -289,12 +289,12 @@ export default function IntizomPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Muammo</th>
-                <th>Xodim</th>
-                <th>Manzil</th>
-                <th>Muddat</th>
-                <th>Kechikish</th>
-                <th>Amallar</th>
+                <th>{tr('Muammo')}</th>
+                <th>{tr('Xodim')}</th>
+                <th>{tr('Manzil')}</th>
+                <th>{tr('Muddat')}</th>
+                <th>{tr('Kechikish')}</th>
+                <th>{tr('Amallar')}</th>
               </tr>
             </thead>
             <tbody>
@@ -463,11 +463,11 @@ export default function IntizomPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Sana</th>
-                <th>Xodim</th>
-                <th>Turi</th>
-                <th>Sabab</th>
-                <th>Kim bergan</th>
+                <th>{tr('Sana')}</th>
+                <th>{tr('Xodim')}</th>
+                <th>{tr('Turi')}</th>
+                <th>{tr('Sabab')}</th>
+                <th>{tr('Kim bergan')}</th>
               </tr>
             </thead>
             <tbody>

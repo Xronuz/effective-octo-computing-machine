@@ -239,7 +239,7 @@ export default function HududPage() {
           </h2>
           <div className="w-full sm:w-auto sm:min-w-[180px]">
             <select className="select text-sm" value={kochaFilterMfyId} onChange={e => setKochaFilterMfyId(e.target.value)}>
-              <option value="">Barcha MFY</option>
+              <option value="">{tr('Barcha MFY')}</option>
               {mfylar.map(m => <option key={m.id} value={m.id}>{m.nomi} MFY (#{m.raqami})</option>)}
             </select>
           </div>
@@ -256,7 +256,7 @@ export default function HududPage() {
               <thead className="sticky top-0">
                 <tr>
                   <th>#</th>
-                  <th>Ko'cha nomi</th>
+                  <th>{tr("Ko'cha nomi")}</th>
                   <th className="text-right">Xonadonlar</th>
                 </tr>
               </thead>
@@ -378,7 +378,7 @@ export default function HududPage() {
                         <thead>
                           <tr>
                             <th>#</th>
-                            <th>Ko'cha nomi</th>
+                            <th>{tr("Ko'cha nomi")}</th>
                             <th className="text-right">Xonadonlar soni</th>
                             {canManage && <th className="text-right">Amallar</th>}
                           </tr>

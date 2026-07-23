@@ -258,26 +258,26 @@ export default function BoshqaruvPage() {
 
           {/* Holat filter */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Holat</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Holat')}</label>
             <select
               className="select"
               value={holatFilter}
               onChange={(e) => { setHolatFilter(e.target.value); setPage(1); }}
             >
-              <option value="">Barcha</option>
-              <option value="kutilmoqda">Kutilmoqda</option>
-              <option value="faol">Faol</option>
-              <option value="bloklangan">Bloklangan</option>
+              <option value="">{tr('Barcha')}</option>
+              <option value="kutilmoqda">{tr('Kutilmoqda')}</option>
+              <option value="faol">{tr('Faol')}</option>
+              <option value="bloklangan">{tr('Bloklangan')}</option>
             </select>
           </div>
 
           {/* Qidiruv */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Qidiruv</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Qidiruv')}</label>
             <input
               className="input"
               type="text"
-              placeholder="Ism, familiya yoki guvohnoma..."
+              placeholder={tr("Ism, familiya yoki guvohnoma...")}
               value={qidiruv}
               onChange={(e) => { setQidiruv(e.target.value); setPage(1); }}
             />
@@ -307,13 +307,13 @@ export default function BoshqaruvPage() {
             <thead>
               <tr>
                 <th className="w-10">#</th>
-                <th>F.I.Sh</th>
-                <th>Guvohnoma</th>
-                <th>Rol</th>
-                <th>Holat</th>
-                <th>Telefon</th>
-                <th>MFY lar</th>
-                <th>Amallar</th>
+                <th>{tr('F.I.Sh')}</th>
+                <th>{tr('Guvohnoma')}</th>
+                <th>{tr('Rol')}</th>
+                <th>{tr('Holat')}</th>
+                <th>{tr('Telefon')}</th>
+                <th>{tr('MFY lar')}</th>
+                <th>{tr('Amallar')}</th>
               </tr>
             </thead>
             <tbody>
@@ -358,7 +358,7 @@ export default function BoshqaruvPage() {
                           onClick={() => tasdiqlash(u.id)}
                           className="btn-primary px-3 py-1.5 text-xs"
                         >
-                          Tasdiqlash
+                          {tr('Tasdiqlash')}
                         </button>
                       )}
 
@@ -368,7 +368,7 @@ export default function BoshqaruvPage() {
                           onClick={() => bloklash(u.id)}
                           className="btn-danger px-3 py-1.5 text-xs"
                         >
-                          Bloklash
+                          {tr('Bloklash')}
                         </button>
                       )}
 

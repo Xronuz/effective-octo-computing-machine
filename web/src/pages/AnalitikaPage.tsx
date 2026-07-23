@@ -236,14 +236,14 @@ export default function AnalitikaPage() {
       <section>
         <h2 className="mb-3 text-base font-semibold text-[#0F2033]">Umumiy ko'rsatkichlar</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          <StatCard label="Jami xonadonlar" value={umumiy.xonadon_soni} icon={Home} chip="bg-[#3D6FB4]/10 text-[#3D6FB4]" />
-          <StatCard label="Jami muammolar" value={umumiy.muammo_soni} icon={BarChart3} chip="bg-[#C9A227]/10 text-[#C9A227]" />
-          <StatCard label="Ochiq muammolar" value={umumiy.ochiq_muammolar} icon={AlertTriangle} chip="bg-[#D9A441]/10 text-[#D9A441]" />
-          <StatCard label="Yopilgan" value={umumiy.yopilgan_muammolar} icon={CheckCircle2} chip="bg-[#2E9E6B]/10 text-[#2E9E6B]" />
-          <StatCard label="Xodimlar" value={umumiy.xodim_soni} icon={Users} chip="bg-[#8E44AD]/10 text-[#8E44AD]" />
-          <StatCard label="MFY lar" value={umumiy.mfy_soni} icon={Landmark} chip="bg-[#3D6FB4]/10 text-[#3D6FB4]" />
-          <StatCard label="Tekshirilgan xonadon" value={umumiy.tekshirilgan_xonadon} icon={Building2} chip="bg-[#2E9E6B]/10 text-[#2E9E6B]" />
-          <StatCard label="Tekshirish foizi" value={`${umumiy.foiz.toFixed(1)}%`} icon={Percent} chip="bg-[#C9A227]/10 text-[#C9A227]" />
+          <StatCard label={tr('Jami xonadonlar')} value={umumiy.xonadon_soni} icon={Home} chip="bg-[#3D6FB4]/10 text-[#3D6FB4]" />
+          <StatCard label={tr('Jami muammolar')} value={umumiy.muammo_soni} icon={BarChart3} chip="bg-[#C9A227]/10 text-[#C9A227]" />
+          <StatCard label={tr('Ochiq muammolar')} value={umumiy.ochiq_muammolar} icon={AlertTriangle} chip="bg-[#D9A441]/10 text-[#D9A441]" />
+          <StatCard label={tr('Yopilgan')} value={umumiy.yopilgan_muammolar} icon={CheckCircle2} chip="bg-[#2E9E6B]/10 text-[#2E9E6B]" />
+          <StatCard label={tr('Xodimlar')} value={umumiy.xodim_soni} icon={Users} chip="bg-[#8E44AD]/10 text-[#8E44AD]" />
+          <StatCard label={tr('MFY lar')} value={umumiy.mfy_soni} icon={Landmark} chip="bg-[#3D6FB4]/10 text-[#3D6FB4]" />
+          <StatCard label={tr('Tekshirilgan xonadon')} value={umumiy.tekshirilgan_xonadon} icon={Building2} chip="bg-[#2E9E6B]/10 text-[#2E9E6B]" />
+          <StatCard label={tr('Tekshirish foizi')} value={`${umumiy.foiz.toFixed(1)}%`} icon={Percent} chip="bg-[#C9A227]/10 text-[#C9A227]" />
         </div>
       </section>
 
@@ -255,7 +255,7 @@ export default function AnalitikaPage() {
           {turiChart.length === 0 ? (
             <div className="empty-state">
               <BarChart3 className="mx-auto h-8 w-8 text-slate-300" />
-              <p className="mt-2 text-sm text-slate-400">Ma'lumot yo'q</p>
+              <p className="mt-2 text-sm text-slate-400">{tr("Ma'lumot yo'q")}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={260}>
@@ -276,7 +276,7 @@ export default function AnalitikaPage() {
           {xavfChart.length === 0 ? (
             <div className="empty-state">
               <Flame className="mx-auto h-8 w-8 text-slate-300" />
-              <p className="mt-2 text-sm text-slate-400">Ma'lumot yo'q</p>
+              <p className="mt-2 text-sm text-slate-400">{tr("Ma'lumot yo'q")}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={260}>
@@ -308,7 +308,7 @@ export default function AnalitikaPage() {
           {statusChart.length === 0 ? (
             <div className="empty-state">
               <BarChart3 className="mx-auto h-8 w-8 text-slate-300" />
-              <p className="mt-2 text-sm text-slate-400">Ma'lumot yo'q</p>
+              <p className="mt-2 text-sm text-slate-400">{tr("Ma'lumot yo'q")}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={260}>
@@ -333,7 +333,7 @@ export default function AnalitikaPage() {
           {vaqt_dinamika.length === 0 ? (
             <div className="empty-state">
               <BarChart3 className="mx-auto h-8 w-8 text-slate-300" />
-              <p className="mt-2 text-sm text-slate-400">Ma'lumot yo'q</p>
+              <p className="mt-2 text-sm text-slate-400">{tr("Ma'lumot yo'q")}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={260}>
@@ -343,8 +343,8 @@ export default function AnalitikaPage() {
                 <YAxis tick={{ fontSize: 12, fill: '#64748b' }} stroke="#cbd5e1" tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="ochilgan" stroke={BLUE} strokeWidth={2} dot={{ r: 3 }} name="Ochilgan" />
-                <Line type="monotone" dataKey="yopilgan" stroke={GOLD} strokeWidth={2} dot={{ r: 3 }} name="Yopilgan" />
+                <Line type="monotone" dataKey="ochilgan" stroke={BLUE} strokeWidth={2} dot={{ r: 3 }} name={tr('Ochilgan')} />
+                <Line type="monotone" dataKey="yopilgan" stroke={GOLD} strokeWidth={2} dot={{ r: 3 }} name={tr('Yopilgan')} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -383,19 +383,19 @@ export default function AnalitikaPage() {
         {mfylar.length === 0 ? (
           <div className="empty-state">
             <Landmark className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm text-slate-400">Ma'lumot yo'q</p>
+            <p className="mt-2 text-sm text-slate-400">{tr("Ma'lumot yo'q")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="table">
               <thead>
                 <tr>
-                  <th>MFY</th>
-                  <th className="text-right">Xonadon</th>
-                  <th className="text-right">Tekshirilgan</th>
-                  <th className="text-right">Ochiq muammo</th>
-                  <th className="text-right">Yopilgan</th>
-                  <th className="text-right">Foiz</th>
+                  <th>{tr('MFY')}</th>
+                  <th className="text-right">{tr('Xonadon')}</th>
+                  <th className="text-right">{tr('Tekshirilgan')}</th>
+                  <th className="text-right">{tr('Ochiq muammo')}</th>
+                  <th className="text-right">{tr('Yopilgan')}</th>
+                  <th className="text-right">{tr('Foiz')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -429,8 +429,8 @@ export default function AnalitikaPage() {
           MFY bo'yicha muammo zichligi
         </h2>
         <p className="mb-3 mt-1 text-xs text-slate-500">
-          Ochiq muammolar soniga qarab rang: och ko'k (kam) → to'q qizil (ko'p).
-          Doira radiusi xonadonlar soniga mutanosib.
+          {tr('Ochiq muammolar soniga qarab rang: och ko\'k (kam) → to\'q qizil (ko\'p).')}
+          {tr('Doira radiusi xonadonlar soniga mutanosib.')}
         </p>
         {heatItems.length === 0 ? (
           <div className="empty-state">
@@ -472,10 +472,10 @@ export default function AnalitikaPage() {
                         <div style={{ minWidth: 170 }}>
                           <div style={{ fontWeight: 700, marginBottom: 4 }}>{h.mfy_nomi}</div>
                           <div style={{ fontSize: 12, lineHeight: 1.6 }}>
-                            <div>Ochiq muammo: <b>{h.ochiq_muammo}</b></div>
-                            <div>Yopilgan: {h.yopilgan_muammo}</div>
+                            <div>{tr('Ochiq muammo')}: <b>{h.ochiq_muammo}</b></div>
+                            <div>{tr('Yopilgan')}: {h.yopilgan_muammo}</div>
                             <div>
-                              Xonadon: {h.xonadon_soni} (tekshirilgan {h.tekshirilgan})
+                              {tr('Xonadon')}: {h.xonadon_soni} ({tr('tekshirilgan')} {h.tekshirilgan})
                             </div>
                           </div>
                         </div>
@@ -487,7 +487,7 @@ export default function AnalitikaPage() {
             </div>
             {/* Legend */}
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
-              <span className="font-medium">Ochiq muammolar:</span>
+              <span className="font-medium">{tr('Ochiq muammolar:')}</span>
               {HEAT_COLORS.map((c, i) => (
                 <span key={c} className="inline-flex items-center gap-1.5">
                   <span
@@ -501,9 +501,9 @@ export default function AnalitikaPage() {
                           (maxOchiq * (i + 1)) / HEAT_COLORS.length,
                         )}`
                     : i === 0
-                      ? 'Kam'
+                      ? tr('Kam')
                       : i === HEAT_COLORS.length - 1
-                        ? "Ko'p"
+                        ? tr("Ko'p")
                         : ''}
                 </span>
               ))}
@@ -520,19 +520,19 @@ export default function AnalitikaPage() {
         {xodimlar.length === 0 ? (
           <div className="empty-state">
             <Users className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm text-slate-400">Ma'lumot yo'q</p>
+            <p className="mt-2 text-sm text-slate-400">{tr("Ma'lumot yo'q")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Xodim</th>
-                  <th className="text-right">Jami muammo</th>
-                  <th className="text-right">Ochiq</th>
-                  <th className="text-right">Yopilgan</th>
-                  <th className="text-right">Tekshirish</th>
-                  <th className="text-right">Oxirgi faollik</th>
+                  <th>{tr('Xodim')}</th>
+                  <th className="text-right">{tr('Jami muammo')}</th>
+                  <th className="text-right">{tr('Ochiq')}</th>
+                  <th className="text-right">{tr('Yopilgan')}</th>
+                  <th className="text-right">{tr('Tekshirish')}</th>
+                  <th className="text-right">{tr('Oxirgi faollik')}</th>
                 </tr>
               </thead>
               <tbody>

@@ -140,23 +140,23 @@ export default function XonadonlarPage() {
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">MFY</label>
             <select className="select" value={mfy_id} onChange={e => updateFilter('mfy_id', e.target.value)}>
-              <option value="">Barcha MFY</option>
+              <option value="">{tr('Barcha MFY')}</option>
               {mfylar.map(m => <option key={m.id} value={m.id}>{m.nomi}</option>)}
             </select>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Ko'cha</label>
             <select className="select" value={kocha_id} onChange={e => updateFilter('kocha_id', e.target.value)}>
-              <option value="">Barcha ko'chalar</option>
+              <option value="">{tr("Barcha ko'chalar")}</option>
               {kochalar.map(k => <option key={k.id} value={k.id}>{k.nomi}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Ochiq muammo</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Ochiq muammo')}</label>
             <select className="select" value={ochiq_muammo} onChange={e => updateFilter('ochiq_muammo', e.target.value)}>
-              <option value="">Barchasi</option>
-              <option value="true">Faqat ochiq muammosi bor</option>
-              <option value="false">Muammosiz</option>
+              <option value="">{tr('Barchasi')}</option>
+              <option value="true">{tr('Faqat ochiq muammosi bor')}</option>
+              <option value="false">{tr('Muammosiz')}</option>
             </select>
           </div>
           <div>
@@ -217,12 +217,12 @@ export default function XonadonlarPage() {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Manzil</th>
-                  <th>MFY</th>
-                  <th>Egasi</th>
-                  <th>Tel</th>
-                  <th className="text-center">Ochiq muammolar</th>
-                  <th className="text-right">Amallar</th>
+                  <th>{tr('Manzil')}</th>
+                  <th>{tr('MFY')}</th>
+                  <th>{tr('Egasi')}</th>
+                  <th>{tr('Tel')}</th>
+                  <th className="text-center">{tr('Ochiq muammolar')}</th>
+                  <th className="text-right">{tr('Amallar')}</th>
                 </tr>
               </thead>
               <tbody>
