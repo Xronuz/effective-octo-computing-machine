@@ -8,6 +8,7 @@ Ishga tushirish:
 
 import asyncio
 import getpass
+import secrets
 import sys
 import os
 
@@ -34,24 +35,48 @@ SUPERADMIN = {
 }
 
 
-def get_superadmin_parol() -> str:
-    """Parolni SUPERADMIN_PAROL env'dan, bo'lmasa interaktiv getpass orqali olish."""
+def generate_parol() -> str:
+    """Kuchli tasodifiy parol — validate_password_strength talablariga mos."""
+    alifbo = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+    while True:
+        parol = "".join(secrets.choice(alifbo) for _ in range(20))
+        try:
+            validate_password_strength(parol)
+            return parol
+        except Exception:
+            continue
+
+
+def get_superadmin_parol() -> tuple[str, bool]:
+    """
+    Parolni SUPERADMIN_PAROL env'dan, bo'lmasa interaktiv getpass orqali olish.
+    Production'dan tashqari muhitlarda va interaktiv rejim yo'q bo'lsa —
+    tasodifiy parol generatsiya qilinadi (repo'da hech qanday default parol
+    saqlanmaydi). Qaytaradi: (parol, generatsiya_qilindimi).
+    """
     parol = os.environ.get("SUPERADMIN_PAROL", "").strip()
     if parol:
-        return parol
+        return parol, False
+
     if not sys.stdin.isatty():
-        print("❌ Xatolik: SUPERADMIN_PAROL muhit o'zgaruvchisi berilmagan va interaktiv rejim mavjud emas.")
-        sys.exit(1)
+        if os.environ.get("APP_ENV", "development") == "production":
+            print(
+                "❌ Xatolik: APP_ENV=production, lekin SUPERADMIN_PAROL muhit "
+                "o'zgaruvchisi berilmagan va interaktiv rejim mavjud emas."
+            )
+            sys.exit(1)
+        return generate_parol(), True
+
     parol = getpass.getpass("Superadmin parolini kiriting: ").strip()
     if not parol:
         print("❌ Xatolik: parol bo'sh bo'lishi mumkin emas.")
         sys.exit(1)
-    return parol
+    return parol, False
 
 
 async def create_superadmin():
     """Superadmin yaratish. Agar mavjud bo'lsa — o'tkazib yuboriladi."""
-    parol = get_superadmin_parol()
+    parol, generatsiya_qilindi = get_superadmin_parol()
 
     async with async_session() as session:
         # Tekshirish: shu guvohnoma raqamli superadmin bormi?
@@ -93,8 +118,16 @@ async def create_superadmin():
         print(f"   Guvohnoma raqami: {SUPERADMIN['guvohnoma_raqami']}")
         print(f"   F.I.Sh:           {user.full_name}")
         print(f"   Rol:              {getattr(user.rol, 'value', user.rol)}")
-        print("=" * 60)
-        print("⚠️  Ishlab chiqarishda parolni darhol almashtiring!")
+        if generatsiya_qilindi:
+            print(f"   Parol:            {parol}")
+            print("=" * 60)
+            print("⚠️  SUPERADMIN_PAROL berilmagani uchun parol tasodifiy")
+            print("   generatsiya qilindi va faqat shu yerda ko'rsatiladi —")
+            print("   nusxalab oling. Barqaror parol uchun .env ichida")
+            print("   SUPERADMIN_PAROL bering va skriptni qayta ishga tushiring.")
+        else:
+            print("=" * 60)
+            print("⚠️  Ishlab chiqarishda parolni darhol almashtiring!")
 
 
 async def main():

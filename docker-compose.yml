@@ -16,7 +16,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-almashtirilsin_2026}
       POSTGRES_DB: ${POSTGRES_DB:-xavfsiz_xonadon}
     ports:
-      - "5432:5432"
+      # Dev DB paroli repo'da ochiq (almashtirilsin_2026) — shuning uchun port
+      # faqat localhost'ga bog'lanadi, tarmoqdan ochiq qolmaydi.
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Seed skriptlar avtomatik bajarilishi uchun:
@@ -40,13 +42,17 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-xavfsiz_user}:${POSTGRES_PASSWORD:-almashtirilsin_2026}@postgres:5432/${POSTGRES_DB:-xavfsiz_xonadon}"
-      JWT_SECRET: ${JWT_SECRET:-0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2}
+      # Bo'sh qoldirilsa backend har ishga tushishda tasodifiy dev secret
+      # generatsiya qiladi (repo'da ishlaydigan secret saqlanmaydi).
+      # Barqaror dev sessiyasi uchun: .env ichida JWT_SECRET=$(openssl rand -hex 32)
+      JWT_SECRET: ${JWT_SECRET:-}
       APP_ENV: development
       DEBUG: "true"
       CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
       UPLOAD_DIR: /app/uploads
-      # Faqat dev uchun standart superadmin paroli — prod'da .env orqali kuchli parol bering
-      SUPERADMIN_PAROL: ${SUPERADMIN_PAROL:-XavfsizDev123}
+      # Bo'sh qoldirilsa create_superadmin.py tasodifiy parol generatsiya qilib
+      # konteyner log'ida bir marta ko'rsatadi: docker compose logs backend
+      SUPERADMIN_PAROL: ${SUPERADMIN_PAROL:-}
       # Telegram bot tokeni — .env dan olinadi (bo'sh bo'lsa bot ishga tushmaydi)
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
     ports:
