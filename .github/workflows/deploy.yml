@@ -14,11 +14,28 @@ jobs:
     runs-on: [self-hosted, mchs]
     timeout-minutes: 20
     steps:
-      - name: Pull latest main
+      - name: Pull latest main (commit qilinmagan ishni stash'ga olib)
         run: |
-          set -e
+          set -euo pipefail
           cd /opt/MCHS
           git fetch origin main
+
+          # /opt/MCHS bir vaqtda deploy katalogi ham, server'da qo'lda
+          # tahrirlanadigan ish katalogi ham (prod compose ./web va ./backend
+          # papkalarini mount qiladi). Avvalgi to'g'ridan-to'g'ri
+          # `git reset --hard` shu yerdagi commit qilinmagan o'zgarishlarni
+          # sassiz yo'q qilardi. Endi reset'dan oldin ular stash'ga olinadi —
+          # `git stash list` orqali tiklash mumkin.
+          if ! git diff --quiet \
+            || ! git diff --cached --quiet \
+            || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+              stash_nomi="deploy-autostash $(date -u +%Y-%m-%dT%H:%M:%SZ) ${GITHUB_SHA:-manual}"
+              echo "::warning::/opt/MCHS ichida commit qilinmagan o'zgarishlar topildi — yo'q qilinmaydi, stash'ga olinadi: ${stash_nomi}"
+              git stash push --include-untracked -m "${stash_nomi}"
+              echo "Tiklash uchun:  cd /opt/MCHS && git stash list && git stash apply stash@{0}"
+              git stash list | head -5
+          fi
+
           git reset --hard origin/main
 
       - name: Build & deploy (docker compose)
