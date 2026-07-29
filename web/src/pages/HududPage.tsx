@@ -210,9 +210,6 @@ export default function HududPage() {
                   <span className="truncate text-sm font-medium text-[#0F2033] group-hover:text-[#3D6FB4]">
                     {m.nomi} MFY
                   </span>
-                  <span className="shrink-0 text-xs tabular-nums text-slate-400">
-                    (#{m.raqami})
-                  </span>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
                   <span className="inline-flex items-center gap-1">

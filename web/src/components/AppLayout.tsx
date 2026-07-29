@@ -61,7 +61,7 @@ export function AppLayout() {
   const { krill, setKrill, tr } = useAlifbo();
   const navigate = useNavigate();
   const location = useLocation();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   const handleLogout = () => {
     logout();
@@ -276,7 +276,7 @@ export function AppLayout() {
                           : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                       }`}
                     >
-                      {rejim === 'krill' ? 'Уз' : "O'zb"}
+                      {rejim === 'krill' ? 'Уз' : "O'z"}
                     </button>
                   );
                 })}
