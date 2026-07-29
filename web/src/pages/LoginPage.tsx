@@ -41,7 +41,7 @@ export default function LoginPage() {
           <img
             src={fvvIcon}
             alt="FVV"
-            className="mb-4 h-16 w-16 object-contain"
+            className="mb-4 h-24 w-24 object-contain"
             draggable={false}
           />
           <h1 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">

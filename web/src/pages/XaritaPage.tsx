@@ -260,7 +260,10 @@ export default function XaritaPage() {
 
   const connectWS = useCallback(() => {
     if (!token) return;
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    // Prod'da (fvv.xron.uz) API bir xil origin orqali beriladi — shuning uchun
+    // sahifa origin'idan olamiz, aks holda https sahifada ws:// aralash kontent
+    // sifatida bloklanadi. Dev'da Vite proxy ham shu origin'ni ishlatadi.
+    const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
     const wsUrl =
       baseUrl.replace(/^http/, 'ws') + `/api/ws/lokatsiya?token=${token}`;
 
