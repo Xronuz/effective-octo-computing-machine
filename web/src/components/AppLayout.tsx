@@ -132,11 +132,11 @@ export function AppLayout() {
         <div
           className={`flex items-center gap-3 pt-6 pb-5 ${expanded ? 'px-5' : 'justify-center px-0'}`}
         >
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-white/95">
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
             <img
               src={fvvIcon}
               alt="FVV"
-              className="h-8 w-8 object-contain"
+              className="h-10 w-10 object-contain"
               draggable={false}
             />
           </span>
