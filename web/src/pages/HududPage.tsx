@@ -199,14 +199,14 @@ export default function HududPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col gap-2">
             {filteredMfylar.map(m => (
               <button
                 key={m.id}
                 onClick={() => loadMfyDetail(m.id)}
-                className="group rounded-xl border-2 border-slate-200 bg-white p-3 text-left transition hover:border-[#3D6FB4]/40 hover:shadow-sm"
+                className="group flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-left transition hover:border-[#3D6FB4]/40 hover:shadow-sm"
               >
-                <div className="flex items-baseline gap-1.5">
+                <div className="flex min-w-0 items-baseline gap-1.5">
                   <span className="truncate text-sm font-medium text-[#0F2033] group-hover:text-[#3D6FB4]">
                     {m.nomi} MFY
                   </span>
@@ -214,7 +214,7 @@ export default function HududPage() {
                     (#{m.raqami})
                   </span>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
                   <span className="inline-flex items-center gap-1">
                     <Home className="h-3.5 w-3.5" />
                     {m.xonadon_soni} {tr('xonadon')}

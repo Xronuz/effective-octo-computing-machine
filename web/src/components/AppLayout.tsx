@@ -270,13 +270,13 @@ export function AppLayout() {
                       onClick={() => setKrill(rejim === 'krill')}
                       title={rejim === 'krill' ? 'Кирилл' : 'Lotin'}
                       aria-pressed={faol}
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold transition-colors duration-150 ${
+                      className={`flex h-8 items-center justify-center rounded-full px-3 text-[13px] font-semibold transition-colors duration-150 ${
                         faol
                           ? 'bg-navy-800 text-white shadow-sm'
                           : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                       }`}
                     >
-                      {rejim === 'krill' ? 'Аа' : 'Aa'}
+                      {rejim === 'krill' ? 'Уз' : "O'zb"}
                     </button>
                   );
                 })}
