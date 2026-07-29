@@ -18,11 +18,11 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  Shield,
 } from 'lucide-react';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
 import GlobalSearch from '@/components/GlobalSearch';
+import fvvIcon from '@/styles/fvv-icon.png';
 
 const ICON_PROPS = { size: 20, strokeWidth: 1.8 } as const;
 
@@ -132,8 +132,13 @@ export function AppLayout() {
         <div
           className={`flex items-center gap-3 pt-6 pb-5 ${expanded ? 'px-5' : 'justify-center px-0'}`}
         >
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
-            <Shield size={20} strokeWidth={1.8} className="text-[var(--accent)]" />
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-white/95">
+            <img
+              src={fvvIcon}
+              alt="FVV"
+              className="h-8 w-8 object-contain"
+              draggable={false}
+            />
           </span>
           {expanded && (
             <span className="min-w-0">

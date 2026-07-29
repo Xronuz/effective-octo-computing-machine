@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { Shield, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
+import fvvIcon from '@/styles/fvv-icon.png';
 
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
@@ -37,9 +38,12 @@ export default function LoginPage() {
       <div className="card w-full max-w-[420px] p-8">
         {/* Navy logo blok */}
         <div className="mb-7 flex flex-col items-center text-center">
-          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-navy-900 shadow-card">
-            <Shield size={26} strokeWidth={1.8} className="text-[var(--accent)]" />
-          </span>
+          <img
+            src={fvvIcon}
+            alt="FVV"
+            className="mb-4 h-16 w-16 object-contain"
+            draggable={false}
+          />
           <h1 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
             {tr('XAVFSIZ XONADON')}
           </h1>
