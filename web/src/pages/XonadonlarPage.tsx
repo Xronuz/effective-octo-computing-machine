@@ -113,14 +113,6 @@ export default function XonadonlarPage() {
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Egasi tel")}</label>
               <input className="input" value={createForm.egasi_tel || ''} onChange={e => setCreateForm({...createForm, egasi_tel: e.target.value})} />
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Lat")}</label>
-              <input className="input" type="number" step="any" value={createForm.lat ?? ''} onChange={e => setCreateForm({...createForm, lat: e.target.value ? Number(e.target.value) : undefined})} />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Lng")}</label>
-              <input className="input" type="number" step="any" value={createForm.lng ?? ''} onChange={e => setCreateForm({...createForm, lng: e.target.value ? Number(e.target.value) : undefined})} />
-            </div>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Izoh")}</label>
