@@ -148,7 +148,7 @@ services:
     ports:
       # Host'dagi asosiy nginx (boshqa loyihalar) 80/443 portlarini band qilgani
       # uchun bu konteyner faqat localhost'da ichki portga bog'lanadi;
-      # tashqi trafik /etc/nginx/sites-available/mchs.xron.uz orqali keladi.
+      # tashqi trafik /etc/nginx/sites-available/fvv.xron.uz orqali keladi.
       - "127.0.0.1:8091:80"
     depends_on:
       backend:

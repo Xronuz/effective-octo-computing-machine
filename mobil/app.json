@@ -59,7 +59,7 @@
       "expo-notifications"
     ],
     "extra": {
-      "apiUrl": "http://10.161.209.52:8000/api"
+      "apiUrl": "https://fvv.xron.uz/api"
     }
   }
 }

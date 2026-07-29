@@ -108,6 +108,30 @@ xavfsiz-xonadon/
 
 ---
 
+## 🌐 Ishlab chiqarish muhiti (production)
+
+| Narsa | Qiymat |
+|---|---|
+| Dashboard | https://fvv.xron.uz |
+| API | https://fvv.xron.uz/api |
+| Health check | https://fvv.xron.uz/api/health |
+| WebSocket (lokatsiya) | `wss://fvv.xron.uz/api/ws/lokatsiya` |
+| Compose fayl | `docker-compose.prod.yml` |
+| Host nginx | `/etc/nginx/sites-available/fvv.xron.uz` (`127.0.0.1:8091` ga proxy) |
+| TLS | Cloudflare (SSL/TLS mode = Flexible), origin HTTP qabul qiladi |
+
+Qayta deploy:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Web va mobil ilova API'ni bir xil origin orqali chaqiradi (`/api`), shuning uchun
+domen o'zgarsa faqat `mobil/app.json` → `extra.apiUrl`, `CORS_ORIGINS` (`.env`) va
+host nginx `server_name` yangilanadi.
+
+---
+
 ## 🚀 Ishga tushirish (1-bosqich — Poydevor)
 
 ### Talablar
@@ -176,10 +200,14 @@ uvicorn app.main:app --reload --port 8000
 | Maydon | Qiymat |
 |---|---|
 | Guvohnoma raqami | `ADMIN001` |
-| Parol | `XavfsizAdmin2026!` |
+| Parol | `SUPERADMIN_PAROL` env'dan olinadi (`scripts/create_superadmin.py`) |
 | Rol | `superadmin` |
 
-⚠️ Ishlab chiqarishda parolni darhol almashtiring!
+⚠️ Parol repo'da saqlanmaydi. Lokal ishga tushirishda `SUPERADMIN_PAROL` bering:
+
+```bash
+SUPERADMIN_PAROL='<parol>' python scripts/create_superadmin.py
+```
 
 ---
 
@@ -206,7 +234,7 @@ curl -X POST http://localhost:8000/api/auth/kirish \
   -H "Content-Type: application/json" \
   -d '{
     "guvohnoma_raqami": "ADMIN001",
-    "parol": "XavfsizAdmin2026!"
+    "parol": "<superadmin paroli>"
   }'
 ```
 
