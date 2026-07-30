@@ -42,6 +42,7 @@ uploads/
 backups/
 *.sql
 *.dump
+!backend/scripts/data/mfy_kochalar_dump.sql
 
 # Node (web/)
 web/node_modules/
