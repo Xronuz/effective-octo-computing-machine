@@ -3,7 +3,7 @@
 // tr() — krill rejim tanlangan bo'lsa matnni krillga o'tkazadi.
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { lotindanKrillga } from '@/lib/alifbo';
+import { krillMatnmi, krilldanLotinga, lotindanKrillga } from '@/lib/alifbo';
 
 interface AlifboState {
   krill: boolean;
@@ -33,7 +33,17 @@ export function AlifboProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const tr = useCallback((matn: string) => (krill ? lotindanKrillga(matn) : matn), [krill]);
+  // Statik UI matnlari lotin, ba'zi bazadan kelgan matnlar (MFY/ko'cha
+  // nomlari) esa krillda saqlanadi — manba alifbosini avtomatik aniqlab,
+  // kerakli yo'nalishda o'giradi.
+  const tr = useCallback(
+    (matn: string) => {
+      const krillMatn = krillMatnmi(matn);
+      if (krill) return krillMatn ? matn : lotindanKrillga(matn);
+      return krillMatn ? krilldanLotinga(matn) : matn;
+    },
+    [krill],
+  );
 
   return (
     <AlifboContext.Provider value={{ krill, setKrill, tr }}>{children}</AlifboContext.Provider>

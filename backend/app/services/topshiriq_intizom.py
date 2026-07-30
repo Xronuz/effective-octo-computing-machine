@@ -23,6 +23,7 @@ async def create_topshiriq(
     rahbar_id: int,
     xodim_id: int,
     mfy_id: Optional[int] = None,
+    kocha_id: Optional[int] = None,
     muammo_id: Optional[int] = None,
     sarlavha: str,
     matn: Optional[str] = None,
@@ -41,6 +42,7 @@ async def create_topshiriq(
         rahbar_id=rahbar_id,
         xodim_id=xodim_id,
         mfy_id=mfy_id,
+        kocha_id=kocha_id,
         muammo_id=muammo_id,
         sarlavha=sarlavha,
         matn=matn,
@@ -64,6 +66,7 @@ async def get_topshiriq(db: AsyncSession, topshiriq_id: int) -> Topshiriq:
             selectinload(Topshiriq.rahbar),
             selectinload(Topshiriq.xodim),
             selectinload(Topshiriq.mfy),
+            selectinload(Topshiriq.kocha),
         )
         .where(Topshiriq.id == topshiriq_id)
     )
@@ -78,6 +81,7 @@ async def list_topshiriqlar(
     *,
     xodim_id: Optional[int] = None,
     mfy_id: Optional[int] = None,
+    kocha_id: Optional[int] = None,
     status: Optional[str] = None,
     muddat_dan: Optional[date] = None,
     muddat_gacha: Optional[date] = None,
@@ -101,6 +105,9 @@ async def list_topshiriqlar(
 
     if mfy_id is not None:
         filters.append(Topshiriq.mfy_id == mfy_id)
+
+    if kocha_id is not None:
+        filters.append(Topshiriq.kocha_id == kocha_id)
 
     if status:
         try:
@@ -276,16 +283,19 @@ def _topshiriq_to_response(topshiriq: Topshiriq) -> dict:
     rahbar = topshiriq.rahbar
     xodim = topshiriq.xodim
     mfy = topshiriq.mfy
+    kocha = topshiriq.kocha
 
     rahbar_fio = rahbar.full_name if rahbar else None
     xodim_fio = xodim.full_name if xodim else None
     mfy_nomi = mfy.nomi if mfy else None
+    kocha_nomi = kocha.nomi if kocha else None
 
     return {
         "id": topshiriq.id,
         "rahbar_id": topshiriq.rahbar_id,
         "xodim_id": topshiriq.xodim_id,
         "mfy_id": topshiriq.mfy_id,
+        "kocha_id": topshiriq.kocha_id,
         "muammo_id": topshiriq.muammo_id,
         "sarlavha": topshiriq.sarlavha,
         "matn": topshiriq.matn,
@@ -297,6 +307,7 @@ def _topshiriq_to_response(topshiriq: Topshiriq) -> dict:
         "rahbar_fio": rahbar_fio,
         "xodim_fio": xodim_fio,
         "mfy_nomi": mfy_nomi,
+        "kocha_nomi": kocha_nomi,
     }
 
 

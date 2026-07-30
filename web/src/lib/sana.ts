@@ -18,3 +18,8 @@ export function faqatSana(iso: string | null | undefined): string {
   if (Number.isNaN(d.getTime())) return '—';
   return format(d, 'd-MMMM, yyyy', { locale: uz });
 }
+
+/** "30/07/2026" — sonli dd/mm/yyyy format. */
+export function ddMmYyyy(sana: Date = new Date()): string {
+  return format(sana, 'dd/MM/yyyy');
+}

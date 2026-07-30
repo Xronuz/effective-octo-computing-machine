@@ -6,6 +6,7 @@ import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
 import { krilldanLotinga } from '@/lib/alifbo';
 import { SkeletonTable } from '@/components/Skeleton';
+import MfySelect from '@/components/MfySelect';
 import type { Paginated, XonadonBrief, MfyBrief, KochaBrief, XonadonCreatePayload } from '@/types';
 
 export default function XonadonlarPage() {
@@ -93,7 +94,7 @@ export default function XonadonlarPage() {
       {showCreate && (
         <div className="card space-y-4 p-6">
           <h3 className="text-base font-semibold text-[#0F2033]">{tr("Yangi xonadon qo'shish")}</h3>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Ko'cha")} *</label>
               <select className="select" value={createForm.kocha_id || ''} onChange={e => setCreateForm({...createForm, kocha_id: Number(e.target.value)})}>
@@ -105,6 +106,8 @@ export default function XonadonlarPage() {
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Uy raqami")} *</label>
               <input className="input" value={createForm.uy_raqami} onChange={e => setCreateForm({...createForm, uy_raqami: e.target.value})} placeholder={tr("15A")} />
             </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Egasi F.I.Sh")}</label>
               <input className="input" value={createForm.egasi_fio || ''} onChange={e => setCreateForm({...createForm, egasi_fio: e.target.value})} />
@@ -131,16 +134,18 @@ export default function XonadonlarPage() {
         <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.3fr]">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">MFY</label>
-            <select className="select" value={mfy_id} onChange={e => updateFilter('mfy_id', e.target.value)}>
-              <option value="">{tr('Barcha MFY')}</option>
-              {mfylar.map(m => <option key={m.id} value={m.id}>{m.nomi}</option>)}
-            </select>
+            <MfySelect
+              mfylar={mfylar}
+              value={mfy_id}
+              onChange={(v) => updateFilter('mfy_id', v)}
+              barchasiLabel={tr('Barcha MFY')}
+            />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Ko'cha</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Ko'cha")}</label>
             <select className="select" value={kocha_id} onChange={e => updateFilter('kocha_id', e.target.value)}>
               <option value="">{tr("Barcha ko'chalar")}</option>
-              {kochalar.map(k => <option key={k.id} value={k.id}>{k.nomi}</option>)}
+              {kochalar.map(k => <option key={k.id} value={k.id}>{tr(k.nomi)}</option>)}
             </select>
           </div>
           <div>
@@ -221,9 +226,9 @@ export default function XonadonlarPage() {
                 {data.items.map((x, i) => (
                   <tr key={x.id}>
                     <td className="text-slate-400 tabular-nums">{(page-1)*size + i + 1}</td>
-                    <td className="font-medium text-[#0F2033]">{x.full_address || `${x.uy_raqami}, ${x.kocha_nomi || ''}`}</td>
-                    <td className="text-slate-500">{x.mfy_nomi || '—'}</td>
-                    <td>{x.egasi_fio || '—'}</td>
+                    <td className="font-medium text-[#0F2033]">{tr(x.full_address || `${x.uy_raqami}, ${x.kocha_nomi || ''}`)}</td>
+                    <td className="text-slate-500">{x.mfy_nomi ? tr(x.mfy_nomi) : '—'}</td>
+                    <td>{x.egasi_fio ? tr(x.egasi_fio) : '—'}</td>
                     <td className="text-slate-500">{x.egasi_tel || '—'}</td>
                     <td className="text-center">
                       {x.ochiq_muammolar_soni > 0 ? (

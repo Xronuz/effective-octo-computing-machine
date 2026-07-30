@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Image,
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -36,9 +36,11 @@ export default function LoginScreen({ navigation }: any) {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* Logo */}
           <View style={styles.logoArea}>
-            <View style={styles.logoBlock}>
-              <MaterialCommunityIcons name="shield-home" size={44} color={Colors.accent} />
-            </View>
+            <Image
+              source={require('../../assets/fvv-icon.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
             <Text style={styles.title}>{tr('XAVFSIZ XONADON')}</Text>
             <Text style={styles.subtitle}>{tr("Yong'in va gaz xavfsizligi nazorati tizimi")}</Text>
           </View>
@@ -127,15 +129,10 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
   logoArea: { alignItems: 'center', marginBottom: Spacing['3xl'] },
-  logoBlock: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 96,
+    height: 96,
     marginBottom: Spacing.base,
-    ...Shadows.lg,
   },
   title: {
     fontSize: FontSizes['2xl'],

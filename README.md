@@ -38,7 +38,8 @@ xavfsiz-xonadon/
 │   │   └── script.py.mako
 │   ├── scripts/
 │   │   ├── init-db.sh          # PostGIS kengaytmalari
-│   │   ├── seed_mfy.py         # 53 MFY seed
+│   │   ├── seed_mfy.py         # 53 MFY seed (tuman ro'yxatidan, kirill)
+│   │   ├── seed_kochalar.py    # Ko'chalar seed (tuman ro'yxatidan, kirill)
 │   │   ├── seed_chegaralar.py  # MFY chegaralarini GeoJSON dan yuklash
 │   │   └── create_superadmin.py
 │   └── app/
@@ -181,6 +182,7 @@ alembic upgrade head
 
 # Seed
 python scripts/seed_mfy.py
+python scripts/seed_kochalar.py
 python scripts/create_superadmin.py
 # MFY chegaralari (ixtiyoriy, GeoJSON fayl bo'lsa):
 # python scripts/seed_chegaralar.py scripts/data/mfy_chegaralar.geojson
@@ -358,6 +360,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 # 3. Seed va superadmin
 docker compose -f docker-compose.prod.yml exec backend python scripts/seed_mfy.py
+docker compose -f docker-compose.prod.yml exec backend python scripts/seed_kochalar.py
 docker compose -f docker-compose.prod.yml exec backend python scripts/create_superadmin.py
 
 # 4. Backup

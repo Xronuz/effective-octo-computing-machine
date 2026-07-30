@@ -4,15 +4,16 @@ import { MapContainer, TileLayer, Circle, Popup } from 'react-leaflet';
 import {
   AlertTriangle,
   BarChart3,
+  Building,
   Building2,
   CheckCircle2,
   FileSpreadsheet,
   FileText,
   Flame,
-  Home,
   Landmark,
   Percent,
   RefreshCw,
+  Route,
   Users,
 } from 'lucide-react';
 import { sanaVaqt } from '@/lib/sana';
@@ -204,46 +205,38 @@ export default function AnalitikaPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-[#0F2033] sm:text-2xl">{tr('Analitika')}</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {tr("Tizim bo'yicha to'liq statistika va hisobotlar")}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleExport('excel')}
-            disabled={exporting !== null}
-            className="btn-soft gap-2"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            {exporting === 'excel' ? tr('Yuklanmoqda...') : 'Excel'}
-          </button>
-          <button
-            onClick={() => handleExport('pdf')}
-            disabled={exporting !== null}
-            className="btn-soft gap-2"
-          >
-            <FileText className="h-4 w-4" />
-            {exporting === 'pdf' ? tr('Yuklanmoqda...') : 'PDF'}
-          </button>
-        </div>
-      </div>
-
       {/* Umumiy statistika kartalari */}
       <section>
-        <h2 className="mb-3 text-base font-semibold text-[#0F2033]">Umumiy ko'rsatkichlar</h2>
+        <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h2 className="text-base font-semibold text-[#0F2033]">{tr("Umumiy ko'rsatkichlar")}</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleExport('excel')}
+              disabled={exporting !== null}
+              className="btn-soft gap-2"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              {exporting === 'excel' ? tr('Yuklanmoqda...') : 'Excel'}
+            </button>
+            <button
+              onClick={() => handleExport('pdf')}
+              disabled={exporting !== null}
+              className="btn-soft gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              {exporting === 'pdf' ? tr('Yuklanmoqda...') : 'PDF'}
+            </button>
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          <StatCard label={tr('Jami xonadonlar')} value={umumiy.xonadon_soni} icon={Home} chip="bg-[#3D6FB4]/10 text-[#3D6FB4]" />
-          <StatCard label={tr('Jami muammolar')} value={umumiy.muammo_soni} icon={BarChart3} chip="bg-[#C9A227]/10 text-[#C9A227]" />
-          <StatCard label={tr('Ochiq muammolar')} value={umumiy.ochiq_muammolar} icon={AlertTriangle} chip="bg-[#D9A441]/10 text-[#D9A441]" />
-          <StatCard label={tr('Yopilgan')} value={umumiy.yopilgan_muammolar} icon={CheckCircle2} chip="bg-[#2E9E6B]/10 text-[#2E9E6B]" />
-          <StatCard label={tr('Xodimlar')} value={umumiy.xodim_soni} icon={Users} chip="bg-[#8E44AD]/10 text-[#8E44AD]" />
-          <StatCard label={tr('MFY lar')} value={umumiy.mfy_soni} icon={Landmark} chip="bg-[#3D6FB4]/10 text-[#3D6FB4]" />
-          <StatCard label={tr('Tekshirilgan xonadon')} value={umumiy.tekshirilgan_xonadon} icon={Building2} chip="bg-[#2E9E6B]/10 text-[#2E9E6B]" />
-          <StatCard label={tr('Tekshirish foizi')} value={`${umumiy.foiz.toFixed(1)}%`} icon={Percent} chip="bg-[#C9A227]/10 text-[#C9A227]" />
+          <StatCard label={tr("Jami ko'chalar")} value={umumiy.kocha_soni} icon={Route} chip="bg-[#3D6FB4]/10 text-[#3D6FB4]" tint="text-[#3D6FB4]" />
+          <StatCard label={tr('Jami muammolar')} value={umumiy.muammo_soni} icon={BarChart3} chip="bg-[#C9A227]/10 text-[#C9A227]" tint="text-[#C9A227]" />
+          <StatCard label={tr('Ochiq muammolar')} value={umumiy.ochiq_muammolar} icon={AlertTriangle} chip="bg-[#D9A441]/10 text-[#D9A441]" tint="text-[#D9A441]" />
+          <StatCard label={tr('Yopilgan')} value={umumiy.yopilgan_muammolar} icon={CheckCircle2} chip="bg-[#2E9E6B]/10 text-[#2E9E6B]" tint="text-[#2E9E6B]" />
+          <StatCard label={tr('Xodimlar')} value={umumiy.xodim_soni} icon={Users} chip="bg-[#8E44AD]/10 text-[#8E44AD]" tint="text-[#8E44AD]" />
+          <StatCard label={tr('MFY lar')} value={umumiy.mfy_soni} icon={Building} chip="bg-[#3D6FB4]/10 text-[#3D6FB4]" tint="text-[#3D6FB4]" />
+          <StatCard label={tr('Tekshirilgan xonadon')} value={umumiy.tekshirilgan_xonadon} icon={Building2} chip="bg-[#2E9E6B]/10 text-[#2E9E6B]" tint="text-[#2E9E6B]" />
+          <StatCard label={tr('Tekshirish foizi')} value={`${umumiy.foiz.toFixed(1)}%`} icon={Percent} chip="bg-[#C9A227]/10 text-[#C9A227]" tint="text-[#C9A227]" />
         </div>
       </section>
 
@@ -251,7 +244,7 @@ export default function AnalitikaPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Muammo turlari */}
         <section className="card p-5">
-          <h2 className="mb-4 text-base font-semibold text-[#0F2033]">Muammo turlari</h2>
+          <h2 className="mb-4 text-base font-semibold text-[#0F2033]">{tr('Muammo turlari')}</h2>
           {turiChart.length === 0 ? (
             <div className="empty-state">
               <BarChart3 className="mx-auto h-8 w-8 text-slate-300" />
@@ -272,7 +265,7 @@ export default function AnalitikaPage() {
 
         {/* Xavf darajalari */}
         <section className="card p-5">
-          <h2 className="mb-4 text-base font-semibold text-[#0F2033]">Xavf darajalari bo'yicha</h2>
+          <h2 className="mb-4 text-base font-semibold text-[#0F2033]">{tr("Xavf darajalari bo'yicha")}</h2>
           {xavfChart.length === 0 ? (
             <div className="empty-state">
               <Flame className="mx-auto h-8 w-8 text-slate-300" />
@@ -304,7 +297,7 @@ export default function AnalitikaPage() {
 
         {/* Status bo'yicha */}
         <section className="card p-5">
-          <h2 className="mb-4 text-base font-semibold text-[#0F2033]">Status bo'yicha</h2>
+          <h2 className="mb-4 text-base font-semibold text-[#0F2033]">{tr("Status bo'yicha")}</h2>
           {statusChart.length === 0 ? (
             <div className="empty-state">
               <BarChart3 className="mx-auto h-8 w-8 text-slate-300" />
@@ -329,7 +322,7 @@ export default function AnalitikaPage() {
 
         {/* Vaqt dinamikasi */}
         <section className="card p-5">
-          <h2 className="mb-4 text-base font-semibold text-[#0F2033]">Vaqt dinamikasi</h2>
+          <h2 className="mb-4 text-base font-semibold text-[#0F2033]">{tr('Vaqt dinamikasi')}</h2>
           {vaqt_dinamika.length === 0 ? (
             <div className="empty-state">
               <BarChart3 className="mx-auto h-8 w-8 text-slate-300" />
@@ -354,23 +347,23 @@ export default function AnalitikaPage() {
       {/* Topshiriqlar + Intizom */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <section className="card p-5">
-          <h2 className="mb-3 text-base font-semibold text-[#0F2033]">Topshiriqlar</h2>
+          <h2 className="mb-3 text-base font-semibold text-[#0F2033]">{tr('Topshiriqlar')}</h2>
           <div className="grid grid-cols-3 gap-3">
-            <MiniStat label="Jami" value={topshiriqlar.jami} tone="slate" />
-            <MiniStat label="Yangi" value={topshiriqlar.yangi} tone="blue" />
-            <MiniStat label="Ko'rilgan" value={topshiriqlar.korildi} tone="yellow" />
-            <MiniStat label="Bajarilgan" value={topshiriqlar.bajarildi} tone="green" />
-            <MiniStat label="Kechikkan" value={topshiriqlar.kechikkan} tone="red" />
+            <MiniStat label={tr('Jami')} value={topshiriqlar.jami} tone="slate" />
+            <MiniStat label={tr('Yangi')} value={topshiriqlar.yangi} tone="blue" />
+            <MiniStat label={tr("Ko'rilgan")} value={topshiriqlar.korildi} tone="yellow" />
+            <MiniStat label={tr('Bajarilgan')} value={topshiriqlar.bajarildi} tone="green" />
+            <MiniStat label={tr('Kechikkan')} value={topshiriqlar.kechikkan} tone="red" />
           </div>
         </section>
 
         <section className="card p-5">
-          <h2 className="mb-3 text-base font-semibold text-[#0F2033]">Intizom</h2>
+          <h2 className="mb-3 text-base font-semibold text-[#0F2033]">{tr('Intizom')}</h2>
           <div className="grid grid-cols-2 gap-3">
-            <MiniStat label="Jami" value={intizom.jami} tone="slate" />
-            <MiniStat label="Ogohlantirish" value={intizom.ogohlantirish} tone="yellow" />
-            <MiniStat label="Hayfsan" value={intizom.hayfsan} tone="red" />
-            <MiniStat label="Rag'bat" value={intizom.ragbat} tone="green" />
+            <MiniStat label={tr('Jami')} value={intizom.jami} tone="slate" />
+            <MiniStat label={tr('Ogohlantirish')} value={intizom.ogohlantirish} tone="yellow" />
+            <MiniStat label={tr('Hayfsan')} value={intizom.hayfsan} tone="red" />
+            <MiniStat label={tr("Rag'bat")} value={intizom.ragbat} tone="green" />
           </div>
         </section>
       </div>
@@ -378,7 +371,7 @@ export default function AnalitikaPage() {
       {/* MFY bo'yicha jadval */}
       <section className="card overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-[#0F2033]">MFY bo'yicha kesim</h2>
+          <h2 className="text-base font-semibold text-[#0F2033]">{tr("MFY bo'yicha kesim")}</h2>
         </div>
         {mfylar.length === 0 ? (
           <div className="empty-state">
@@ -386,27 +379,27 @@ export default function AnalitikaPage() {
             <p className="mt-2 text-sm text-slate-400">{tr("Ma'lumot yo'q")}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-h-[60vh] overflow-auto">
             <table className="table">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-white">
                 <tr>
                   <th>{tr('MFY')}</th>
-                  <th className="text-right">{tr('Xonadon')}</th>
-                  <th className="text-right">{tr('Tekshirilgan')}</th>
-                  <th className="text-right">{tr('Ochiq muammo')}</th>
-                  <th className="text-right">{tr('Yopilgan')}</th>
-                  <th className="text-right">{tr('Foiz')}</th>
+                  <th className="text-center">{tr('Xonadon')}</th>
+                  <th className="text-center">{tr('Tekshirilgan')}</th>
+                  <th className="text-center">{tr('Ochiq muammo')}</th>
+                  <th className="text-center">{tr('Yopilgan')}</th>
+                  <th className="text-center">{tr('Foiz')}</th>
                 </tr>
               </thead>
               <tbody>
                 {mfylar.map((m) => (
                   <tr key={m.mfy_id}>
-                    <td className="font-medium text-[#0F2033]">{m.mfy_nomi}</td>
-                    <td className="text-right tabular-nums">{m.xonadon_soni}</td>
-                    <td className="text-right tabular-nums">{m.tekshirilgan}</td>
-                    <td className="text-right font-medium text-[#D9A441] tabular-nums">{m.ochiq_muammo}</td>
-                    <td className="text-right text-[#2E9E6B] tabular-nums">{m.yopilgan_muammo}</td>
-                    <td className="text-right">
+                    <td className="font-medium text-[#0F2033]">{tr(m.mfy_nomi)}</td>
+                    <td className="text-center tabular-nums">{m.xonadon_soni}</td>
+                    <td className="text-center tabular-nums">{m.tekshirilgan}</td>
+                    <td className="text-center font-medium text-[#D9A441] tabular-nums">{m.ochiq_muammo}</td>
+                    <td className="text-center text-[#2E9E6B] tabular-nums">{m.yopilgan_muammo}</td>
+                    <td className="text-center">
                       <span
                         className={
                           m.foiz >= 80 ? 'badge-green' : m.foiz >= 50 ? 'badge-yellow' : 'badge-red'
@@ -435,7 +428,7 @@ export default function AnalitikaPage() {
         {heatItems.length === 0 ? (
           <div className="empty-state">
             <Landmark className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm text-slate-400">Koordinatalari ma'lum MFY topilmadi</p>
+            <p className="mt-2 text-sm text-slate-400">{tr("Koordinatalari ma'lum MFY topilmadi")}</p>
           </div>
         ) : (
           <>
@@ -470,7 +463,7 @@ export default function AnalitikaPage() {
                     >
                       <Popup>
                         <div style={{ minWidth: 170 }}>
-                          <div style={{ fontWeight: 700, marginBottom: 4 }}>{h.mfy_nomi}</div>
+                          <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr(h.mfy_nomi)}</div>
                           <div style={{ fontSize: 12, lineHeight: 1.6 }}>
                             <div>{tr('Ochiq muammo')}: <b>{h.ochiq_muammo}</b></div>
                             <div>{tr('Yopilgan')}: {h.yopilgan_muammo}</div>
@@ -515,7 +508,7 @@ export default function AnalitikaPage() {
       {/* Xodimlar statistikasi */}
       <section className="card overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-[#0F2033]">Xodimlar faoliyati</h2>
+          <h2 className="text-base font-semibold text-[#0F2033]">{tr('Xodimlar faoliyati')}</h2>
         </div>
         {xodimlar.length === 0 ? (
           <div className="empty-state">
@@ -538,7 +531,7 @@ export default function AnalitikaPage() {
               <tbody>
                 {xodimlar.map((x) => (
                   <tr key={x.xodim_id}>
-                    <td className="font-medium text-[#0F2033]">{x.xodim_fio}</td>
+                    <td className="font-medium text-[#0F2033]">{tr(x.xodim_fio)}</td>
                     <td className="text-right tabular-nums">{x.jami_muammo}</td>
                     <td className="text-right text-[#D9A441] tabular-nums">{x.ochiq_muammo}</td>
                     <td className="text-right text-[#2E9E6B] tabular-nums">{x.yopilgan_muammo}</td>
@@ -564,25 +557,30 @@ function StatCard({
   value,
   icon: Icon,
   chip,
+  tint,
 }: {
   label: string;
   value: number | string;
-  icon: typeof Home;
+  icon: typeof Route;
   chip: string;
+  tint: string;
 }) {
   return (
-    <div className="stat-card">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-2xl font-bold tabular-nums text-[#0F2033]">{value}</div>
-          <div className="mt-1 text-xs text-slate-500">{label}</div>
-        </div>
-        <span
-          className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${chip}`}
-        >
-          <Icon className="h-5 w-5" />
-        </span>
+    <div className="stat-card group relative overflow-hidden transition-shadow duration-200 hover:shadow-md">
+      <span
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${chip} transition-transform duration-200 group-hover:scale-105`}
+      >
+        <Icon className="h-5 w-5" strokeWidth={1.8} />
+      </span>
+      <div className="min-w-0">
+        <div className="mt-0.5 text-2xl font-bold tabular-nums text-[#0F2033]">{value}</div>
+        <div className="mt-1 truncate text-xs text-slate-500">{label}</div>
       </div>
+      <Icon
+        className={`pointer-events-none absolute -bottom-4 -right-4 h-24 w-24 opacity-[0.05] ${tint}`}
+        strokeWidth={1.2}
+        aria-hidden="true"
+      />
     </div>
   );
 }

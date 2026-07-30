@@ -102,6 +102,8 @@ async function yozuvniYubor(y: NavbatYozuvi): Promise<void> {
     ornida_bartaraf: y.ornida_bartaraf,
     muddat: y.ornida_bartaraf ? null : y.muddat,
     has_keyin_foto: y.ornida_bartaraf && y.foto_paths.length > 0,
+    taklif_etilgan_tadbirlar: y.taklif_etilgan_tadbirlar,
+    yoriqnomadan_otkanlar_soni: y.yoriqnomadan_otkanlar_soni,
   });
   // dublikat: true — backend'da client_uuid bilan yozuv allaqachon bor, id sini olamiz
   if (!data.ok || !data.data?.id) throw new Error(data.xato || 'Muammo yaratishda xatolik');

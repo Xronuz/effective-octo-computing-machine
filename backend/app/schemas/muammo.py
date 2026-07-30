@@ -26,6 +26,8 @@ class MuammoCreate(BaseModel):
     muddat: Optional[date] = None
     has_keyin_foto: bool = False
     fotos_sha256_list: Optional[list[str]] = None
+    taklif_etilgan_tadbirlar: Optional[str] = Field(None, max_length=2000)
+    yoriqnomadan_otkanlar_soni: Optional[int] = Field(None, ge=0)
 
     @field_validator("turi")
     @classmethod
@@ -120,6 +122,13 @@ class MuammoResponse(BaseModel):
     # Xonadon manzili va xodim ismi qo'shib beriladi
     xonadon_manzili: Optional[str] = None
     xodim_fio: Optional[str] = None
+    mfy_nomi: Optional[str] = None
+    kocha_nomi: Optional[str] = None
+    uy_raqami: Optional[str] = None
+    egasi_fio: Optional[str] = None
+    egasi_tel: Optional[str] = None
+    taklif_etilgan_tadbirlar: Optional[str] = None
+    yoriqnomadan_otkanlar_soni: Optional[int] = None
 
     model_config = {"from_attributes": True}
 

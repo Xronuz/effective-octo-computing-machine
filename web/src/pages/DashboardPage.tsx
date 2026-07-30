@@ -335,7 +335,7 @@ export default function DashboardPage() {
                             {m.tavsif || `${tr(TURI_LABEL[m.turi] || m.turi)} — #${m.id}`}
                           </p>
                           <p className="mt-0.5 truncate text-xs text-slate-500">
-                            {m.xonadon_manzil || tr("Manzil ko‘rsatilmagan")}
+                            {m.xonadon_manzili ? tr(m.xonadon_manzili) : tr("Manzil ko‘rsatilmagan")}
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                             {tr(STATUS_LABEL[m.status] || m.status)}
                           </span>
                           <span className="text-xs text-slate-400">
-                            {qanchaVaqtOldin(m.yaratilgan)}
+                            {qanchaVaqtOldin(m.sinxron_vaqti)}
                           </span>
                         </div>
                       </Link>

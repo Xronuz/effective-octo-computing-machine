@@ -75,6 +75,7 @@ class Topshiriq(Base):
     rahbar_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     xodim_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     mfy_id = Column(Integer, ForeignKey("mfy.id"), nullable=True)
+    kocha_id = Column(Integer, ForeignKey("kochalar.id"), nullable=True)
     muammo_id = Column(Integer, ForeignKey("muammolar.id"), nullable=True)
 
     sarlavha = Column(String(200), nullable=False)
@@ -95,6 +96,7 @@ class Topshiriq(Base):
     rahbar = relationship("User", foreign_keys=[rahbar_id], lazy="selectin")
     xodim = relationship("User", foreign_keys=[xodim_id], lazy="selectin")
     mfy = relationship("Mfy", lazy="selectin")
+    kocha = relationship("Kocha", lazy="selectin")
     muammo = relationship("Muammo", lazy="selectin")
 
     def __repr__(self):

@@ -75,7 +75,7 @@ export function AppLayout() {
     );
   };
 
-  const initials = user ? `${user.ism?.[0] ?? ''}${user.familiya?.[0] ?? ''}`.toUpperCase() : '';
+  const initials = user ? tr(`${user.ism?.[0] ?? ''}${user.familiya?.[0] ?? ''}`.toUpperCase()) : '';
   const profilFoto = (user as { profil_foto_url?: string | null } | null)?.profil_foto_url ?? null;
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -83,7 +83,7 @@ export function AppLayout() {
       expanded ? '' : 'justify-center px-0'
     } ${
       isActive
-        ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+        ? 'bg-[var(--accent-soft)] text-white'
         : 'text-white/60 hover:bg-white/[0.06] hover:text-white'
     }`;
 
@@ -212,7 +212,7 @@ export function AppLayout() {
             title={tr(item.label)}
             className={({ isActive }) =>
               `flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-150 ${
-                isActive ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-white/60'
+                isActive ? 'bg-[var(--accent-soft)] text-white' : 'text-white/60'
               }`
             }
           >
@@ -299,7 +299,7 @@ export function AppLayout() {
                 {profilFoto ? (
                   <img
                     src={profilFoto}
-                    alt={user?.full_name ?? ''}
+                    alt={user?.full_name ? tr(user.full_name) : ''}
                     className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
@@ -309,7 +309,7 @@ export function AppLayout() {
                 )}
                 <span className="hidden min-w-0 leading-tight sm:block">
                   <span className="block max-w-[140px] truncate text-[13px] font-medium text-[var(--text-primary)]">
-                    {user?.full_name}
+                    {user?.full_name ? tr(user.full_name) : ''}
                   </span>
                   <span className="block text-[11px] text-[var(--text-muted)]">
                     {tr(ROL_LABELS[user?.rol ?? ''] ?? user?.rol ?? '')}

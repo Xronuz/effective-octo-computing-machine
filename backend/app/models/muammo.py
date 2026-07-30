@@ -107,6 +107,10 @@ class Muammo(Base):
     tashkilot = Column(String(120), nullable=True)
     tashkilotga_sana = Column(DateTime(timezone=True), nullable=True)
 
+    # Yong'inga qarshi tadbirlar (xodim qayd etadi)
+    taklif_etilgan_tadbirlar = Column(Text, nullable=True)
+    yoriqnomadan_otkanlar_soni = Column(Integer, nullable=True)
+
     # Geo
     lat = Column(Float, nullable=False)
     lng = Column(Float, nullable=False)

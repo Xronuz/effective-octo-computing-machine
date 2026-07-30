@@ -5,6 +5,7 @@ import { apiGet, apiPatch, apiPost } from '@/api';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
 import type { MuammoDetail } from '@/types';
+import DateInput from '@/components/DateInput';
 
 const STATUS_LABEL: Record<string, string> = {
   ochiq: 'Ochiq', jarayonda: 'Jarayonda', yopilgan: 'Yopilgan', qayta_ochilgan: 'Qayta ochilgan',
@@ -147,7 +148,7 @@ export default function MuammoDetailPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-[#0F2033] sm:text-2xl">
-          {muammo.turi_nomi || (TURI_LABEL[muammo.turi] ? tr(TURI_LABEL[muammo.turi]) : muammo.turi)} — {muammo.xonadon_manzili || `${tr('Xonadon')} #${muammo.xonadon_id}`}
+          {muammo.turi_nomi ? tr(muammo.turi_nomi) : (TURI_LABEL[muammo.turi] ? tr(TURI_LABEL[muammo.turi]) : muammo.turi)} — {muammo.xonadon_manzili ? tr(muammo.xonadon_manzili) : `${tr('Xonadon')} #${muammo.xonadon_id}`}
         </h1>
         <div className="flex items-center gap-3">
           <span className={STATUS_BADGE[muammo.status] || 'badge-gray'}>{STATUS_LABEL[muammo.status] ? tr(STATUS_LABEL[muammo.status]) : muammo.status}</span>
@@ -178,7 +179,7 @@ export default function MuammoDetailPage() {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Muddat')}</label>
-              <input type="date" className="input" value={editMuddat} onChange={e => setEditMuddat(e.target.value)} />
+              <DateInput className="input" value={editMuddat} onChange={setEditMuddat} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Tashkilot')}</label>
@@ -222,7 +223,7 @@ export default function MuammoDetailPage() {
         <div className="card space-y-4 p-6">
           <h3 className="text-base font-semibold text-[#0F2033]">{tr("Asosiy ma'lumot")}</h3>
           <div className="space-y-3">
-            <Row label="Turi" value={muammo.turi_nomi || (TURI_LABEL[muammo.turi] ? tr(TURI_LABEL[muammo.turi]) : muammo.turi)} />
+            <Row label="Turi" value={muammo.turi_nomi ? tr(muammo.turi_nomi) : (TURI_LABEL[muammo.turi] ? tr(TURI_LABEL[muammo.turi]) : muammo.turi)} />
             <Row label="Xavf darajasi">
               <span className={XAVF_BADGE[muammo.xavf] || 'badge-gray'}>{XAVF_LABEL[muammo.xavf] ? tr(XAVF_LABEL[muammo.xavf]) : muammo.xavf}</span>
             </Row>
@@ -237,7 +238,7 @@ export default function MuammoDetailPage() {
                 )}</span>
               } />
             )}
-            {muammo.tashkilot && <Row label="Tashkilot" value={muammo.tashkilot} />}
+            {muammo.tashkilot && <Row label="Tashkilot" value={tr(muammo.tashkilot)} />}
             {muammo.yopilgan_sana && <Row label="Yopilgan sana" value={tr(new Date(muammo.yopilgan_sana).toLocaleDateString('uz-UZ'))} />}
             <Row label="Yaratilgan" value={tr(new Date(muammo.sinxron_vaqti).toLocaleString('uz-UZ'))} />
           </div>
@@ -247,8 +248,8 @@ export default function MuammoDetailPage() {
         <div className="card space-y-4 p-6">
           <h3 className="text-base font-semibold text-[#0F2033]">{tr("Bog'langanlar")}</h3>
           <div className="space-y-3">
-            <Row label="Xonadon" value={<Link to={`/xonadonlar/${muammo.xonadon_id}`} className="text-[#3D6FB4] hover:underline">{muammo.xonadon_manzili || `#${muammo.xonadon_id}`}</Link>} />
-            <Row label="Xodim" value={muammo.xodim_fio || `#${muammo.xodim_id}`} />
+            <Row label="Xonadon" value={<Link to={`/xonadonlar/${muammo.xonadon_id}`} className="text-[#3D6FB4] hover:underline">{muammo.xonadon_manzili ? tr(muammo.xonadon_manzili) : `#${muammo.xonadon_id}`}</Link>} />
+            <Row label="Xodim" value={muammo.xodim_fio ? tr(muammo.xodim_fio) : `#${muammo.xodim_id}`} />
             {muammo.lat !== 0 && muammo.lng !== 0 && (
               <Row label="GPS" value={`${muammo.lat.toFixed(6)}, ${muammo.lng.toFixed(6)}`} />
             )}
@@ -264,7 +265,7 @@ export default function MuammoDetailPage() {
       {muammo.tavsif && (
         <div className="card p-6">
           <h3 className="mb-2 text-base font-semibold text-[#0F2033]">{tr('Tavsif')}</h3>
-          <p className="whitespace-pre-wrap text-sm text-slate-600">{muammo.tavsif}</p>
+          <p className="whitespace-pre-wrap text-sm text-slate-600">{tr(muammo.tavsif)}</p>
         </div>
       )}
 

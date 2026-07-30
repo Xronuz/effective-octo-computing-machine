@@ -108,14 +108,14 @@ export default function GlobalSearch() {
     ...xonadonlar.map((x) => ({
       tur: 'xonadon' as const,
       id: x.id,
-      sarlavha: x.full_address || `${x.uy_raqami}-${tr('uy')}, ${x.kocha_nomi || ''}`,
-      osti: [x.mfy_nomi, x.egasi_fio].filter(Boolean).join(' · ') || '—',
+      sarlavha: x.full_address ? tr(x.full_address) : `${x.uy_raqami}-${tr('uy')}, ${x.kocha_nomi ? tr(x.kocha_nomi) : ''}`,
+      osti: [x.mfy_nomi ? tr(x.mfy_nomi) : null, x.egasi_fio ? tr(x.egasi_fio) : null].filter(Boolean).join(' · ') || '—',
     })),
     ...muammolar.map((m) => ({
       tur: 'muammo' as const,
       id: m.id,
       sarlavha: m.tavsif || `${m.turi} ${tr('muammosi')} — #${m.id}`,
-      osti: m.xonadon_manzil || '—',
+      osti: m.xonadon_manzili ? tr(m.xonadon_manzili) : '—',
     })),
   ];
 
@@ -252,10 +252,10 @@ export default function GlobalSearch() {
 
         {/* Footer */}
         <div className="flex items-center gap-4 border-t border-gray-200 px-4 py-2 text-[11px] text-gray-400">
-          <span>↑↓ tanlash</span>
-          <span>Enter ochish</span>
-          <span>Esc yopish</span>
-          <span className="ml-auto">{xonadonSoni + muammolar.length} ta natija</span>
+          <span>↑↓ {tr('tanlash')}</span>
+          <span>Enter {tr('ochish')}</span>
+          <span>Esc {tr('yopish')}</span>
+          <span className="ml-auto">{xonadonSoni + muammolar.length} {tr('ta natija')}</span>
         </div>
       </div>
     </div>

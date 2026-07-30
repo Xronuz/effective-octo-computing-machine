@@ -23,7 +23,7 @@ try { Location = require('expo-location'); } catch {}
 const GPS_YAXSHI_ANIQLIK_M = 50;
 const GPS_QULF_TIMEOUT_MS = 20_000;
 const FOTO_MAX_PX = 1600;
-const MUDDAT_RE = /^\d{4}-\d{2}-\d{2}$/;
+const MUDDAT_RE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
 
 // Idempotency uchun qurilma tomonida generatsiya qilinadigan UUID v4
 function generateUuid(): string {
@@ -54,10 +54,30 @@ async function compressPhoto(uri: string): Promise<string> {
   }
 }
 
+// Foydalanuvchi kiritgan "dd/mm/yyyy" ni ISO "yyyy-mm-dd" ga o'giradi.
+// Yaroqsiz bo'lsa null qaytaradi.
+function ddMmYyyyToIso(s: string): string | null {
+  const match = s.match(MUDDAT_RE);
+  if (!match) return null;
+  const [, d, m, y] = match;
+  const date = new Date(`${y}-${m}-${d}T00:00:00`);
+  const yaroqli =
+    !isNaN(date.getTime()) &&
+    date.getDate() === Number(d) &&
+    date.getMonth() + 1 === Number(m) &&
+    date.getFullYear() === Number(y);
+  return yaroqli ? `${y}-${m}-${d}` : null;
+}
+
 function isValidMuddat(s: string): boolean {
-  if (!MUDDAT_RE.test(s)) return false;
-  const d = new Date(`${s}T00:00:00`);
-  return !isNaN(d.getTime());
+  return ddMmYyyyToIso(s) !== null;
+}
+
+// Raqamlarni "dd/mm/yyyy" ko'rinishida avtomatik "/" bilan formatlaydi
+function muddatTerishniFormatlash(raw: string): string {
+  const raqamlar = raw.replace(/\D/g, '').slice(0, 8);
+  const qismlar = [raqamlar.slice(0, 2), raqamlar.slice(2, 4), raqamlar.slice(4, 8)].filter(Boolean);
+  return qismlar.join('/');
 }
 
 const TUR_OPTIONS = (tr: (s: string) => string): { key: MuammoTuri; label: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'] }[] => [
@@ -91,6 +111,8 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
   const [turi, setTuri] = useState<MuammoTuri>('boshqa');
   const [xavf, setXavf] = useState<XavfDarajasi>('orta');
   const [tavsif, setTavsif] = useState('');
+  const [taklifEtilganTadbirlar, setTaklifEtilganTadbirlar] = useState('');
+  const [yoriqnomadanOtkanlarSoni, setYoriqnomadanOtkanlarSoni] = useState('');
   const [ornidaBartaraf, setOrnidaBartaraf] = useState(false);
   const [muddat, setMuddat] = useState('');
   const [location, setLocation] = useState<{ lat: number; lon: number; accuracy: number } | null>(null);
@@ -242,7 +264,7 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
       return;
     }
     if (!ornidaBartaraf && !isValidMuddat(muddat.trim())) {
-      Alert.alert(tr('Xatolik'), tr("Bartaraf etish muddatini YYYY-MM-DD formatida kiriting (masalan, 2025-01-31)."));
+      Alert.alert(tr('Xatolik'), tr("Bartaraf etish muddatini DD/MM/YYYY formatida kiriting (masalan, 31/01/2025)."));
       return;
     }
 
@@ -259,7 +281,11 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
         gps_aniqlik: location.accuracy,
         mock_gps: mockGps,
         ornida_bartaraf: ornidaBartaraf,
-        muddat: ornidaBartaraf ? null : muddat.trim(),
+        muddat: ornidaBartaraf ? null : ddMmYyyyToIso(muddat.trim()),
+        taklif_etilgan_tadbirlar: taklifEtilganTadbirlar.trim() || null,
+        yoriqnomadan_otkanlar_soni: yoriqnomadanOtkanlarSoni.trim()
+          ? parseInt(yoriqnomadanOtkanlarSoni.trim(), 10)
+          : null,
         foto_paths: photos.map(p => p.uri),
         status: 'kutilmoqda',
         urinishlar_soni: 0,
@@ -375,6 +401,35 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
           />
         </View>
 
+        {/* Taklif etilgan yong'inga qarshi tadbirlar */}
+        <Text style={styles.label}>{tr("Taklif etilgan yong'inga qarshi tadbirlar")}</Text>
+        <View style={[styles.inputWrapper, styles.textareaWrapper]}>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={taklifEtilganTadbirlar}
+            onChangeText={setTaklifEtilganTadbirlar}
+            placeholder={tr('Masalan: elektr simlarini almashtirish...')}
+            placeholderTextColor={Colors.textMuted}
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+          />
+        </View>
+
+        {/* Yo'riqnomadan o'tkanlar soni */}
+        <Text style={styles.label}>{tr("Yo'riqnomadan o'tkanlar soni")}</Text>
+        <View style={styles.inputWrapper}>
+          <MaterialCommunityIcons name="account-group-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            value={yoriqnomadanOtkanlarSoni}
+            onChangeText={(v) => setYoriqnomadanOtkanlarSoni(v.replace(/[^0-9]/g, ''))}
+            placeholder="0"
+            placeholderTextColor={Colors.textMuted}
+            keyboardType="number-pad"
+          />
+        </View>
+
         {/* O'rnida bartaraf */}
         <View style={styles.toggleRow}>
           <View style={{ flex: 1, marginRight: 12 }}>
@@ -405,10 +460,10 @@ export default function MuammoYaratishScreen({ route, navigation }: any) {
               <TextInput
                 style={styles.input}
                 value={muddat}
-                onChangeText={setMuddat}
-                placeholder="YYYY-MM-DD"
+                onChangeText={(v) => setMuddat(muddatTerishniFormatlash(v))}
+                placeholder="DD/MM/YYYY"
                 placeholderTextColor={Colors.textMuted}
-                keyboardType="numbers-and-punctuation"
+                keyboardType="number-pad"
                 maxLength={10}
                 autoCapitalize="none"
               />

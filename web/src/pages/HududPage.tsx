@@ -3,8 +3,9 @@ import { Home, Landmark, Pencil, Plus, Route, Search, Trash2, X } from 'lucide-r
 import { apiGet } from '@/api';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
-import { krilldanLotinga } from '@/lib/alifbo';
+import { krilldanLotinga, mfyNomiTozala } from '@/lib/alifbo';
 import type { MfyBrief, MfyDetail, KochaBrief } from '@/types';
+import MfySelect from '@/components/MfySelect';
 import {
   Toast,
   MfyForma,
@@ -92,7 +93,7 @@ export default function HududPage() {
     const q = krilldanLotinga(mfyQidiruv.trim().toLowerCase());
     if (!q) return mfylar;
     return mfylar.filter(
-      m => m.nomi.toLowerCase().includes(q) || String(m.raqami).includes(q),
+      m => krilldanLotinga(m.nomi.toLowerCase()).includes(q) || String(m.raqami).includes(q),
     );
   }, [mfylar, mfyQidiruv]);
 
@@ -162,7 +163,7 @@ export default function HududPage() {
   };
 
   return (
-    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1fr_360px]">
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[2fr_1fr]">
       {/* MFY ro'yxati + qidiruv */}
       <div className="card p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -204,21 +205,21 @@ export default function HududPage() {
               <button
                 key={m.id}
                 onClick={() => loadMfyDetail(m.id)}
-                className="group flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-left transition hover:border-[#3D6FB4]/40 hover:shadow-sm"
+                className="group flex w-full items-center justify-between gap-x-4 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-left transition hover:border-[#3D6FB4]/40 hover:shadow-sm"
               >
-                <div className="flex min-w-0 items-baseline gap-1.5">
+                <div className="flex min-w-0 flex-1 items-baseline gap-1.5">
                   <span className="truncate text-sm font-medium text-[#0F2033] group-hover:text-[#3D6FB4]">
-                    {m.nomi} MFY
+                    {tr(mfyNomiTozala(m.nomi))} {tr('MFY')}
                   </span>
                 </div>
-                <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                  <span className="inline-flex items-center gap-1">
-                    <Home className="h-3.5 w-3.5" />
-                    {m.xonadon_soni} {tr('xonadon')}
+                <div className="flex shrink-0 items-center gap-x-4 text-xs text-slate-500">
+                  <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                    <Home className="h-3.5 w-3.5 shrink-0" />
+                    <span className="tabular-nums">{m.xonadon_soni}</span> {tr('xonadon')}
                   </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Route className="h-3.5 w-3.5" />
-                    {m.kochalar_soni} {tr("ko'cha")}
+                  <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                    <Route className="h-3.5 w-3.5 shrink-0" />
+                    <span className="tabular-nums">{m.kochalar_soni}</span> {tr("ko'cha")}
                   </span>
                 </div>
               </button>
@@ -235,10 +236,13 @@ export default function HududPage() {
             <span className="tabular-nums text-slate-400">({allKochalar.length})</span>
           </h2>
           <div className="w-full sm:w-auto sm:min-w-[180px]">
-            <select className="select text-sm" value={kochaFilterMfyId} onChange={e => setKochaFilterMfyId(e.target.value)}>
-              <option value="">{tr('Barcha MFY')}</option>
-              {mfylar.map(m => <option key={m.id} value={m.id}>{m.nomi} MFY (#{m.raqami})</option>)}
-            </select>
+            <MfySelect
+              mfylar={mfylar}
+              value={kochaFilterMfyId}
+              onChange={setKochaFilterMfyId}
+              barchasiLabel={tr('Barcha MFY')}
+              className="select text-sm"
+            />
           </div>
         </div>
 
@@ -254,15 +258,15 @@ export default function HududPage() {
                 <tr>
                   <th>#</th>
                   <th>{tr("Ko'cha nomi")}</th>
-                  <th className="text-right">{tr('Xonadonlar')}</th>
+                  <th className="text-center">{tr('Xonadonlar')}</th>
                 </tr>
               </thead>
               <tbody>
                 {allKochalar.map((k, i) => (
                   <tr key={k.id}>
                     <td className="text-slate-400 tabular-nums">{i + 1}</td>
-                    <td className="font-medium text-[#0F2033]">{k.nomi}</td>
-                    <td className="text-right tabular-nums">{k.xonadon_soni}</td>
+                    <td className="font-medium text-[#0F2033]">{tr(k.nomi)}</td>
+                    <td className="text-center tabular-nums">{k.xonadon_soni}</td>
                   </tr>
                 ))}
               </tbody>
@@ -293,7 +297,7 @@ export default function HududPage() {
               <div className="min-w-0">
                 {selectedMfy ? (
                   <>
-                    <h2 className="truncate text-lg font-semibold text-[#0F2033]">{tr('MFY')} #{selectedMfy.raqami}: {selectedMfy.nomi}
+                    <h2 className="truncate text-lg font-semibold text-[#0F2033]">{tr('MFY')} #{selectedMfy.raqami}: {tr(selectedMfy.nomi)}
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
                       {selectedMfy.kochalar.length} {tr('ta ko\'cha')}, {selectedMfy.xonadon_soni} {tr('ta xonadon')}
@@ -320,7 +324,7 @@ export default function HududPage() {
                       setOchirishModal({
                         tur: 'mfy',
                         id: selectedMfy.id,
-                        nomi: `${selectedMfy.raqami}-son — ${selectedMfy.nomi}`,
+                        nomi: `${selectedMfy.raqami}-son — ${tr(selectedMfy.nomi)}`,
                         kochalarSoni: selectedMfy.kochalar.length,
                         xonadonSoni: selectedMfy.xonadon_soni,
                       })
@@ -375,22 +379,22 @@ export default function HududPage() {
                           <tr>
                             <th>#</th>
                             <th>{tr("Ko'cha nomi")}</th>
-                            <th className="text-right">{tr('Xonadonlar soni')}</th>
-                            {canManage && <th className="text-right">{tr('Amallar')}</th>}
+                            <th className="text-center">{tr('Xonadonlar soni')}</th>
+                            {canManage && <th className="text-center">{tr('Amallar')}</th>}
                           </tr>
                         </thead>
                         <tbody>
                           {selectedMfy.kochalar.map((k, i) => (
                             <tr key={k.id}>
                               <td className="text-slate-400 tabular-nums">{i + 1}</td>
-                              <td className="font-medium text-[#0F2033]">{k.nomi}</td>
-                              <td className="text-right tabular-nums">{k.xonadon_soni}</td>
+                              <td className="font-medium text-[#0F2033]">{tr(k.nomi)}</td>
+                              <td className="text-center tabular-nums">{k.xonadon_soni}</td>
                               {canManage && (
-                                <td className="text-right">
+                                <td className="text-center">
                                   <div className="inline-flex items-center gap-1">
                                     <button
                                       onClick={() => setKochaModal({ rejim: 'tahrirlash', kocha: k })}
-                                      aria-label={`${k.nomi} ni tahrirlash`}
+                                      aria-label={`${tr(k.nomi)} ni tahrirlash`}
                                       title="Tahrirlash"
                                       className="rounded-xl p-2.5 text-slate-400 transition-colors hover:bg-[#3D6FB4]/10 hover:text-[#2a5489]"
                                     >
@@ -402,11 +406,11 @@ export default function HududPage() {
                                           setOchirishModal({
                                             tur: 'kocha',
                                             id: k.id,
-                                            nomi: k.nomi,
+                                            nomi: tr(k.nomi),
                                             xonadonSoni: k.xonadon_soni,
                                           })
                                         }
-                                        aria-label={`${k.nomi} ni o'chirish`}
+                                        aria-label={`${tr(k.nomi)} ni o'chirish`}
                                         title="O'chirish"
                                         className="rounded-xl p-2.5 text-slate-400 transition-colors hover:bg-[#C0392B]/10 hover:text-[#96291f]"
                                       >
@@ -442,7 +446,7 @@ export default function HududPage() {
         <KochaForma
           modal={kochaModal}
           mfyId={selectedMfy.id}
-          mfyNomi={selectedMfy.nomi}
+          mfyNomi={tr(selectedMfy.nomi)}
           onYopish={() => setKochaModal(null)}
           onSaqlandi={kochaSaqlandi}
         />

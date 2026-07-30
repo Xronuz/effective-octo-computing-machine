@@ -13,6 +13,7 @@ class TopshiriqCreate(BaseModel):
     """Yangi topshiriq yaratish. rahbar_id server tomonidan olinadi."""
     xodim_id: int
     mfy_id: Optional[int] = None
+    kocha_id: Optional[int] = None
     muammo_id: Optional[int] = None
     sarlavha: str = Field(..., min_length=1, max_length=200)
     matn: Optional[str] = Field(None, max_length=2000)
@@ -44,6 +45,7 @@ class TopshiriqResponse(BaseModel):
     rahbar_id: int
     xodim_id: int
     mfy_id: Optional[int] = None
+    kocha_id: Optional[int] = None
     muammo_id: Optional[int] = None
     sarlavha: str
     matn: Optional[str] = None
@@ -52,11 +54,12 @@ class TopshiriqResponse(BaseModel):
     yaratilgan: datetime
     korilgan: Optional[datetime] = None
     bajarilgan: Optional[datetime] = None
-    
+
     # Qo'shimcha maydonlar (JOIN lar orqali)
     rahbar_fio: Optional[str] = None
     xodim_fio: Optional[str] = None
     mfy_nomi: Optional[str] = None
+    kocha_nomi: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -76,6 +79,7 @@ class TopshiriqFilter(BaseModel):
     """Topshiriqlarni filtrlash parametrlari."""
     xodim_id: Optional[int] = None
     mfy_id: Optional[int] = None
+    kocha_id: Optional[int] = None
     status: Optional[str] = Field(None, description="yangi|korildi|bajarildi|kechikkan")
     muddat_dan: Optional[date] = None
     muddat_gacha: Optional[date] = None

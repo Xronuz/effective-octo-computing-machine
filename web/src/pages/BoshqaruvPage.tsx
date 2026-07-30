@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Users, X } from 'lucide-react';
 import { apiGet, apiPatch, apiPost } from '@/api';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
-import { krilldanLotinga } from '@/lib/alifbo';
+import { krilldanLotinga, mfyNomiTozala } from '@/lib/alifbo';
 import { SkeletonTable } from '@/components/Skeleton';
 import type { Foydalanuvchi, Paginated, MfyBrief } from '@/types';
 
@@ -97,7 +97,7 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <h3 className="text-base font-semibold text-[#0F2033]">
-            {tr('MFY biriktirish')} — {user.full_name}
+            {tr('MFY biriktirish')} — {tr(user.full_name)}
           </h3>
           <button
             onClick={onClose}
@@ -127,7 +127,7 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
                   className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                 />
                 <span className="text-sm text-slate-700">
-                  {mfy.raqami}-{tr('son')} — {mfy.nomi}
+                  {tr(mfyNomiTozala(mfy.nomi))} {tr('MFY')}
                 </span>
               </label>
             ))
@@ -306,52 +306,52 @@ export default function BoshqaruvPage() {
           <table className="table">
             <thead>
               <tr>
-                <th className="w-10">#</th>
-                <th>{tr('F.I.Sh')}</th>
-                <th>{tr('Guvohnoma')}</th>
-                <th>{tr('Rol')}</th>
-                <th>{tr('Holat')}</th>
-                <th>{tr('Telefon')}</th>
-                <th>{tr('MFY lar')}</th>
-                <th>{tr('Amallar')}</th>
+                <th className="w-10 text-center">#</th>
+                <th className="text-center">{tr('F.I.Sh')}</th>
+                <th className="text-center">{tr('Guvohnoma')}</th>
+                <th className="text-center">{tr('Rol')}</th>
+                <th className="text-center">{tr('Holat')}</th>
+                <th className="text-center">{tr('Telefon')}</th>
+                <th className="text-center">{tr('MFY lar')}</th>
+                <th className="text-center">{tr('Amallar')}</th>
               </tr>
             </thead>
             <tbody>
               {users.map((u, idx) => (
                 <tr key={u.id}>
-                  <td className="whitespace-nowrap text-slate-400 tabular-nums">
+                  <td className="whitespace-nowrap text-center text-slate-400 tabular-nums">
                     {(page - 1) * 20 + idx + 1}
                   </td>
-                  <td className="whitespace-nowrap font-medium text-[#0F2033]">
-                    {u.full_name}
+                  <td className="whitespace-nowrap text-center font-medium text-[#0F2033]">
+                    {tr(u.full_name)}
                   </td>
-                  <td className="whitespace-nowrap text-slate-500">
+                  <td className="whitespace-nowrap text-center text-slate-500">
                     {u.guvohnoma_raqami}
                   </td>
-                  <td className="whitespace-nowrap">
+                  <td className="whitespace-nowrap text-center">
                     <span className={rolRangi[u.rol] || 'badge-gray'}>
                       {tr(rolLabels[u.rol] || u.rol)}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap">
+                  <td className="whitespace-nowrap text-center">
                     <span className={holatRangi[u.holat] || 'badge-gray'}>
                       {tr(holatLabels[u.holat] || u.holat)}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap text-slate-500">
+                  <td className="whitespace-nowrap text-center text-slate-500">
                     {u.telefon || '—'}
                   </td>
-                  <td className="max-w-[200px] text-slate-500">
+                  <td className="max-w-[200px] text-center text-slate-500">
                     <span className="block truncate">
                       {u.mfy_biriktirishlar?.length
                         ? u.mfy_biriktirishlar
-                            .map((b) => b.nomi || `#${b.mfy_id}`)
+                            .map((b) => (b.nomi ? tr(b.nomi) : `#${b.mfy_id}`))
                             .join(', ')
                         : '—'}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap">
-                    <div className="flex items-center gap-2">
+                  <td className="whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-2">
                       {/* Tasdiqlash — only for kutilmoqda */}
                       {u.holat === 'kutilmoqda' && (
                         <button
@@ -391,11 +391,11 @@ export default function BoshqaruvPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-between">
           <span className="text-sm text-slate-500">
             {total} tadan {(page - 1) * 20 + 1}–{Math.min(page * 20, total)} ko‘rsatilmoqda
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-center gap-1">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}

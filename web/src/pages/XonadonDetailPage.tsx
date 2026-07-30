@@ -218,11 +218,11 @@ export default function XonadonDetailPage() {
       </Link>
 
       {/* Page header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-[#0F2033] sm:text-2xl">
-          {xonadon.full_address || `${tr('Xonadon')} #${xonadon.id}`}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="min-w-0 truncate text-xl font-semibold text-[#0F2033] sm:text-2xl">
+          {xonadon.full_address ? tr(xonadon.full_address) : `${tr('Xonadon')} #${xonadon.id}`}
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {isRahbar && !editing && (
             <button onClick={startEditing} className="btn-soft gap-2">
               <Pencil className="h-4 w-4" />
@@ -368,11 +368,11 @@ export default function XonadonDetailPage() {
               {tr('Xonadon maʼlumotlari')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-              <InfoRow label={tr('To‘liq manzil')} value={xonadon.full_address} />
-              <InfoRow label={tr('Mahalla (MFY)')} value={xonadon.mfy_nomi} />
-              <InfoRow label={tr('Ko‘cha')} value={xonadon.kocha_nomi} />
+              <InfoRow label={tr('To‘liq manzil')} value={xonadon.full_address ? tr(xonadon.full_address) : undefined} />
+              <InfoRow label={tr('Mahalla (MFY)')} value={xonadon.mfy_nomi ? tr(xonadon.mfy_nomi) : undefined} />
+              <InfoRow label={tr('Ko‘cha')} value={xonadon.kocha_nomi ? tr(xonadon.kocha_nomi) : undefined} />
               <InfoRow label={tr('Uy raqami')} value={xonadon.uy_raqami} />
-              <InfoRow label={tr('Egasi')} value={xonadon.egasi_fio} />
+              <InfoRow label={tr('Egasi')} value={xonadon.egasi_fio ? tr(xonadon.egasi_fio) : undefined} />
               <InfoRow label={tr('Tel')} value={xonadon.egasi_tel} />
               <InfoRow
                 label="Lat/Lng"
@@ -382,7 +382,7 @@ export default function XonadonDetailPage() {
                     : null
                 }
               />
-              <InfoRow label={tr('Izoh')} value={xonadon.izoh} />
+              <InfoRow label={tr('Izoh')} value={xonadon.izoh ? tr(xonadon.izoh) : undefined} />
               <InfoRow
                 label={tr('Ochiq muammolar')}
                 value={
@@ -470,14 +470,14 @@ export default function XonadonDetailPage() {
                     </div>
                     {muammo.tavsif && (
                       <p className="text-sm text-gray-600 line-clamp-2">
-                        {muammo.tavsif}
+                        {tr(muammo.tavsif)}
                       </p>
                     )}
                     <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
                       <span>
-                        {tr(new Date(muammo.sana).toLocaleDateString('uz-UZ'))}
+                        {tr(new Date(muammo.sinxron_vaqti).toLocaleDateString('uz-UZ'))}
                       </span>
-                      {muammo.xodim_fio && <span>{muammo.xodim_fio}</span>}
+                      {muammo.xodim_fio && <span>{tr(muammo.xodim_fio)}</span>}
                     </div>
                   </div>
                   <ChevronRight className="mt-1 h-5 w-5 flex-shrink-0 text-slate-300" />

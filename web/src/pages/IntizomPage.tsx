@@ -239,7 +239,7 @@ export default function IntizomPage() {
   }, [isRahbar, fetchTarix]);
 
   const onIntizomSaved = () => {
-    setXabar("Intizom yozuvi muvaffaqiyatli saqlandi.");
+    setXabar(tr('Intizom yozuvi muvaffaqiyatli saqlandi.'));
     fetchTarix();
     fetchMuammolar();
     setTimeout(() => setXabar(null), 4000);
@@ -251,7 +251,7 @@ export default function IntizomPage() {
       <div className="empty-state card">
         <ShieldAlert className="mx-auto h-8 w-8 text-slate-300" />
         <p className="mt-2 text-sm text-slate-500">
-          Bu sahifa faqat rahbar va superadmin uchun.
+          {tr('Bu sahifa faqat rahbar va superadmin uchun.')}
         </p>
       </div>
     );
@@ -272,11 +272,11 @@ export default function IntizomPage() {
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <h2 className="text-base font-semibold text-[#0F2033]">{tr("Muddati o'tgan muammolar")}</h2>
           <span className="text-sm text-slate-500">
-            Jami <span className="font-semibold tabular-nums text-[#0F2033]">{mTotal}</span> ta
+            {tr('Jami')} <span className="font-semibold tabular-nums text-[#0F2033]">{mTotal}</span> {tr('ta')}
           </span>
         </div>
         {mLoading ? (
-          <p className="px-6 py-12 text-center text-sm text-slate-400">Yuklanmoqda...</p>
+          <p className="px-6 py-12 text-center text-sm text-slate-400">{tr('Yuklanmoqda...')}</p>
         ) : koRinadigan.length === 0 ? (
           <div className="empty-state">
             <AlertTriangle className="mx-auto h-8 w-8 text-slate-300" />
@@ -305,14 +305,14 @@ export default function IntizomPage() {
                     <td className="font-medium text-[#0F2033]">
                       #{m.id}
                       <span className="block max-w-[220px] truncate text-xs font-normal text-slate-400">
-                        {m.tavsif || m.turi}
+                        {tr(m.tavsif || m.turi)}
                       </span>
                     </td>
                     <td className="whitespace-nowrap text-slate-500">
-                      {m.xodim_fio || `#${m.xodim_id}`}
+                      {m.xodim_fio ? tr(m.xodim_fio) : `#${m.xodim_id}`}
                     </td>
                     <td className="max-w-[220px] text-slate-500">
-                      <span className="block truncate">{m.xonadon_manzil || '—'}</span>
+                      <span className="block truncate">{m.xonadon_manzili ? tr(m.xonadon_manzili) : '—'}</span>
                     </td>
                     <td className="whitespace-nowrap text-slate-500">
                       {m.muddat ? sanaFormat(m.muddat) : '—'}
@@ -332,12 +332,12 @@ export default function IntizomPage() {
                               turi: 'ogohlantirish',
                               xodimId: m.xodim_id,
                               muammoId: m.id,
-                              sarlavha: `Ogohlantirish — ${m.xodim_fio || `#${m.xodim_id}`}`,
+                              sarlavha: `${tr('Ogohlantirish')} — ${m.xodim_fio ? tr(m.xodim_fio) : `#${m.xodim_id}`}`,
                             })
                           }
                           className="btn-soft px-3 py-1.5 text-xs"
                         >
-                          Ogohlantirish
+                          {tr('Ogohlantirish')}
                         </button>
                         <button
                           onClick={() =>
@@ -345,12 +345,12 @@ export default function IntizomPage() {
                               turi: 'hayfsan',
                               xodimId: m.xodim_id,
                               muammoId: m.id,
-                              sarlavha: `Hayfsan — ${m.xodim_fio || `#${m.xodim_id}`}`,
+                              sarlavha: `${tr('Hayfsan')} — ${m.xodim_fio ? tr(m.xodim_fio) : `#${m.xodim_id}`}`,
                             })
                           }
                           className="btn-danger px-3 py-1.5 text-xs"
                         >
-                          Hayfsan
+                          {tr('Hayfsan')}
                         </button>
                         <button
                           onClick={() =>
@@ -358,7 +358,7 @@ export default function IntizomPage() {
                           }
                           className="btn-ghost px-3 py-1.5 text-xs"
                         >
-                          Sababli
+                          {tr('Sababli')}
                         </button>
                       </div>
                     </td>
@@ -375,14 +375,14 @@ export default function IntizomPage() {
       {mTotalPages > 1 && (
         <div className="flex items-center justify-between">
           <span className="text-sm text-slate-500">
-            {mTotal} tadan {(mPage - 1) * 20 + 1}–{Math.min(mPage * 20, mTotal)} ko'rsatilmoqda
+            {mTotal} {tr('tadan')} {(mPage - 1) * 20 + 1}–{Math.min(mPage * 20, mTotal)} {tr("ko'rsatilmoqda")}
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setMPage((p) => Math.max(1, p - 1))}
               disabled={mPage <= 1}
               className="btn-soft px-3 py-1.5 text-xs"
-              aria-label="Oldingi sahifa"
+              aria-label={tr('Oldingi sahifa')}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -393,7 +393,7 @@ export default function IntizomPage() {
               onClick={() => setMPage((p) => Math.min(mTotalPages, p + 1))}
               disabled={mPage >= mTotalPages}
               className="btn-soft px-3 py-1.5 text-xs"
-              aria-label="Keyingi sahifa"
+              aria-label={tr('Keyingi sahifa')}
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -403,14 +403,14 @@ export default function IntizomPage() {
 
       {/* Rag'bat bo'limi */}
       <div className="card p-6">
-        <h2 className="text-base font-semibold text-[#0F2033]">Rag'batlantirish</h2>
+        <h2 className="text-base font-semibold text-[#0F2033]">{tr("Rag'batlantirish")}</h2>
         <p className="mb-4 mt-1 text-sm text-slate-500">
-          Yopilgan muammolar soni bo'yicha eng yaxshi 3 xodim
+          {tr("Yopilgan muammolar soni bo'yicha eng yaxshi 3 xodim")}
         </p>
         {engYaxshi.length === 0 ? (
           <div className="empty-state">
             <Award className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm text-slate-400">Ma'lumot topilmadi</p>
+            <p className="mt-2 text-sm text-slate-400">{tr("Ma'lumot topilmadi")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -420,25 +420,25 @@ export default function IntizomPage() {
                 className="flex flex-col gap-2 rounded-xl border border-slate-200 p-4"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#0F2033]">{x.xodim_fio}</span>
-                  <span className="badge-yellow">{idx + 1}-o'rin</span>
+                  <span className="text-sm font-semibold text-[#0F2033]">{tr(x.xodim_fio)}</span>
+                  <span className="badge-yellow">{idx + 1}-{tr("o'rin")}</span>
                 </div>
                 <div className="space-y-0.5 text-xs text-slate-500">
-                  <p>Yopilgan muammolar: <span className="font-medium tabular-nums text-slate-700">{x.yopilgan_muammo}</span></p>
-                  <p>Jami tekshirishlar: <span className="font-medium tabular-nums text-slate-700">{x.jami_tekshirish}</span></p>
+                  <p>{tr('Yopilgan muammolar')}: <span className="font-medium tabular-nums text-slate-700">{x.yopilgan_muammo}</span></p>
+                  <p>{tr('Jami tekshirishlar')}: <span className="font-medium tabular-nums text-slate-700">{x.jami_tekshirish}</span></p>
                 </div>
                 <button
                   onClick={() =>
                     setModal({
                       turi: 'ragbat',
                       xodimId: x.xodim_id,
-                      sarlavha: `Rag'bat — ${x.xodim_fio}`,
+                      sarlavha: `${tr("Rag'bat")} — ${tr(x.xodim_fio)}`,
                     })
                   }
                   className="btn-primary mt-auto gap-2 self-start px-3 py-1.5 text-xs"
                 >
                   <Award className="h-4 w-4" />
-                  Rag'bat
+                  {tr("Rag'bat")}
                 </button>
               </div>
             ))}
@@ -449,14 +449,14 @@ export default function IntizomPage() {
       {/* Intizom tarixi */}
       <div className="card overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-[#0F2033]">Intizom tarixi</h2>
+          <h2 className="text-base font-semibold text-[#0F2033]">{tr('Intizom tarixi')}</h2>
         </div>
         {tLoading ? (
-          <p className="px-6 py-12 text-center text-sm text-slate-400">Yuklanmoqda...</p>
+          <p className="px-6 py-12 text-center text-sm text-slate-400">{tr('Yuklanmoqda...')}</p>
         ) : tarix.length === 0 ? (
           <div className="empty-state">
             <ScrollText className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm font-medium text-slate-600">Intizom yozuvlari topilmadi</p>
+            <p className="mt-2 text-sm font-medium text-slate-600">{tr('Intizom yozuvlari topilmadi')}</p>
           </div>
         ) : (
         <div className="overflow-x-auto">
@@ -477,7 +477,7 @@ export default function IntizomPage() {
                     {sanaFormat(i.sana)}
                   </td>
                   <td className="whitespace-nowrap font-medium text-[#0F2033]">
-                    {i.xodim_fio || `#${i.xodim_id}`}
+                    {i.xodim_fio ? tr(i.xodim_fio) : `#${i.xodim_id}`}
                   </td>
                   <td className="whitespace-nowrap">
                     <span className={turiRangi[i.turi] || 'badge-gray'}>
@@ -485,10 +485,10 @@ export default function IntizomPage() {
                     </span>
                   </td>
                   <td className="max-w-[320px] text-slate-500">
-                    <span className="block truncate">{i.sabab}</span>
+                    <span className="block truncate">{tr(i.sabab)}</span>
                   </td>
                   <td className="whitespace-nowrap text-slate-500">
-                    {i.bergan_fio || `#${i.bergan_id}`}
+                    {i.bergan_fio ? tr(i.bergan_fio) : `#${i.bergan_id}`}
                   </td>
                 </tr>
               ))}
@@ -505,7 +505,7 @@ export default function IntizomPage() {
             onClick={() => setTPage((p) => Math.max(1, p - 1))}
             disabled={tPage <= 1}
             className="btn-soft px-3 py-1.5 text-xs"
-            aria-label="Oldingi sahifa"
+            aria-label={tr('Oldingi sahifa')}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -516,7 +516,7 @@ export default function IntizomPage() {
             onClick={() => setTPage((p) => Math.min(tTotalPages, p + 1))}
             disabled={tPage >= tTotalPages}
             className="btn-soft px-3 py-1.5 text-xs"
-            aria-label="Keyingi sahifa"
+            aria-label={tr('Keyingi sahifa')}
           >
             <ChevronRight className="h-4 w-4" />
           </button>

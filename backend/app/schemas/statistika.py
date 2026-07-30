@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 class UmumiyStatistika(BaseModel):
     """Dashboard uchun umumiy ko'rsatkichlar."""
     xonadon_soni: int = Field(description="Jami xonadonlar soni")
+    kocha_soni: int = Field(description="Jami ko'chalar soni")
     muammo_soni: int = Field(description="Jami muammolar soni")
     ochiq_muammolar: int = Field(description="Ochiq + jarayonda muammolar soni")
     yopilgan_muammolar: int = Field(description="Yopilgan/tuzatilgan muammolar soni")

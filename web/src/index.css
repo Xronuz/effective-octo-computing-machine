@@ -201,13 +201,17 @@
     @apply w-full text-sm;
     border-collapse: collapse;
   }
-  .table thead th {
+  /* :where() — bazaviy tekislash (text-left) ustunlarga qo'yilgan
+     text-center/text-right utility klasslaridan ustun kelib
+     qolmasligi uchun (specificity 0 qilib, Tailwind utility'lariga
+     yo'l beradi). */
+  .table :where(thead th) {
     @apply px-4 py-3 text-left text-xs font-medium;
     color: var(--text-muted);
     letter-spacing: 0.04em;
     border-bottom: 1px solid var(--border);
   }
-  .table tbody td {
+  .table :where(tbody td) {
     @apply px-4 py-3;
     color: var(--text-primary);
     border-bottom: 1px solid var(--border);

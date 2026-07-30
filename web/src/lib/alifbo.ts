@@ -181,3 +181,13 @@ export function krilldanLotinga(matn: string): string {
 export function krillMatnmi(matn: string): boolean {
   return /[а-яА-ЯёЁўЎғҒқҚҳҲ]/.test(matn);
 }
+
+// Ba'zi MFY nomlari manbada allaqachon "МФЙ"/"мфй" (yoki harflar orasida
+// probel bilan "М Ф Й") qo'shimchasi bilan keladi — UI bu qo'shimchani
+// o'zi ham qo'shganda ikki marta chiqmasligi uchun avval tozalanadi.
+const MFY_QOSHIMCHA = /\s*(m\s*f\s*y|м\s*ф\s*й)\s*$/i;
+
+/** MFY nomidan mavjud "MFY/МФЙ" qo'shimchasini olib tashlaydi (UI o'zi qo'shadi). */
+export function mfyNomiTozala(nomi: string): string {
+  return nomi.replace(MFY_QOSHIMCHA, '').trim();
+}

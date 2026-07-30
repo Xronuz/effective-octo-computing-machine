@@ -13,6 +13,7 @@ import { useAlifbo } from '@/alifbo';
 import { MfyQatlami } from '@/components/xarita/MfyQatlami';
 import { MuammoQatlami } from '@/components/xarita/MuammoQatlami';
 import { XodimQatlami } from '@/components/xarita/XodimQatlami';
+import MfySelect from '@/components/MfySelect';
 import {
   STATUS_RANGLARI,
   STATUS_NOMLARI,
@@ -123,7 +124,7 @@ function TanlanganMfyMarker({ mfy }: { mfy: MfyXarita }) {
   return (
     <Marker position={[mfy.markaz_lat, mfy.markaz_lng]} icon={TANLANGAN_MFY_ICON}>
       <Tooltip permanent direction="top" offset={[0, -12]} className="mfy-tooltip">
-        {tr('MFY')} #{mfy.raqami} — {mfy.nomi}
+        {tr('MFY')} #{mfy.raqami} — {tr(mfy.nomi)}
       </Tooltip>
     </Marker>
   );
@@ -296,7 +297,7 @@ export default function XaritaPage() {
             xodim,
           ]);
           pulse(xodim.xodim_id);
-          addHodisa(msg.type, `${xodim.xodim_fio} ${tr('joylashuvi yangilandi')}`);
+          addHodisa(msg.type, `${tr(xodim.xodim_fio)} ${tr('joylashuvi yangilandi')}`);
         } else if (msg.type === 'yangi_muammo') {
           const turiNomi = TURI_NOMLARI[d.turi ?? ''] ?? d.turi ?? 'muammo';
           addHodisa(msg.type, `${tr('Yangi muammo')}: #${d.id ?? d.muammo_id ?? '?'} — ${tr(turiNomi)}`);
@@ -450,18 +451,13 @@ export default function XaritaPage() {
 
         <label className="flex items-center gap-2 text-sm text-gray-600">
           <span className="font-medium">{tr('MFY:')}</span>
-          <select
-            defaultValue=""
-            onChange={(e) => handleMfyTanlash(e.target.value)}
+          <MfySelect
+            mfylar={mfylar}
+            value={selectedMfyId !== null ? String(selectedMfyId) : ''}
+            onChange={handleMfyTanlash}
+            barchasiLabel={tr('Tanlang…')}
             className="select !w-auto !py-1.5 text-sm max-w-[260px]"
-          >
-            <option value="">{tr('Tanlang…')}</option>
-            {mfylar.map((m) => (
-              <option key={m.id} value={m.id}>
-                MFY #{m.raqami} — {m.nomi}
-              </option>
-            ))}
-          </select>
+          />
         </label>
 
         {/* Rang legendasi */}
@@ -557,12 +553,12 @@ export default function XaritaPage() {
                         className="w-9 h-9 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs font-bold flex-shrink-0"
                         style={{ border: `2px solid ${batareyaRangi(x.batareya)}` }}
                       >
-                        {boshHarflar(x.xodim_fio)}
+                        {boshHarflar(tr(x.xodim_fio))}
                       </span>
                     )}
                     <span className="min-w-0">
                       <span className="block text-sm font-medium text-gray-900 truncate">
-                        {x.xodim_fio}
+                        {tr(x.xodim_fio)}
                       </span>
                       <span className="block text-xs text-gray-500">
                         {vaqtOldin(x.ohirgi_vaqt)}

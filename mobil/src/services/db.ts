@@ -17,6 +17,8 @@ export interface NavbatYozuvi {
   mock_gps: boolean;
   ornida_bartaraf: boolean;
   muddat: string | null; // YYYY-MM-DD
+  taklif_etilgan_tadbirlar: string | null;
+  yoriqnomadan_otkanlar_soni: number | null;
   foto_paths: string[];
   status: NavbatStatus;
   urinishlar_soni: number;
@@ -44,6 +46,8 @@ export async function initDB(): Promise<void> {
       mock_gps INTEGER DEFAULT 0,
       ornida_bartaraf INTEGER DEFAULT 0,
       muddat TEXT,
+      taklif_etilgan_tadbirlar TEXT,
+      yoriqnomadan_otkanlar_soni INTEGER,
       foto_paths TEXT DEFAULT '[]',
       status TEXT DEFAULT 'kutilmoqda',
       urinishlar_soni INTEGER DEFAULT 0,
@@ -64,6 +68,19 @@ export async function initDB(): Promise<void> {
       updated_at TEXT NOT NULL
     );
   `);
+
+  // Eski o'rnatishlarda mavjud jadvalga yangi ustunlarni qo'shish
+  // (CREATE TABLE IF NOT EXISTS eski sxemani o'zgartirmaydi).
+  for (const alter of [
+    'ALTER TABLE muammo_navbat ADD COLUMN taklif_etilgan_tadbirlar TEXT',
+    'ALTER TABLE muammo_navbat ADD COLUMN yoriqnomadan_otkanlar_soni INTEGER',
+  ]) {
+    try {
+      await db.execAsync(alter);
+    } catch {
+      // Ustun allaqachon mavjud — e'tiborsiz qoldiriladi
+    }
+  }
 }
 
 async function getDb(): Promise<SQLite.SQLiteDatabase> {
@@ -83,6 +100,8 @@ interface NavbatRow {
   mock_gps: number;
   ornida_bartaraf: number;
   muddat: string | null;
+  taklif_etilgan_tadbirlar: string | null;
+  yoriqnomadan_otkanlar_soni: number | null;
   foto_paths: string;
   status: string;
   urinishlar_soni: number;
@@ -104,6 +123,8 @@ function rowToYozuv(r: NavbatRow): NavbatYozuvi {
     mock_gps: r.mock_gps === 1,
     ornida_bartaraf: r.ornida_bartaraf === 1,
     muddat: r.muddat,
+    taklif_etilgan_tadbirlar: r.taklif_etilgan_tadbirlar,
+    yoriqnomadan_otkanlar_soni: r.yoriqnomadan_otkanlar_soni,
     foto_paths: JSON.parse(r.foto_paths || '[]'),
     status: r.status as NavbatStatus,
     urinishlar_soni: r.urinishlar_soni,
@@ -118,8 +139,9 @@ export async function muammoniNavbatgaQosh(yozuv: NavbatYozuvi): Promise<void> {
   await d.runAsync(
     `INSERT OR REPLACE INTO muammo_navbat
       (client_uuid, xonadon_id, turi, xavf, tavsif, lat, lng, gps_aniqlik, mock_gps,
-       ornida_bartaraf, muddat, foto_paths, status, urinishlar_soni, xato, keyingi_urinish, yaratilgan)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       ornida_bartaraf, muddat, taklif_etilgan_tadbirlar, yoriqnomadan_otkanlar_soni,
+       foto_paths, status, urinishlar_soni, xato, keyingi_urinish, yaratilgan)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       yozuv.client_uuid,
       yozuv.xonadon_id,
@@ -132,6 +154,8 @@ export async function muammoniNavbatgaQosh(yozuv: NavbatYozuvi): Promise<void> {
       yozuv.mock_gps ? 1 : 0,
       yozuv.ornida_bartaraf ? 1 : 0,
       yozuv.muddat,
+      yozuv.taklif_etilgan_tadbirlar,
+      yozuv.yoriqnomadan_otkanlar_soni,
       JSON.stringify(yozuv.foto_paths),
       yozuv.status,
       yozuv.urinishlar_soni,

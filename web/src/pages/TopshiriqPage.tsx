@@ -7,7 +7,9 @@ import { ChevronLeft, ChevronRight, ClipboardList, Send, ShieldAlert } from 'luc
 import { apiGet, apiPost } from '@/api';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
-import type { Foydalanuvchi, MfyBrief, Paginated } from '@/types';
+import type { Foydalanuvchi, MfyBrief, KochaBrief, Paginated } from '@/types';
+import DateInput from '@/components/DateInput';
+import MfySelect from '@/components/MfySelect';
 
 // Backend TopshiriqResponse (app/schemas/topshiriq_intizom.py) bilan mos
 interface TopshiriqItem {
@@ -15,6 +17,7 @@ interface TopshiriqItem {
   rahbar_id: number;
   xodim_id: number;
   mfy_id: number | null;
+  kocha_id: number | null;
   muammo_id: number | null;
   sarlavha: string;
   matn: string | null;
@@ -26,6 +29,7 @@ interface TopshiriqItem {
   rahbar_fio: string | null;
   xodim_fio: string | null;
   mfy_nomi: string | null;
+  kocha_nomi: string | null;
 }
 
 const statusLabels: Record<string, string> = {
@@ -54,6 +58,7 @@ export default function TopshiriqPage() {
   // Forma holati
   const [xodimId, setXodimId] = useState('');
   const [mfyId, setMfyId] = useState('');
+  const [kochaId, setKochaId] = useState('');
   const [sarlavha, setSarlavha] = useState('');
   const [matn, setMatn] = useState('');
   const [muddat, setMuddat] = useState('');
@@ -64,6 +69,7 @@ export default function TopshiriqPage() {
   // Tanlov ro'yxatlari
   const [xodimlar, setXodimlar] = useState<Foydalanuvchi[]>([]);
   const [mfylar, setMfylar] = useState<MfyBrief[]>([]);
+  const [kochalar, setKochalar] = useState<KochaBrief[]>([]);
 
   // Topshiriqlar ro'yxati
   const [topshiriqlar, setTopshiriqlar] = useState<TopshiriqItem[]>([]);
@@ -77,17 +83,30 @@ export default function TopshiriqPage() {
     if (!isRahbar) return;
     let cancelled = false;
     (async () => {
-      const [xodimRes, mfyRes] = await Promise.all([
+      const [xodimRes, mfyRes, kochaRes] = await Promise.all([
         apiGet<Paginated<Foydalanuvchi>>('/users?rol=xodim&holat=faol&size=100'),
-        // GET /api/mfylar oddiy massiv qaytaradi (sahifalanmaydi)
+        // GET /api/mfylar va /api/kochalar oddiy massiv qaytaradi (sahifalanmaydi)
         apiGet<MfyBrief[]>('/mfylar'),
+        apiGet<KochaBrief[]>('/kochalar'),
       ]);
       if (cancelled) return;
       if (xodimRes.ok && xodimRes.data) setXodimlar(xodimRes.data.items);
       if (mfyRes.ok && Array.isArray(mfyRes.data)) setMfylar(mfyRes.data);
+      if (kochaRes.ok && Array.isArray(kochaRes.data)) setKochalar(kochaRes.data);
     })();
     return () => { cancelled = true; };
   }, [isRahbar]);
+
+  // MFY tanlanganda faqat shu MFY ko'chalari ko'rsatiladi ("Barchasi" — barcha ko'chalar)
+  const filtrlanganKochalar = mfyId ? kochalar.filter((k) => String(k.mfy_id) === mfyId) : kochalar;
+
+  // MFY o'zgarganda avval tanlangan ko'cha shu MFY ga tegishli bo'lmasa — tozalash
+  useEffect(() => {
+    if (kochaId && !filtrlanganKochalar.some((k) => String(k.id) === kochaId)) {
+      setKochaId('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mfyId]);
 
   // ── topshiriqlar ro'yxati ────────────────────────────────────────
   const fetchTopshiriqlar = useCallback(async () => {
@@ -120,10 +139,11 @@ export default function TopshiriqPage() {
     if (!muddat) return setFormaXato(tr('Muddatni tanlang.'));
 
     setYuborilmoqda(true);
-    // TopshiriqCreate: xodim_id, mfy_id?, muammo_id?, sarlavha, matn?, muddat (YYYY-MM-DD)
+    // TopshiriqCreate: xodim_id, mfy_id?, kocha_id?, muammo_id?, sarlavha, matn?, muddat (YYYY-MM-DD)
     const res = await apiPost('/topshiriqlar', {
       xodim_id: Number(xodimId),
       mfy_id: mfyId ? Number(mfyId) : null,
+      kocha_id: kochaId ? Number(kochaId) : null,
       sarlavha: sarlavha.trim(),
       matn: matn.trim() || null,
       muddat,
@@ -134,6 +154,7 @@ export default function TopshiriqPage() {
       setFormaXabar(tr('Topshiriq muvaffaqiyatli yuborildi.'));
       setXodimId('');
       setMfyId('');
+      setKochaId('');
       setSarlavha('');
       setMatn('');
       setMuddat('');
@@ -164,7 +185,7 @@ export default function TopshiriqPage() {
       <div className="card p-6">
         <h2 className="mb-4 text-base font-semibold text-[#0F2033]">{tr('Yangi topshiriq')}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {/* Xodim */}
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">
@@ -179,46 +200,75 @@ export default function TopshiriqPage() {
                 <option value="">{tr('— Xodimni tanlang —')}</option>
                 {xodimlar.map((x) => (
                   <option key={x.id} value={x.id}>
-                    {x.full_name}
+                    {tr(x.full_name)}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* MFY (ixtiyoriy) */}
+            {/* MFY (ixtiyoriy) — qidiruvli tanlov */}
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">
                 {tr('MFY (ixtiyoriy)')}
               </label>
+              <MfySelect
+                mfylar={mfylar}
+                value={mfyId}
+                onChange={setMfyId}
+                barchasiLabel={tr('— Barcha MFY lar —')}
+              />
+            </div>
+
+            {/* Ko'cha (ixtiyoriy) */}
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">
+                {tr("Ko'cha (ixtiyoriy)")}
+              </label>
               <select
                 className="select"
-                value={mfyId}
-                onChange={(e) => setMfyId(e.target.value)}
+                value={kochaId}
+                onChange={(e) => setKochaId(e.target.value)}
               >
-                <option value="">{tr('— Barcha MFY lar —')}</option>
-                {mfylar.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.raqami}-{tr('son')} — {m.nomi}
+                <option value="">{tr('— Barchasi —')}</option>
+                {filtrlanganKochalar.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {tr(k.nomi)}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Sarlavha */}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">
-              {tr('Sarlavha')} <span className="text-[#C0392B]">*</span>
-            </label>
-            <input
-              className="input"
-              type="text"
-              maxLength={200}
-              placeholder={tr("Masalan: 12-son MFY bo'yicha gaz tekshiruvini yakunlash")}
-              value={sarlavha}
-              onChange={(e) => setSarlavha(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* Sarlavha */}
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">
+                {tr('Sarlavha')} <span className="text-[#C0392B]">*</span>
+              </label>
+              <input
+                className="input"
+                type="text"
+                maxLength={200}
+                placeholder={tr("Masalan: 12-son MFY bo'yicha gaz tekshiruvini yakunlash")}
+                value={sarlavha}
+                onChange={(e) => setSarlavha(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Muddat */}
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">
+                {tr('Muddat')} <span className="text-[#C0392B]">*</span>
+              </label>
+              <DateInput
+                className="input"
+                min={bugun}
+                value={muddat}
+                onChange={setMuddat}
+                required
+              />
+            </div>
           </div>
 
           {/* Matn */}
@@ -235,28 +285,11 @@ export default function TopshiriqPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
-            {/* Muddat */}
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">
-                {tr('Muddat')} <span className="text-[#C0392B]">*</span>
-              </label>
-              <input
-                className="input"
-                type="date"
-                min={bugun}
-                value={muddat}
-                onChange={(e) => setMuddat(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="flex justify-end">
-              <button type="submit" className="btn-primary gap-2" disabled={yuborilmoqda}>
-                <Send className="h-4 w-4" />
-                {yuborilmoqda ? tr('Yuborilmoqda...') : tr('Topshiriqni yuborish')}
-              </button>
-            </div>
+          <div className="flex justify-end">
+            <button type="submit" className="btn-primary gap-2" disabled={yuborilmoqda}>
+              <Send className="h-4 w-4" />
+              {yuborilmoqda ? tr('Yuborilmoqda...') : tr('Topshiriqni yuborish')}
+            </button>
           </div>
 
           {formaXato && (
@@ -281,8 +314,8 @@ export default function TopshiriqPage() {
         ) : topshiriqlar.length === 0 ? (
           <div className="empty-state">
             <ClipboardList className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm font-medium text-slate-600">Hali topshiriq yuborilmagan</p>
-            <p className="mt-1 text-xs text-slate-400">Yuqoridagi forma orqali birinchi topshiriqni yuboring</p>
+            <p className="mt-2 text-sm font-medium text-slate-600">{tr('Hali topshiriq yuborilmagan')}</p>
+            <p className="mt-1 text-xs text-slate-400">{tr('Yuqoridagi forma orqali birinchi topshiriqni yuboring')}</p>
           </div>
         ) : (
         <div className="overflow-x-auto">
@@ -293,6 +326,7 @@ export default function TopshiriqPage() {
                 <th>{tr('Sarlavha')}</th>
                 <th>{tr('Xodim')}</th>
                 <th>{tr('MFY')}</th>
+                <th>{tr("Ko'cha")}</th>
                 <th>{tr('Muddat')}</th>
                 <th>{tr('Holat')}</th>
               </tr>
@@ -304,18 +338,21 @@ export default function TopshiriqPage() {
                     {(page - 1) * 20 + idx + 1}
                   </td>
                   <td className="font-medium text-[#0F2033]">
-                    {t.sarlavha}
+                    {tr(t.sarlavha)}
                     {t.matn && (
                       <span className="block max-w-[300px] truncate text-xs font-normal text-slate-400">
-                        {t.matn}
+                        {tr(t.matn)}
                       </span>
                     )}
                   </td>
                   <td className="whitespace-nowrap text-slate-500">
-                    {t.xodim_fio || `#${t.xodim_id}`}
+                    {t.xodim_fio ? tr(t.xodim_fio) : `#${t.xodim_id}`}
                   </td>
                   <td className="whitespace-nowrap text-slate-500">
-                    {t.mfy_nomi || '—'}
+                    {t.mfy_nomi ? tr(t.mfy_nomi) : '—'}
+                  </td>
+                  <td className="whitespace-nowrap text-slate-500">
+                    {t.kocha_nomi ? tr(t.kocha_nomi) : '—'}
                   </td>
                   <td className="whitespace-nowrap text-slate-500">
                     {sanaFormat(t.muddat)}

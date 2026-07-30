@@ -67,6 +67,7 @@ services:
         alembic upgrade head &&
         echo 'Running seed...' &&
         python scripts/seed_mfy.py &&
+        python scripts/seed_kochalar.py &&
         echo 'Creating superadmin...' &&
         python scripts/create_superadmin.py &&
         echo 'Starting FastAPI...' &&

@@ -43,6 +43,8 @@ async def create_muammo(
     muddat: date | None = None,
     has_keyin_foto: bool = False,
     fotos_sha256_list: list[str] | None = None,
+    taklif_etilgan_tadbirlar: str | None = None,
+    yoriqnomadan_otkanlar_soni: int | None = None,
 ) -> tuple[Muammo, bool]:
     """Yangi muammo qayd etish.
 
@@ -123,6 +125,8 @@ async def create_muammo(
         shubhali=shubhali,
         client_uuid=client_uuid,
         qurilma_vaqti=qurilma_vaqti,
+        taklif_etilgan_tadbirlar=taklif_etilgan_tadbirlar,
+        yoriqnomadan_otkanlar_soni=yoriqnomadan_otkanlar_soni,
     )
 
     # ornida_bartaraf bo'lsa — status darhol yopilgan, aks holda muddat belgilansin
@@ -196,6 +200,7 @@ async def list_muammolar(
     xodim_id: int | None = None,
     shubhali: bool | None = None,
     ornida_bartaraf: bool | None = None,
+    tadbirlar_soni_dan: int | None = None,
     sana_dan: date | None = None,
     sana_gacha: date | None = None,
     qidiruv: str | None = None,
@@ -240,6 +245,20 @@ async def list_muammolar(
 
     if ornida_bartaraf is not None:
         filters.append(Muammo.ornida_bartaraf == ornida_bartaraf)
+
+    # Taklif etilgan tadbirlar soni (vergul bilan ajratilgan ro'yxat) — shundan
+    # katta bo'lganlar. Bo'sh/NULL matn 0 ta tadbir deb hisoblanadi.
+    if tadbirlar_soni_dan is not None:
+        tadbirlar_soni = func.coalesce(
+            func.array_length(
+                func.string_to_array(
+                    func.nullif(func.trim(Muammo.taklif_etilgan_tadbirlar), ''), ','
+                ),
+                1,
+            ),
+            0,
+        )
+        filters.append(tadbirlar_soni > tadbirlar_soni_dan)
 
     # MFY bo'yicha filtrlash — xonadon → kocha → mfy
     if mfy_id is not None:
@@ -511,8 +530,16 @@ def _muammo_to_response(muammo: Muammo, current_user: User | None = None) -> dic
     xodim = muammo.xodim
 
     manzil = None
+    mfy_nomi = None
+    kocha_nomi = None
+    uy_raqami = None
     if xonadon:
         manzil = xonadon.full_address
+        uy_raqami = xonadon.uy_raqami
+        if xonadon.kocha:
+            kocha_nomi = xonadon.kocha.nomi
+            if xonadon.kocha.mfy:
+                mfy_nomi = xonadon.kocha.mfy.nomi
 
     xodim_fio = None
     if xodim:
@@ -562,4 +589,9 @@ def _muammo_to_response(muammo: Muammo, current_user: User | None = None) -> dic
         "xodim_fio": xodim_fio,
         "egasi_fio": egasi_fio,
         "egasi_tel": egasi_tel,
+        "mfy_nomi": mfy_nomi,
+        "kocha_nomi": kocha_nomi,
+        "uy_raqami": uy_raqami,
+        "taklif_etilgan_tadbirlar": muammo.taklif_etilgan_tadbirlar,
+        "yoriqnomadan_otkanlar_soni": muammo.yoriqnomadan_otkanlar_soni,
     }

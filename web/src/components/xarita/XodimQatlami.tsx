@@ -17,12 +17,12 @@ function escapeAttr(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
-function xodimIcon(x: XaritaXodim, pulsing: boolean): L.DivIcon {
+function xodimIcon(x: XaritaXodim, pulsing: boolean, tr: (matn: string) => string): L.DivIcon {
   const ring = batareyaRangi(x.batareya);
   const ichki = x.profil_foto_url
     ? `<img src="${escapeAttr(x.profil_foto_url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`
     : `<span style="color:#fff;font-size:12px;font-weight:700;letter-spacing:0.5px;">${escapeAttr(
-        boshHarflar(x.xodim_fio),
+        boshHarflar(tr(x.xodim_fio)),
       )}</span>`;
   return L.divIcon({
     className: 'xarita-xodim-icon',
@@ -52,12 +52,12 @@ export function XodimQatlami({ aktivlar, pulsingIds }: Props) {
           <Fragment key={x.xodim_id}>
             <Marker
               position={[x.lat, x.lng]}
-              icon={xodimIcon(x, pulsingIds.has(x.xodim_id))}
+              icon={xodimIcon(x, pulsingIds.has(x.xodim_id), tr)}
             >
               <Popup>
                 <div style={{ minWidth: 180 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
-                    {x.xodim_fio}
+                    {tr(x.xodim_fio)}
                   </div>
                   <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>
                     <div>🕐 {tr(vaqtOldin(x.ohirgi_vaqt))}</div>

@@ -42,7 +42,7 @@ export function MfyQatlami({ mfylar, tanlanganId }: { mfylar: MfyXarita[]; tanla
             >
               <Tooltip sticky>
                 <span style={{ fontSize: 12 }}>
-                  {tr('MFY')} #{mfy.raqami} — {mfy.nomi}
+                  {tr('MFY')} #{mfy.raqami} — {tr(mfy.nomi)}
                 </span>
               </Tooltip>
             </Polygon>

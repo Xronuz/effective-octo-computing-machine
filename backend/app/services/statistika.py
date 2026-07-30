@@ -39,6 +39,10 @@ async def get_umumiy(db: AsyncSession) -> UmumiyStatistika:
     xonadon_soni_res = await db.execute(select(func.count(hudud_model.Xonadon.id)))
     xonadon_soni = xonadon_soni_res.scalar() or 0
 
+    # Ko'chalar soni
+    kocha_soni_res = await db.execute(select(func.count(hudud_model.Kocha.id)))
+    kocha_soni = kocha_soni_res.scalar() or 0
+
     # Barcha muammolar soni
     muammo_soni_res = await db.execute(select(func.count(muammo_model.Muammo.id)))
     muammo_soni = muammo_soni_res.scalar() or 0
@@ -78,6 +82,7 @@ async def get_umumiy(db: AsyncSession) -> UmumiyStatistika:
 
     return UmumiyStatistika(
         xonadon_soni=xonadon_soni,
+        kocha_soni=kocha_soni,
         muammo_soni=muammo_soni,
         ochiq_muammolar=ochiq_muammolar,
         yopilgan_muammolar=yopilgan_muammolar,

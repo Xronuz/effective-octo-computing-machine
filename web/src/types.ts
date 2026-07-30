@@ -103,11 +103,16 @@ export interface MuammoBrief {
   muddat: string | null;
   tashkilot: string | null;
   yopilgan_sana: string | null;
-  sana: string;
-  yaratilgan: string;
+  sinxron_vaqti: string;
   xodim_fio: string | null;
-  xonadon_manzil: string | null;
-  fotolar_soni: number;
+  xonadon_manzili: string | null;
+  mfy_nomi: string | null;
+  kocha_nomi: string | null;
+  uy_raqami: string | null;
+  egasi_fio: string | null;
+  egasi_tel: string | null;
+  taklif_etilgan_tadbirlar: string | null;
+  yoriqnomadan_otkanlar_soni: number | null;
 }
 
 export interface MuammoCreatePayload {
@@ -224,6 +229,7 @@ export interface AktivXodim {
 // Statistika (Analitika)
 export interface UmumiyStatistika {
   xonadon_soni: number;
+  kocha_soni: number;
   muammo_soni: number;
   ochiq_muammolar: number;
   yopilgan_muammolar: number;

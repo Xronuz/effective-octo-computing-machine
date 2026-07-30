@@ -49,6 +49,7 @@ async def create_topshiriq(
             rahbar_id=current_user.id,
             xodim_id=body.xodim_id,
             mfy_id=body.mfy_id,
+            kocha_id=body.kocha_id,
             muammo_id=body.muammo_id,
             sarlavha=body.sarlavha,
             matn=body.matn,
@@ -81,6 +82,7 @@ async def create_topshiriq(
 async def list_topshiriqlar(
     xodim_id: int | None = Query(None),
     mfy_id: int | None = Query(None),
+    kocha_id: int | None = Query(None),
     status: str | None = Query(None),
     muddat_dan: str | None = Query(None, description="YYYY-MM-DD"),
     muddat_gacha: str | None = Query(None, description="YYYY-MM-DD"),
@@ -98,6 +100,7 @@ async def list_topshiriqlar(
             db,
             xodim_id=xodim_id,
             mfy_id=mfy_id,
+            kocha_id=kocha_id,
             status=status,
             muddat_dan=muddat_dan_date,
             muddat_gacha=muddat_gacha_date,
