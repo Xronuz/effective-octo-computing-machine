@@ -4,12 +4,6 @@ import api from '../services/api';
 import { getKutilmaganSoni } from '../services/db';
 import type { ApiResponse, Paginated, Topshiriq } from '../types';
 
-interface MfyBiriktirish {
-  mfy_id: number;
-  nomi: string | null;
-  faol: boolean;
-}
-
 export interface MaydonData {
   /** Hozir bajarilishi kerak bo'lgan eng dolzarb topshiriq */
   nextTask: Topshiriq | null;
@@ -18,8 +12,6 @@ export interface MaydonData {
   /** Kritik ochiq muammolar soni; null — serverdan aniqlanmadi */
   kritikCount: number | null;
   pendingCount: number;
-  mfylar: MfyBiriktirish[];
-  ochiqMuammolar: number;
 }
 
 const INITIAL: MaydonData = {
@@ -28,8 +20,6 @@ const INITIAL: MaydonData = {
   overdueCount: 0,
   kritikCount: null,
   pendingCount: 0,
-  mfylar: [],
-  ochiqMuammolar: 0,
 };
 
 function isOverdue(t: Topshiriq): boolean {
@@ -57,8 +47,6 @@ export function useMaydonData(): {
   data: MaydonData;
   loading: boolean;
   refresh: () => void;
-  /** Topshiriqni "bajarildi" qilish; xatoda exception tashlaydi */
-  markDone: (id: number) => Promise<void>;
 } {
   const { user } = useAuth();
   const [data, setData] = useState<MaydonData>(INITIAL);
@@ -67,22 +55,14 @@ export function useMaydonData(): {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [tasks, men, pendingCount, ochiqMuammo, kritikTotal] = await Promise.all([
+      const [tasks, pendingCount, kritikTotal] = await Promise.all([
         user?.id
           ? api
               .get<ApiResponse<Paginated<Topshiriq>>>(`/topshiriqlar?xodim_id=${user.id}&size=50`)
               .then((res) => (res.data.ok ? (res.data.data?.items ?? []) : []))
               .catch(() => [] as Topshiriq[])
           : ([] as Topshiriq[]),
-        api
-          .get<ApiResponse<{ mfy_biriktirishlar?: MfyBiriktirish[] }>>('/auth/men')
-          .then((res) => (res.data.ok ? (res.data.data?.mfy_biriktirishlar ?? []) : []))
-          .catch(() => [] as MfyBiriktirish[]),
         getKutilmaganSoni().catch(() => 0),
-        api
-          .get<ApiResponse<Paginated<unknown>>>('/muammolar?status=ochiq&size=1')
-          .then((res) => res.data.data?.total ?? 0)
-          .catch(() => 0),
         api
           .get<ApiResponse<Paginated<unknown>>>('/muammolar?status=ochiq&xavf=kritik&size=1')
           .then((res) => res.data.data?.total ?? null)
@@ -96,8 +76,6 @@ export function useMaydonData(): {
         overdueCount: active.filter(isOverdue).length,
         kritikCount: typeof kritikTotal === 'number' ? kritikTotal : null,
         pendingCount,
-        mfylar: men,
-        ochiqMuammolar: ochiqMuammo,
       });
     } finally {
       setLoading(false);
@@ -108,16 +86,5 @@ export function useMaydonData(): {
     fetchData();
   }, [fetchData]);
 
-  const markDone = useCallback(
-    async (id: number) => {
-      const { data: res } = await api.patch<ApiResponse<Topshiriq>>(`/topshiriqlar/${id}`, {
-        status: 'bajarildi',
-      });
-      if (!res.ok) throw new Error(res.xato || 'Server xatosi');
-      await fetchData();
-    },
-    [fetchData],
-  );
-
-  return { data, loading, refresh: fetchData, markDone };
+  return { data, loading, refresh: fetchData };
 }

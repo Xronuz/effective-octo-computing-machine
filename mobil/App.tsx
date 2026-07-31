@@ -72,7 +72,7 @@ const TAB_ICONS: Record<
     inactive: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
   }
 > = {
-  Home: { active: 'compass', inactive: 'compass-outline' },
+  Home: { active: 'home', inactive: 'home-outline' },
   Xonadonlar: { active: 'clipboard-list', inactive: 'clipboard-list-outline' },
   Hududlar: { active: 'map-marker-radius', inactive: 'map-marker-radius-outline' },
   Topshiriqlar: { active: 'clipboard-check', inactive: 'clipboard-check-outline' },
@@ -152,7 +152,7 @@ function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={MaydonScreen} options={{ tabBarLabel: 'Maydon' }} />
+      <Tab.Screen name="Home" component={MaydonScreen} options={{ tabBarLabel: 'Asosiy' }} />
       <Tab.Screen
         name="Xonadonlar"
         component={XonadonlarScreen}

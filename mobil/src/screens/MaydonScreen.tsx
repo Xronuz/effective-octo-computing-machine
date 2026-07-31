@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
@@ -10,30 +9,33 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAlifbo } from '../contexts/AlifboContext';
 import { useTabScreenNavigation } from '../navigation/hooks';
 import { useMaydonData } from '../hooks/useMaydonData';
+import { useKunlikTekshiruv } from '../hooks/useKunlikTekshiruv';
 import StatusStrip from '../components/StatusStrip';
-import SectionLabel from '../components/SectionLabel';
-import NextActionCard from '../components/maydon/NextActionCard';
-import AttentionList, { type AttentionItem } from '../components/maydon/AttentionList';
-import TerritoryCard from '../components/maydon/TerritoryCard';
-import { Colors, Fonts, FontSizes, FontWeights, tabBarContentPadding } from '../theme';
+import QuickButtonsRow from '../components/maydon/QuickButtonsRow';
+import HaftaTanlagich from '../components/maydon/HaftaTanlagich';
+import KunlikStatistika from '../components/maydon/KunlikStatistika';
+import { Colors, tabBarContentPadding } from '../theme';
+
+function bugunIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 /**
- * MAYDON — operativ boshqaruv ekrani.
- * 3 soniyada javob beradi: holat → keyingi ish → diqqat → hudud.
- * Salomlashuv, statistik grid va tezkor amallar olib tashlandi:
- * ular topshiriq bajarishga yordam bermaydi.
+ * ASOSIY — operativ boshqaruv ekrani.
+ * Tepada: Keyingi ish / Diqqat — ikkita tezkor tugma.
+ * Pastda: kun tanlagich + shu kunning tekshiruv statistikasi.
  */
 export default function MaydonScreen() {
   const navigation = useTabScreenNavigation();
   const { tr } = useAlifbo();
   const insets = useSafeAreaInsets();
-  const { data, loading, refresh, markDone } = useMaydonData();
+  const { data, loading, refresh } = useMaydonData();
   const [refreshing, setRefreshing] = useState(false);
-  const [completing, setCompleting] = useState(false);
+  const [tanlanganSana, setTanlanganSana] = useState(bugunIso());
+  const { stat, loading: statLoading } = useKunlikTekshiruv(tanlanganSana);
 
   useFocusEffect(
     useCallback(() => {
@@ -54,39 +56,12 @@ export default function MaydonScreen() {
     return t.muddat ? new Date(t.muddat).getTime() < Date.now() : false;
   }, [data.nextTask]);
 
-  const handleComplete = useCallback(() => {
-    const task = data.nextTask;
-    if (!task) return;
-    Alert.alert(
-      tr('Topshiriqni yakunlash'),
-      tr('«{title}» bajarildi deb belgilansinmi?').replace('{title}', task.sarlavha),
-      [
-        { text: tr('Bekor qilish'), style: 'cancel' },
-        {
-          text: tr('Bajarildi'),
-          onPress: async () => {
-            setCompleting(true);
-            try {
-              await markDone(task.id);
-            } catch {
-              Alert.alert(tr('Xatolik'), tr("Holatni yangilab bo'lmadi. Internetni tekshiring."));
-            } finally {
-              setCompleting(false);
-            }
-          },
-        },
-      ],
-    );
-  }, [data.nextTask, markDone, tr]);
-
-  const attentionItems = useMemo<AttentionItem[]>(() => {
-    const items: AttentionItem[] = [];
+  const attentionItems = useMemo(() => {
+    const items: { key: string; label: string; count: number; onPress: () => void }[] = [];
     if (data.overdueCount > 0) {
       items.push({
         key: 'overdue',
-        icon: 'alert-circle',
-        color: Colors.danger,
-        label: 'Kechikkan topshiriqlar',
+        label: tr('Kechikkan topshiriqlar'),
         count: data.overdueCount,
         onPress: () => navigation.navigate('Topshiriqlar' as never),
       });
@@ -94,9 +69,7 @@ export default function MaydonScreen() {
     if (data.kritikCount !== null && data.kritikCount > 0) {
       items.push({
         key: 'kritik',
-        icon: 'fire',
-        color: Colors.danger,
-        label: 'Kritik muammolar',
+        label: tr('Kritik muammolar'),
         count: data.kritikCount,
         onPress: () => navigation.navigate('Xonadonlar' as never),
       });
@@ -104,20 +77,33 @@ export default function MaydonScreen() {
     if (data.pendingCount > 0) {
       items.push({
         key: 'pending',
-        icon: 'sync-alert',
-        color: Colors.warning,
-        label: 'Sinxronlanmagan yozuvlar',
+        label: tr('Sinxronlanmagan yozuvlar'),
         count: data.pendingCount,
         onPress: () => navigation.navigate('Navbat' as never),
       });
     }
     return items;
-  }, [data.overdueCount, data.kritikCount, data.pendingCount, navigation]);
+  }, [data.overdueCount, data.kritikCount, data.pendingCount, navigation, tr]);
 
-  const mfyNames = useMemo(
-    () => data.mfylar.map((m) => m.nomi).filter((n): n is string => Boolean(n)),
-    [data.mfylar],
+  const attentionCount = useMemo(
+    () => attentionItems.reduce((sum, it) => sum + it.count, 0),
+    [attentionItems],
   );
+
+  const handlePressAttention = useCallback(() => {
+    if (attentionItems.length === 0) return;
+    if (attentionItems.length === 1) {
+      attentionItems[0].onPress();
+      return;
+    }
+    Alert.alert(tr('Diqqat talab qiladi'), undefined, [
+      ...attentionItems.map((it) => ({
+        text: `${it.label} (${it.count})`,
+        onPress: it.onPress,
+      })),
+      { text: tr('Bekor qilish'), style: 'cancel' as const },
+    ]);
+  }, [attentionItems, tr]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -140,42 +126,19 @@ export default function MaydonScreen() {
           <ActivityIndicator color={Colors.primary} style={styles.loader} />
         ) : (
           <>
-            <SectionLabel
-              title={tr('Keyingi ish')}
-              trailing={data.activeCount > 0 ? `${data.activeCount} ${tr('faol')}` : undefined}
+            <QuickButtonsRow
+              taskTitle={data.nextTask?.sarlavha ?? null}
+              taskOverdue={overdue}
+              activeCount={data.activeCount}
+              onPressTask={() => navigation.navigate('Topshiriqlar' as never)}
+              attentionCount={attentionCount}
+              onPressAttention={handlePressAttention}
             />
-            {data.nextTask ? (
-              <NextActionCard
-                task={data.nextTask}
-                overdue={overdue}
-                completing={completing}
-                onComplete={handleComplete}
-                onDetails={() => navigation.navigate('Topshiriqlar' as never)}
-              />
-            ) : (
-              <View style={styles.allClear}>
-                <MaterialCommunityIcons
-                  name="check-circle-outline"
-                  size={22}
-                  color={Colors.success}
-                />
-                <Text style={styles.allClearText}>{tr('Faol topshiriqlar yo‘q')}</Text>
-              </View>
-            )}
 
-            {attentionItems.length > 0 && (
-              <>
-                <SectionLabel title={tr('Diqqat')} />
-                <AttentionList items={attentionItems} />
-              </>
-            )}
-
-            <SectionLabel title={tr('Hudud')} />
-            <TerritoryCard
-              mfyNames={mfyNames}
-              ochiqMuammolar={data.ochiqMuammolar}
-              onPress={() => navigation.navigate('Xonadonlar' as never)}
-            />
+            <View style={styles.kunBlok}>
+              <HaftaTanlagich selected={tanlanganSana} onSelect={setTanlanganSana} />
+              <KunlikStatistika stat={stat} loading={statLoading} />
+            </View>
           </>
         )}
       </ScrollView>
@@ -187,24 +150,12 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   content: {
     paddingHorizontal: 16,
+    gap: 16,
   },
   loader: {
     marginTop: 96,
   },
-  allClear: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    borderRadius: 14,
-    padding: 16,
-  },
-  allClearText: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    fontWeight: FontWeights.medium,
-    color: Colors.success,
+  kunBlok: {
+    gap: 12,
   },
 });

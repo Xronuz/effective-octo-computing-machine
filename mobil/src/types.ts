@@ -93,6 +93,8 @@ export interface MuammoSummary {
   taklif_etilgan_tadbirlar: string | null;
   /** Ushbu tashrifda ogohlantirilgan aholi soni. */
   yoriqnomadan_otkanlar_soni: number | null;
+  /** 'muammo_topildi' | 'muammo_yoq' | 'kira_olmadi' */
+  tekshiruv_natijasi: string | null;
 }
 
 // Alias for full detail
