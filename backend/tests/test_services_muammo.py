@@ -7,7 +7,9 @@ from datetime import date, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
-from app.models.muammo import Muammo, Foto, MuammoStatus, MuammoTuri, XavfDarajasi, FotoTuri
+from app.models.muammo import (
+    Muammo, Foto, MuammoStatus, MuammoTuri, XavfDarajasi, FotoTuri, TekshiruvNatijasi,
+)
 from app.models.hudud import Xonadon
 from app.models.user import User, UserRole
 from app.core.exceptions import NotFoundException, ValidationException
@@ -228,6 +230,225 @@ class TestCreateMuammo:
             muddat=date(2026, 8, 1),
         )
         assert m.shubhali is True
+
+    @pytest.mark.asyncio
+    async def test_clean_check_no_problem_auto_closes(self):
+        """turi=None, taklif_etilgan_tadbirlar bo'sh — "tekshirildi, muammo yo'q":
+        muddat/ornida_bartaraf talab qilinmaydi, status darhol yopilgan bo'ladi."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+
+        m, dublikat = await muammo_service.create_muammo(
+            db, _make_xodim(),
+            xonadon_id=1,
+            turi=None,
+            tavsif=None,
+            xavf="orta",
+            lat=40.1, lng=71.4,
+            gps_aniqlik=5.0,
+            mock_gps=False,
+            client_uuid=str(uuid4()),
+            qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+            yoriqnomadan_otkanlar_soni=3,
+            # muddat/ornida_bartaraf/has_keyin_foto berilmagan — muammo bo'lmagani
+            # uchun bu talab qilinmasligi kerak
+        )
+
+        assert dublikat is False
+        assert m.turi is None
+        assert m.ornida_bartaraf is False
+        assert m.muddat is None
+        assert m.status == MuammoStatus.yopilgan
+        assert m.yopilgan_sana is not None
+        assert m.tekshiruv_natijasi == TekshiruvNatijasi.muammo_yoq
+
+    @pytest.mark.asyncio
+    async def test_kira_olmadi_auto_closes_without_checklist(self):
+        """kira_olmadi=True — checklist/muddat/ornida_bartaraf talab qilinmaydi,
+        status darhol yopilgan, tekshiruv_natijasi='kira_olmadi' bo'ladi."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+
+        m, dublikat = await muammo_service.create_muammo(
+            db, _make_xodim(),
+            xonadon_id=1,
+            turi=None,
+            tavsif="Eshik ochilmadi",
+            xavf="orta",
+            lat=40.1, lng=71.4,
+            gps_aniqlik=5.0,
+            mock_gps=False,
+            client_uuid=str(uuid4()),
+            qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+            yoriqnomadan_otkanlar_soni=0,
+            kira_olmadi=True,
+        )
+
+        assert dublikat is False
+        assert m.ornida_bartaraf is False
+        assert m.muddat is None
+        assert m.status == MuammoStatus.yopilgan
+        assert m.tekshiruv_natijasi == TekshiruvNatijasi.kira_olmadi
+
+    @pytest.mark.asyncio
+    async def test_kira_olmadi_ignores_checklist_bandlari(self):
+        """kira_olmadi=True bo'lsa, checklist bandlari (agar xato yuborilgan
+        bo'lsa ham) e'tiborga olinmaydi — turi/taklif_etilgan_tadbirlar bo'sh
+        qoladi va 'muammo_topildi' hisoblanmaydi."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+
+        m, _ = await muammo_service.create_muammo(
+            db, _make_xodim(),
+            xonadon_id=1,
+            turi=None,
+            tavsif=None,
+            xavf="orta",
+            lat=40.1, lng=71.4,
+            gps_aniqlik=5.0,
+            mock_gps=False,
+            client_uuid=str(uuid4()),
+            qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+            taklif_etilgan_tadbirlar="3,4,8",
+            yoriqnomadan_otkanlar_soni=0,
+            kira_olmadi=True,
+        )
+
+        assert m.turi is None
+        assert m.taklif_etilgan_tadbirlar is None
+        assert m.tekshiruv_natijasi == TekshiruvNatijasi.kira_olmadi
+
+    @pytest.mark.asyncio
+    async def test_checklist_problem_without_muddat_raises(self):
+        """turi=None lekin taklif_etilgan_tadbirlar bandlar bilan — muammo hisoblanadi,
+        ornida_bartaraf=False + muddat=None bo'lsa hali ham ValidationException."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+
+        with pytest.raises(ValidationException, match="muddat"):
+            await muammo_service.create_muammo(
+                db, _make_xodim(),
+                xonadon_id=1,
+                turi=None,
+                tavsif=None,
+                xavf="orta",
+                lat=40.1, lng=71.4,
+                gps_aniqlik=5.0,
+                mock_gps=False,
+                client_uuid=str(uuid4()),
+                qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+                yoriqnomadan_otkanlar_soni=2,
+                taklif_etilgan_tadbirlar="3,4,8",
+            )
+
+    @pytest.mark.asyncio
+    async def test_checklist_problem_with_muddat_succeeds(self):
+        """turi=None + tanlangan bandlar + muddat — muvaffaqiyatli, ochiq holatda saqlanadi."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+
+        m, dublikat = await muammo_service.create_muammo(
+            db, _make_xodim(),
+            xonadon_id=1,
+            turi=None,
+            tavsif=None,
+            xavf="orta",
+            lat=40.1, lng=71.4,
+            gps_aniqlik=5.0,
+            mock_gps=False,
+            client_uuid=str(uuid4()),
+            qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+            yoriqnomadan_otkanlar_soni=1,
+            taklif_etilgan_tadbirlar="3,4,8",
+            muddat=date(2026, 8, 15),
+        )
+
+        assert dublikat is False
+        assert m.turi is None
+        assert m.taklif_etilgan_tadbirlar == "3,4,8"
+        assert m.muddat == date(2026, 8, 15)
+        assert m.status == MuammoStatus.ochiq
+
+    @pytest.mark.asyncio
+    async def test_checklist_problem_ornida_bartaraf_without_foto_raises(self):
+        """turi=None + bandlar + ornida_bartaraf=True lekin has_keyin_foto=False — xato."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+
+        with pytest.raises(ValidationException, match="foto"):
+            await muammo_service.create_muammo(
+                db, _make_xodim(),
+                xonadon_id=1,
+                turi=None,
+                tavsif=None,
+                xavf="orta",
+                lat=40.1, lng=71.4,
+                gps_aniqlik=5.0,
+                mock_gps=False,
+                client_uuid=str(uuid4()),
+                qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+                yoriqnomadan_otkanlar_soni=1,
+                taklif_etilgan_tadbirlar="3,4,8",
+                ornida_bartaraf=True,
+                has_keyin_foto=False,
+            )
+
+    @pytest.mark.asyncio
+    async def test_clean_check_skips_notifications(self):
+        """Muammo topilmagan tashrif — Telegram va WebSocket bildirishnomalari yuborilmaydi."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+
+        with patch("app.services.telegram_xabar.yangi_muammo_xabar", new_callable=AsyncMock) as mock_tg, \
+             patch("app.ws.manager.broadcast_xavfsiz", new_callable=AsyncMock) as mock_ws:
+            await muammo_service.create_muammo(
+                db, _make_xodim(),
+                xonadon_id=1,
+                turi=None,
+                tavsif=None,
+                xavf="orta",
+                lat=40.1, lng=71.4,
+                gps_aniqlik=5.0,
+                mock_gps=False,
+                client_uuid=str(uuid4()),
+                qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+                yoriqnomadan_otkanlar_soni=0,
+            )
+            mock_tg.assert_not_called()
+            mock_ws.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_real_problem_sends_websocket_broadcast(self):
+        """Haqiqiy muammo (checklist bandlari bilan) — WebSocket bildirishnomasi yuboriladi."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+
+        with patch("app.ws.manager.broadcast_xavfsiz", new_callable=AsyncMock) as mock_ws:
+            await muammo_service.create_muammo(
+                db, _make_xodim(),
+                xonadon_id=1,
+                turi=None,
+                tavsif=None,
+                xavf="orta",
+                lat=40.1, lng=71.4,
+                gps_aniqlik=5.0,
+                mock_gps=False,
+                client_uuid=str(uuid4()),
+                qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+                yoriqnomadan_otkanlar_soni=1,
+                taklif_etilgan_tadbirlar="3,4,8",
+                muddat=date(2026, 8, 15),
+            )
+            mock_ws.assert_called_once()
+            assert mock_ws.call_args.args[0]["type"] == "yangi_muammo"
 
     @pytest.mark.asyncio
     async def test_good_gps_not_shubhali(self):
@@ -705,6 +926,20 @@ class TestXaritaMuammolar:
             status="nomalum_status",
         )
         assert features == []
+
+
+# ============ Muammo.turi_nomi (model property) ============
+
+class TestTuriNomiProperty:
+    """turi_nomi None-xavfsizligi (checklist oqimida turi bo'sh bo'lishi mumkin)."""
+
+    def test_turi_none_returns_none(self):
+        m = Muammo(turi=None)
+        assert m.turi_nomi is None
+
+    def test_turi_set_returns_label(self):
+        m = Muammo(turi=MuammoTuri.gaz_hidi)
+        assert m.turi_nomi == "Gaz hidi"
 
 
 # ============ _muammo_to_response ============

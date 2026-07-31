@@ -94,12 +94,18 @@ async def get_umumiy(db: AsyncSession) -> UmumiyStatistika:
 
 
 async def get_muammo_turlari(db: AsyncSession) -> List[MuammoTuriStat]:
-    """Muammo turlari bo'yicha taqsimot."""
+    """Muammo turlari bo'yicha taqsimot.
+
+    Yangi yo'riqnoma checklist oqimidagi yozuvlarda `turi` bo'sh (None)
+    bo'ladi — bunday qatorlar bu diagrammada ma'nosiz bo'lgani uchun
+    chiqarib tashlanadi (faqat eski, turi belgilangan yozuvlar hisoblanadi).
+    """
     result = await db.execute(
         select(
             muammo_model.Muammo.turi,
             func.count(muammo_model.Muammo.id).label("soni"),
         )
+        .where(muammo_model.Muammo.turi.is_not(None))
         .group_by(muammo_model.Muammo.turi)
         .order_by(func.count(muammo_model.Muammo.id).desc())
     )

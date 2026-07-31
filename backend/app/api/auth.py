@@ -282,6 +282,9 @@ async def men(current_user: User = Depends(get_current_user)):
             {
                 "mfy_id": xm.mfy_id,
                 "nomi": xm.mfy.nomi if xm.mfy else None,
+                "raqami": xm.mfy.raqami if xm.mfy else None,
+                "xonadon_soni": xm.mfy.xonadon_soni if xm.mfy else 0,
+                "kochalar_soni": len(xm.mfy.kochalar) if xm.mfy and xm.mfy.kochalar else 0,
                 "faol": xm.faol,
             }
             for xm in current_user.xodim_mfylar

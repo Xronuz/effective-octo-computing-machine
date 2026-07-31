@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useAlifbo } from '../contexts/AlifboContext';
-import { Colors, Fonts, FontSizes, FontWeights } from '../theme';
+import { AlifboContext } from '../contexts/AlifboContext';
+import { ThemeContext } from '../contexts/ThemeContext';
+import { Fonts, FontSizes, FontWeights, Radius, Spacing, LightColors } from '../theme';
 
 interface Props {
   isOffline: boolean;
@@ -10,41 +11,61 @@ interface Props {
 }
 
 export default function OfflineBanner({ isOffline, pendingCount }: Props) {
-  const { tr } = useAlifbo();
+  const alifbo = useContext(AlifboContext);
+  const theme = useContext(ThemeContext);
+
+  const tr = alifbo?.tr ?? ((s: string) => s);
+  const colors = theme?.colors ?? LightColors;
+
   if (!isOffline && (!pendingCount || pendingCount === 0)) return null;
 
+  const message = isOffline
+    ? tr("Internet aloqasi yo'q — ma'lumotlar qurilmada saqlanadi")
+    : tr('{count} ta yozuv sinxronlanishi kutilmoqda').replace('{count}', String(pendingCount));
+
   return (
-    <View style={[styles.banner, isOffline ? styles.bannerOffline : styles.bannerPending]}>
-      <MaterialCommunityIcons
-        name={isOffline ? 'wifi-off' : 'cloud-sync-outline'}
-        size={16}
-        color={isOffline ? Colors.danger : Colors.accent}
-        style={{ marginRight: 6 }}
-      />
-      <Text style={styles.text}>
-        {isOffline
-          ? tr("Internet aloqasi yo'q — ma'lumotlar qurilmada saqlanadi")
-          : tr('{count} ta yozuv sinxronlanishi kutilmoqda').replace('{count}', String(pendingCount))}
-      </Text>
+    <View
+      style={[
+        styles.banner,
+        {
+          backgroundColor: isOffline ? colors.dangerSurface : colors.accentSurface,
+          borderBottomColor: isOffline ? colors.danger : colors.accent,
+        },
+      ]}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+      accessibilityLabel={message}
+    >
+      <View style={styles.pill}>
+        <MaterialCommunityIcons
+          name={isOffline ? 'wifi-off' : 'cloud-sync-outline'}
+          size={18}
+          color={isOffline ? colors.danger : colors.accent}
+          style={{ marginRight: 8 }}
+          importantForAccessibility="no"
+        />
+        <Text style={[styles.text, { color: colors.textPrimary }]}>{message}</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   banner: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: Spacing.base,
+    borderBottomWidth: 1,
+  },
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: Radius.full,
   },
-  bannerOffline: { backgroundColor: Colors.dangerSurface },
-  bannerPending: { backgroundColor: Colors.accentSurface },
   text: {
-    fontSize: FontSizes.xs,
+    fontSize: FontSizes.sm,
     fontWeight: FontWeights.medium,
     fontFamily: Fonts.body,
-    color: Colors.textPrimary,
     textAlign: 'center',
     flexShrink: 1,
   },

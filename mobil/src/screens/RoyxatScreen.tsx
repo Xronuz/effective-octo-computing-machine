@@ -1,17 +1,28 @@
 import React, { useRef, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Image,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import api from '../services/api';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
-import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
+import { Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
 import type { ApiResponse } from '../types';
 import { useAlifbo } from '../contexts/AlifboContext';
+import { useAppNavigation } from '../navigation/hooks';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface RoyxatResponse {
   id: number;
@@ -20,73 +31,72 @@ interface RoyxatResponse {
   xabar: string;
 }
 
-interface FormState {
-  familiya: string;
-  ism: string;
-  sharif: string;
-  lavozim: string;
-  telefon: string;
-  guvohnoma_raqami: string;
-  parol: string;
-  parol_tasdiq: string;
-}
+const registerSchema = z
+  .object({
+    familiya: z.string().min(1, 'Familiyani kiriting'),
+    ism: z.string().min(1, 'Ismingizni kiriting'),
+    sharif: z.string().optional(),
+    lavozim: z.string().min(2, 'Lavozimingizni kiriting'),
+    telefon: z.string().optional(),
+    guvohnoma_raqami: z
+      .string()
+      .min(3, "Guvohnoma raqami 3-20 ta harf/raqamdan iborat bo'lsin")
+      .max(20, "Guvohnoma raqami 3-20 ta harf/raqamdan iborat bo'lsin")
+      .regex(/^[A-Za-z0-9]+$/, 'Faqat harf va raqamlar ruxsat etiladi'),
+    parol: z
+      .string()
+      .min(8, "Parol kamida 8 ta belgidan iborat bo'lsin")
+      .regex(/[A-Za-z]/, "Parol kamida bitta harfdan iborat bo'lsin")
+      .regex(/[0-9]/, "Parol kamida bitta raqamdan iborat bo'lsin"),
+    parol_tasdiq: z.string().min(1, 'Parolni tasdiqlang'),
+  })
+  .refine((data) => data.parol === data.parol_tasdiq, {
+    message: 'Parollar bir xil emas',
+    path: ['parol_tasdiq'],
+  });
 
-const INITIAL_FORM: FormState = {
-  familiya: '',
-  ism: '',
-  sharif: '',
-  lavozim: '',
-  telefon: '',
-  guvohnoma_raqami: '',
-  parol: '',
-  parol_tasdiq: '',
-};
+type RegisterForm = z.infer<typeof registerSchema>;
 
-export default function RoyxatScreen({ navigation }: any) {
+export default function RoyxatScreen() {
+  const navigation = useAppNavigation();
   const { tr } = useAlifbo();
-  const [form, setForm] = useState<FormState>(INITIAL_FORM);
-  const [errors, setErrors] = useState<Partial<FormState>>({});
-  const [serverError, setServerError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+  } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      familiya: '',
+      ism: '',
+      sharif: '',
+      lavozim: '',
+      telefon: '',
+      guvohnoma_raqami: '',
+      parol: '',
+      parol_tasdiq: '',
+    },
+  });
+
   const [success, setSuccess] = useState(false);
 
-  // Selfi — faqat oldingi kamera
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraOpen, setCameraOpen] = useState(false);
   const [selfiUri, setSelfiUri] = useState<string | null>(null);
   const cameraRef = useRef<CameraView>(null);
 
-  const setField = (key: keyof FormState, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => ({ ...prev, [key]: undefined }));
-  };
-
-  const validate = (): boolean => {
-    const e: Partial<FormState> = {};
-    if (!form.familiya.trim()) e.familiya = tr('Familiyani kiriting');
-    if (!form.ism.trim()) e.ism = tr('Ismingizni kiriting');
-    if (form.lavozim.trim().length < 2) e.lavozim = tr('Lavozimingizni kiriting');
-    if (!/^[A-Z0-9]{3,20}$/.test(form.guvohnoma_raqami.trim().toUpperCase())) {
-      e.guvohnoma_raqami = tr("Guvohnoma raqami 3-20 ta harf/raqamdan iborat bo'lsin");
-    }
-    if (form.parol.length < 8) e.parol = tr("Parol kamida 8 ta belgidan iborat bo'lsin");
-    else if (!/[A-Za-z]/.test(form.parol) || !/[0-9]/.test(form.parol)) {
-      e.parol = tr("Parol kamida bitta harf va bitta raqamdan iborat bo'lsin");
-    }
-    if (form.parol !== form.parol_tasdiq) e.parol_tasdiq = tr('Parollar bir xil emas');
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
   const openCamera = async () => {
     if (!permission?.granted) {
       const res = await requestPermission();
       if (!res.granted) {
-        setServerError("Selfi olish uchun kamera ruxsati kerak");
+        setError('root', { message: 'Selfi olish uchun kamera ruxsati kerak' });
         return;
       }
     }
-    setServerError('');
+    setError('root', { message: '' });
     setCameraOpen(true);
   };
 
@@ -98,66 +108,62 @@ export default function RoyxatScreen({ navigation }: any) {
         setCameraOpen(false);
       }
     } catch {
-      setServerError('Selfi olishda xatolik yuz berdi');
+      setError('root', { message: 'Selfi olishda xatolik yuz berdi' });
     }
   };
 
-  const handleSubmit = async () => {
-    setServerError('');
-    if (!validate()) return;
+  const onSubmit = async (data: RegisterForm) => {
     if (!selfiUri) {
-      setServerError("Iltimos, oldingi kamera orqali selfi oling");
+      setError('root', { message: 'Iltimos, oldingi kamera orqali selfi oling' });
       return;
     }
 
-    setLoading(true);
     try {
-      // Backend /api/auth/royxat multipart/form-data qabul qiladi (selfi majburiy)
       const formData = new FormData();
-      formData.append('familiya', form.familiya.trim());
-      formData.append('ism', form.ism.trim());
-      if (form.sharif.trim()) formData.append('sharif', form.sharif.trim());
-      formData.append('lavozim', form.lavozim.trim());
-      if (form.telefon.trim()) formData.append('telefon', form.telefon.trim());
-      formData.append('guvohnoma_raqami', form.guvohnoma_raqami.trim().toUpperCase());
-      formData.append('parol', form.parol);
+      formData.append('familiya', data.familiya.trim());
+      formData.append('ism', data.ism.trim());
+      if (data.sharif?.trim()) formData.append('sharif', data.sharif.trim());
+      formData.append('lavozim', data.lavozim.trim());
+      if (data.telefon?.trim()) formData.append('telefon', data.telefon.trim());
+      formData.append('guvohnoma_raqami', data.guvohnoma_raqami.trim().toUpperCase());
+      formData.append('parol', data.parol);
       formData.append('selfi', {
         uri: selfiUri,
         name: 'selfi.jpg',
         type: 'image/jpeg',
-      } as any);
+      } as unknown as Blob);
 
-      const { data } = await api.post<ApiResponse<RoyxatResponse>>('/auth/royxat', formData, {
+      const response = await api.post<ApiResponse<RoyxatResponse>>('/auth/royxat', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      if (data.ok) {
+      if (response.data.ok) {
         setSuccess(true);
       } else {
-        setServerError(data.xato || "Ro'yxatdan o'tishda xatolik");
+        setError('root', { message: response.data.xato || "Ro'yxatdan o'tishda xatolik" });
       }
     } catch (err: any) {
       const msg =
         err?.response?.data?.xato ||
         err?.response?.data?.detail ||
         "Server bilan bog'lanishda xatolik. Qaytadan urinib ko'ring.";
-      setServerError(typeof msg === 'string' ? msg : "Ro'yxatdan o'tishda xatolik");
-    } finally {
-      setLoading(false);
+      setError('root', { message: typeof msg === 'string' ? msg : "Ro'yxatdan o'tishda xatolik" });
     }
   };
 
-  // ── Muvaffaqiyat holati ──────────────────────────
   if (success) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.successBox}>
-          <View style={styles.successIcon}>
-            <MaterialCommunityIcons name="clock-check-outline" size={56} color={Colors.success} />
+          <View style={[styles.successIcon, { backgroundColor: colors.successSurface }]}>
+            <MaterialCommunityIcons name="clock-check-outline" size={64} color={colors.success} />
           </View>
-          <Text style={styles.successTitle}>So'rovingiz qabul qilindi</Text>
-          <Text style={styles.successText}>
-            Hisobingiz tasdiqlanishini kuting. Administrator tasdiqlagach, guvohnoma raqamingiz va parolingiz bilan tizimga kirishingiz mumkin.
+          <Text style={[styles.successTitle, { color: colors.textPrimary }]}>
+            So'rovingiz qabul qilindi
+          </Text>
+          <Text style={[styles.successText, { color: colors.textSecondary }]}>
+            Hisobingiz tasdiqlanishini kuting. Administrator tasdiqlagach, guvohnoma raqamingiz va
+            parolingiz bilan tizimga kirishingiz mumkin.
           </Text>
           <Button
             title="Kirish sahifasiga qaytish"
@@ -170,20 +176,25 @@ export default function RoyxatScreen({ navigation }: any) {
     );
   }
 
-  // ── Kamera oynasi (faqat oldingi kamera) ─────────
   if (cameraOpen) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.cameraContainer}>
           <CameraView ref={cameraRef} style={styles.camera} facing="front" />
           <View style={styles.cameraOverlay}>
-            <Text style={styles.cameraHint}>Yuzingizni kameraga qarating</Text>
+            <Text style={[styles.cameraHint, { color: colors.textInverse }]}>
+              Yuzingizni kameraga qarating
+            </Text>
             <View style={styles.cameraButtons}>
-              <TouchableOpacity style={styles.cameraCancel} onPress={() => setCameraOpen(false)} activeOpacity={0.8}>
-                <MaterialCommunityIcons name="close" size={22} color={Colors.textInverse} />
+              <TouchableOpacity
+                style={styles.cameraCancel}
+                onPress={() => setCameraOpen(false)}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons name="close" size={24} color={colors.textInverse} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.shutter} onPress={takeSelfi} activeOpacity={0.8}>
-                <View style={styles.shutterInner} />
+                <View style={[styles.shutterInner, { backgroundColor: colors.textInverse }]} />
               </TouchableOpacity>
               <View style={styles.cameraCancel} />
             </View>
@@ -194,133 +205,224 @@ export default function RoyxatScreen({ navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* Sarlavha */}
           <View style={styles.headerArea}>
-            <View style={styles.logoCircle}>
-              <MaterialCommunityIcons name="account-plus" size={36} color={Colors.accent} />
+            <View style={[styles.logoCircle, { backgroundColor: colors.primary }, Shadows.lg]}>
+              <MaterialCommunityIcons name="account-plus" size={40} color={colors.accent} />
             </View>
-            <Text style={styles.title}>{tr("Ro'yxatdan o'tish")}</Text>
-            <Text style={styles.subtitle}>{tr('Yangi xodim hisobi yarating')}</Text>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>
+              {tr("Ro'yxatdan o'tish")}
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              {tr('Yangi xodim hisobi yarating')}
+            </Text>
           </View>
 
-          <View style={styles.card}>
-            <FormField
-              label="Familiya *"
-              value={form.familiya}
-              onChangeText={(v) => setField('familiya', v)}
-              placeholder={tr('Familiyangiz')}
-              autoCapitalize="words"
-              error={errors.familiya}
-              editable={!loading}
+          <View style={[styles.card, { backgroundColor: colors.surface }, Shadows.md]}>
+            <Controller
+              control={control}
+              name="familiya"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Familiya *"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={tr('Familiyangiz')}
+                  autoCapitalize="words"
+                  error={errors.familiya?.message}
+                  editable={!isSubmitting}
+                />
+              )}
             />
-            <FormField
-              label="Ism *"
-              value={form.ism}
-              onChangeText={(v) => setField('ism', v)}
-              placeholder={tr('Ismingiz')}
-              autoCapitalize="words"
-              error={errors.ism}
-              editable={!loading}
+            <Controller
+              control={control}
+              name="ism"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Ism *"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={tr('Ismingiz')}
+                  autoCapitalize="words"
+                  error={errors.ism?.message}
+                  editable={!isSubmitting}
+                />
+              )}
             />
-            <FormField
-              label="Sharif"
-              value={form.sharif}
-              onChangeText={(v) => setField('sharif', v)}
-              placeholder={tr('Otangizning ismi')}
-              autoCapitalize="words"
-              editable={!loading}
+            <Controller
+              control={control}
+              name="sharif"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Sharif"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={tr('Otangizning ismi')}
+                  autoCapitalize="words"
+                  editable={!isSubmitting}
+                />
+              )}
             />
-            <FormField
-              label="Lavozim *"
-              value={form.lavozim}
-              onChangeText={(v) => setField('lavozim', v)}
-              placeholder={tr('Masalan: MFY inspektori')}
-              error={errors.lavozim}
-              editable={!loading}
+            <Controller
+              control={control}
+              name="lavozim"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Lavozim *"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={tr('Masalan: MFY inspektori')}
+                  error={errors.lavozim?.message}
+                  editable={!isSubmitting}
+                />
+              )}
             />
-            <FormField
-              label="Telefon"
-              value={form.telefon}
-              onChangeText={(v) => setField('telefon', v)}
-              placeholder={tr('+998 90 123 45 67')}
-              keyboardType="phone-pad"
-              editable={!loading}
+            <Controller
+              control={control}
+              name="telefon"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Telefon"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={tr('+998 90 123 45 67')}
+                  keyboardType="phone-pad"
+                  editable={!isSubmitting}
+                />
+              )}
             />
-            <FormField
-              label="Guvohnoma raqami *"
-              value={form.guvohnoma_raqami}
-              onChangeText={(v) => setField('guvohnoma_raqami', v)}
-              placeholder={tr('Masalan: AB1234567')}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              error={errors.guvohnoma_raqami}
-              editable={!loading}
+            <Controller
+              control={control}
+              name="guvohnoma_raqami"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Guvohnoma raqami *"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={tr('Masalan: AB1234567')}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  error={errors.guvohnoma_raqami?.message}
+                  editable={!isSubmitting}
+                />
+              )}
             />
-            <FormField
-              label="Parol *"
-              value={form.parol}
-              onChangeText={(v) => setField('parol', v)}
-              placeholder={tr('Kamida 8 belgi, harf va raqam')}
-              secureTextEntry
-              error={errors.parol}
-              editable={!loading}
+            <Controller
+              control={control}
+              name="parol"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Parol *"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={tr('Kamida 8 belgi, harf va raqam')}
+                  secureTextEntry
+                  error={errors.parol?.message}
+                  editable={!isSubmitting}
+                />
+              )}
             />
-            <FormField
-              label="Parolni tasdiqlang *"
-              value={form.parol_tasdiq}
-              onChangeText={(v) => setField('parol_tasdiq', v)}
-              placeholder={tr('Parolni qayta kiriting')}
-              secureTextEntry
-              error={errors.parol_tasdiq}
-              editable={!loading}
+            <Controller
+              control={control}
+              name="parol_tasdiq"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Parolni tasdiqlang *"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={tr('Parolni qayta kiriting')}
+                  secureTextEntry
+                  error={errors.parol_tasdiq?.message}
+                  editable={!isSubmitting}
+                />
+              )}
             />
 
             {/* Selfi bloki */}
             <View style={styles.selfiBlock}>
-              <Text style={styles.selfiLabel}>{tr('Selfi (oldingi kamera) *')}</Text>
+              <Text style={[styles.selfiLabel, { color: colors.textPrimary }]}>
+                {tr('Selfi (oldingi kamera) *')}
+              </Text>
               {selfiUri ? (
                 <View style={styles.selfiPreviewRow}>
                   <Image source={{ uri: selfiUri }} style={styles.selfiPreview} />
-                  <TouchableOpacity style={styles.selfiRetake} onPress={openCamera} activeOpacity={0.8}>
-                    <MaterialCommunityIcons name="camera-retake" size={18} color={Colors.primary} />
-                    <Text style={styles.selfiRetakeText}>{tr('Qayta olish')}</Text>
+                  <TouchableOpacity
+                    style={[styles.selfiRetake, { borderColor: colors.primary }]}
+                    onPress={openCamera}
+                    activeOpacity={0.8}
+                  >
+                    <MaterialCommunityIcons name="camera-retake" size={20} color={colors.primary} />
+                    <Text style={[styles.selfiRetakeText, { color: colors.primary }]}>
+                      {tr('Qayta olish')}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity style={styles.selfiButton} onPress={openCamera} activeOpacity={0.8}>
-                  <MaterialCommunityIcons name="camera-front" size={28} color={Colors.primary} />
-                  <Text style={styles.selfiButtonText}>{tr('Selfi olish')}</Text>
-                  <Text style={styles.selfiButtonHint}>{tr('Faqat oldingi kamera orqali')}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.selfiButton,
+                    { borderColor: colors.primary, backgroundColor: colors.primarySurface },
+                  ]}
+                  onPress={openCamera}
+                  activeOpacity={0.8}
+                >
+                  <MaterialCommunityIcons name="camera-front" size={32} color={colors.primary} />
+                  <Text style={[styles.selfiButtonText, { color: colors.primary }]}>
+                    {tr('Selfi olish')}
+                  </Text>
+                  <Text style={[styles.selfiButtonHint, { color: colors.textMuted }]}>
+                    {tr('Faqat oldingi kamera orqali')}
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
 
             {/* Server xatosi */}
-            {serverError ? (
-              <View style={styles.errorBox}>
-                <MaterialCommunityIcons name="alert-circle" size={18} color={Colors.danger} style={{ marginRight: 6 }} />
-                <Text style={styles.errorText}>{serverError}</Text>
+            {errors.root?.message ? (
+              <View style={[styles.errorBox, { backgroundColor: colors.dangerSurface }]}>
+                <MaterialCommunityIcons
+                  name="alert-circle"
+                  size={20}
+                  color={colors.danger}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={[styles.errorText, { color: colors.danger }]}>
+                  {errors.root.message}
+                </Text>
               </View>
             ) : null}
 
             <Button
               title={tr("Ro'yxatdan o'tish")}
               icon="account-check"
-              loading={loading}
-              onPress={handleSubmit}
+              loading={isSubmitting}
+              onPress={handleSubmit(onSubmit)}
             />
 
             <TouchableOpacity
               style={styles.backLink}
               onPress={() => navigation.goBack()}
-              disabled={loading}
+              disabled={isSubmitting}
               activeOpacity={0.7}
             >
-              <MaterialCommunityIcons name="arrow-left" size={16} color={Colors.textLink} />
-              <Text style={styles.backLinkText}>{tr('Kirish sahifasiga qaytish')}</Text>
+              <MaterialCommunityIcons name="arrow-left" size={18} color={colors.textLink} />
+              <Text style={[styles.backLinkText, { color: colors.textLink }]}>
+                {tr('Kirish sahifasiga qaytish')}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -330,122 +432,173 @@ export default function RoyxatScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  safe: { flex: 1 },
   flex: { flex: 1 },
   content: { flexGrow: 1, padding: Spacing.xl, paddingBottom: Spacing['4xl'] },
   headerArea: { alignItems: 'center', marginBottom: Spacing.xl },
   logoCircle: {
-    width: 72, height: 72, borderRadius: 20,
-    backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center',
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Spacing.md,
-    ...Shadows.lg,
   },
   title: {
-    fontSize: FontSizes['2xl'], fontWeight: FontWeights.extrabold,
-    fontFamily: Fonts.heading, color: Colors.textPrimary,
+    fontSize: FontSizes['2xl'],
+    fontWeight: FontWeights.extrabold,
+    fontFamily: Fonts.heading,
   },
-  subtitle: { fontSize: FontSizes.base, fontFamily: Fonts.body, color: Colors.textSecondary, marginTop: 4 },
+  subtitle: {
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    marginTop: 6,
+  },
   card: {
-    backgroundColor: Colors.surface, borderRadius: Radius.xl,
-    padding: Spacing.xl, gap: Spacing.base,
-    ...Shadows.md,
+    borderRadius: Radius['2xl'],
+    padding: Spacing.xl,
+    gap: Spacing.lg,
   },
   selfiBlock: { gap: Spacing.xs },
   selfiLabel: {
-    fontSize: FontSizes.sm, fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading, color: Colors.textPrimary,
+    fontSize: FontSizes.base,
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.heading,
   },
   selfiButton: {
-    borderWidth: 1.5, borderColor: Colors.primary, borderStyle: 'dashed',
-    borderRadius: Radius.md, padding: Spacing.xl,
-    alignItems: 'center', gap: Spacing.xs,
-    backgroundColor: Colors.primarySurface,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderRadius: Radius.md,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    gap: Spacing.xs,
   },
   selfiButtonText: {
-    fontSize: FontSizes.base, fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading, color: Colors.primary,
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.heading,
   },
   selfiButtonHint: {
-    fontSize: FontSizes.xs, fontFamily: Fonts.body, color: Colors.textMuted,
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.body,
   },
   selfiPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.base },
   selfiPreview: {
-    width: 96, height: 96, borderRadius: Radius.md,
-    borderWidth: 2, borderColor: Colors.success,
+    width: 104,
+    height: 104,
+    borderRadius: Radius.md,
+    borderWidth: 2,
+    borderColor: '#2E9E6B',
   },
   selfiRetake: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md,
-    borderWidth: 1, borderColor: Colors.primary, borderRadius: Radius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    borderWidth: 1,
+    borderRadius: Radius.md,
   },
   selfiRetakeText: {
-    fontSize: FontSizes.sm, fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body, color: Colors.primary,
+    fontSize: FontSizes.base,
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.body,
   },
   errorBox: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.dangerSurface,
-    paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md,
-    borderRadius: Radius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    borderRadius: Radius.md,
   },
   errorText: {
-    flex: 1, fontSize: FontSizes.sm, fontFamily: Fonts.body,
-    color: Colors.danger, fontWeight: FontWeights.medium,
+    flex: 1,
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    fontWeight: FontWeights.medium,
   },
   backLink: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: Spacing.sm,
   },
   backLinkText: {
-    fontSize: FontSizes.sm, fontFamily: Fonts.body,
-    color: Colors.textLink, fontWeight: FontWeights.medium,
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    fontWeight: FontWeights.medium,
   },
   // Kamera
   cameraContainer: { flex: 1, backgroundColor: '#000' },
   camera: { flex: 1 },
   cameraOverlay: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
-    paddingBottom: Spacing['3xl'], paddingTop: Spacing.xl,
-    alignItems: 'center', gap: Spacing.xl,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingBottom: Spacing['3xl'],
+    paddingTop: Spacing.xl,
+    alignItems: 'center',
+    gap: Spacing.xl,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
   cameraHint: {
-    fontSize: FontSizes.base, fontFamily: Fonts.body, color: Colors.textInverse,
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
   },
   cameraButtons: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing['3xl'],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing['3xl'],
   },
   cameraCancel: {
-    width: 48, height: 48, borderRadius: 24,
-    alignItems: 'center', justifyContent: 'center',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   shutter: {
-    width: 76, height: 76, borderRadius: 38,
-    borderWidth: 4, borderColor: Colors.textInverse,
-    alignItems: 'center', justifyContent: 'center',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   shutterInner: {
-    width: 58, height: 58, borderRadius: 29,
-    backgroundColor: Colors.textInverse,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   // Muvaffaqiyat
   successBox: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    padding: Spacing['2xl'], gap: Spacing.base,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing['2xl'],
+    gap: Spacing.base,
   },
   successIcon: {
-    width: 104, height: 104, borderRadius: 52,
-    backgroundColor: Colors.successSurface,
-    alignItems: 'center', justifyContent: 'center',
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Spacing.sm,
   },
   successTitle: {
-    fontSize: FontSizes.xl, fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading, color: Colors.textPrimary,
+    fontSize: FontSizes.xl,
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.heading,
   },
   successText: {
-    fontSize: FontSizes.base, fontFamily: Fonts.body,
-    color: Colors.textSecondary, textAlign: 'center',
-    lineHeight: 22, marginBottom: Spacing.md,
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: Spacing.md,
   },
 });

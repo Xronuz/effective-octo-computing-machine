@@ -305,7 +305,7 @@ export default function IntizomPage() {
                     <td className="font-medium text-[#0F2033]">
                       #{m.id}
                       <span className="block max-w-[220px] truncate text-xs font-normal text-slate-400">
-                        {tr(m.tavsif || m.turi)}
+                        {tr(m.tavsif || m.turi || 'Tekshiruv')}
                       </span>
                     </td>
                     <td className="whitespace-nowrap text-slate-500">

@@ -129,6 +129,7 @@ class TestCreateMuammoEndpoint:
                 "mock_gps": False,
                 "client_uuid": str(uuid4()),
                 "qurilma_vaqti": "2026-07-14T10:00:00Z",
+                "yoriqnomadan_otkanlar_soni": 2,
             }
 
             resp = client.post("/api/muammolar", json=payload)
@@ -138,6 +139,130 @@ class TestCreateMuammoEndpoint:
             assert data["ok"] is True
             assert data["data"]["id"] == 1
             assert data["xato"] is None
+
+    def test_create_forwards_tadbirlar_and_soni_to_service(self, client_factory):
+        """Regression: taklif_etilgan_tadbirlar/yoriqnomadan_otkanlar_soni
+        so'rov tanasidan service qatlamiga to'g'ri uzatilishi kerak
+        (avval bu ikki maydon jimgina tashlab yuborilar edi)."""
+        mock_user = _make_user(rol=UserRole.xodim)
+        mock_db = AsyncMock()
+
+        muammo_dict = _make_muammo_dict(turi=None, taklif_etilgan_tadbirlar="3,4,8")
+
+        with patch.object(muammo_service, "create_muammo", new_callable=AsyncMock) as mock_create, \
+             patch.object(muammo_service, "_muammo_to_response", return_value=muammo_dict):
+
+            mock_muammo = MagicMock()
+            mock_create.return_value = (mock_muammo, False)
+
+            client = client_factory(
+                user_override=lambda: mock_user,
+                db_override=lambda: mock_db,
+            )
+
+            payload = {
+                "xonadon_id": 1,
+                "turi": None,
+                "lat": 40.123,
+                "lng": 71.456,
+                "client_uuid": str(uuid4()),
+                "qurilma_vaqti": "2026-07-14T10:00:00Z",
+                "ornida_bartaraf": True,
+                "has_keyin_foto": True,
+                "taklif_etilgan_tadbirlar": "3,4,8",
+                "yoriqnomadan_otkanlar_soni": 5,
+            }
+
+            resp = client.post("/api/muammolar", json=payload)
+            assert resp.status_code == 200
+
+            call_kwargs = mock_create.call_args.kwargs
+            assert call_kwargs["taklif_etilgan_tadbirlar"] == "3,4,8"
+            assert call_kwargs["yoriqnomadan_otkanlar_soni"] == 5
+
+    def test_create_clean_check_turi_none(self, client_factory):
+        """turi=None va taklif_etilgan_tadbirlar bo'sh — "tekshirildi, muammo yo'q"."""
+        mock_user = _make_user(rol=UserRole.xodim)
+        mock_db = AsyncMock()
+
+        muammo_dict = _make_muammo_dict(
+            turi=None, turi_nomi=None, taklif_etilgan_tadbirlar=None, status="yopilgan",
+        )
+
+        with patch.object(muammo_service, "create_muammo", new_callable=AsyncMock) as mock_create, \
+             patch.object(muammo_service, "_muammo_to_response", return_value=muammo_dict):
+
+            mock_muammo = MagicMock()
+            mock_create.return_value = (mock_muammo, False)
+
+            client = client_factory(
+                user_override=lambda: mock_user,
+                db_override=lambda: mock_db,
+            )
+
+            payload = {
+                "xonadon_id": 1,
+                "turi": None,
+                "lat": 40.123,
+                "lng": 71.456,
+                "client_uuid": str(uuid4()),
+                "qurilma_vaqti": "2026-07-14T10:00:00Z",
+                "yoriqnomadan_otkanlar_soni": 3,
+            }
+
+            resp = client.post("/api/muammolar", json=payload)
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["data"]["turi"] is None
+            assert data["data"]["status"] == "yopilgan"
+
+    def test_create_missing_yoriqnomadan_otkanlar_soni_422(self, client_factory):
+        """yoriqnomadan_otkanlar_soni endi majburiy — tushmasa 422."""
+        mock_user = _make_user(rol=UserRole.xodim)
+        mock_db = AsyncMock()
+
+        client = client_factory(
+            user_override=lambda: mock_user,
+            db_override=lambda: mock_db,
+        )
+
+        payload = {
+            "xonadon_id": 1,
+            "turi": "boshqa",
+            "lat": 40.1,
+            "lng": 71.4,
+            "client_uuid": str(uuid4()),
+            "qurilma_vaqti": "2026-07-14T10:00:00Z",
+        }
+
+        resp = client.post("/api/muammolar", json=payload)
+        assert resp.status_code == 422
+
+    def test_create_taklif_etilgan_tadbirlar_out_of_range_422(self, client_factory):
+        """turi=None bo'lganda 1-14 oralig'idan tashqari band raqami — 422."""
+        mock_user = _make_user(rol=UserRole.xodim)
+        mock_db = AsyncMock()
+
+        client = client_factory(
+            user_override=lambda: mock_user,
+            db_override=lambda: mock_db,
+        )
+
+        payload = {
+            "xonadon_id": 1,
+            "turi": None,
+            "lat": 40.1,
+            "lng": 71.4,
+            "client_uuid": str(uuid4()),
+            "qurilma_vaqti": "2026-07-14T10:00:00Z",
+            "yoriqnomadan_otkanlar_soni": 1,
+            "taklif_etilgan_tadbirlar": "3,99",
+            "ornida_bartaraf": True,
+            "has_keyin_foto": True,
+        }
+
+        resp = client.post("/api/muammolar", json=payload)
+        assert resp.status_code == 422
 
     def test_create_forbidden_for_rahbar(self, client_factory):
         """Rahbar muammo yarata olmaydi."""
@@ -159,6 +284,7 @@ class TestCreateMuammoEndpoint:
             "mock_gps": False,
             "client_uuid": str(uuid4()),
             "qurilma_vaqti": "2026-07-14T10:00:00Z",
+            "yoriqnomadan_otkanlar_soni": 0,
         }
 
         resp = client.post("/api/muammolar", json=payload)
@@ -196,6 +322,7 @@ class TestCreateMuammoEndpoint:
                 "mock_gps": False,
                 "client_uuid": str(uuid4()),
                 "qurilma_vaqti": "2026-07-14T10:00:00Z",
+                "yoriqnomadan_otkanlar_soni": 4,
             }
 
             resp = client.post("/api/muammolar", json=payload)
@@ -279,6 +406,7 @@ class TestCreateMuammoEndpoint:
                 "lng": 71.456,
                 "client_uuid": str(uuid4()),
                 "qurilma_vaqti": "2026-07-14T10:00:00Z",
+                "yoriqnomadan_otkanlar_soni": 0,
             }
 
             resp = client.post("/api/muammolar", json=payload)
@@ -379,6 +507,7 @@ class TestListMuammolarEndpoint:
                     "turi": "gaz_hidi",
                     "xavf": "yuqori",
                     "mfy_id": 1,
+                    "xonadon_id": 1,
                     "shubhali": "true",
                     "ornida_bartaraf": "false",
                     "sana_dan": "2026-07-01",

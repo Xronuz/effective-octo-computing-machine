@@ -12,7 +12,7 @@ interface AlifboState {
   tr: (matn: string) => string;
 }
 
-const AlifboContext = createContext<AlifboState | null>(null);
+export const AlifboContext = createContext<AlifboState | null>(null);
 
 const KALIT = 'alifbo';
 
@@ -43,17 +43,22 @@ export function AlifboProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const tr = useCallback(
-    (matn: string) => (krill ? lotindanKrillga(matn) : matn),
-    [krill],
-  );
+  const tr = useCallback((matn: string) => (krill ? lotindanKrillga(matn) : matn), [krill]);
 
-  if (!yuklandi) return <>{children}</>; // AsyncStorage yuklanmaguncha default lotin
+  // AsyncStorage yuklanmaguncha ham context value doim bo'lishi kerak,
+  // aks holda useAlifbo chaqirgan komponentlar render xatosiga uchraydi.
+  const fallbackValue: AlifboState = {
+    krill: false,
+    setKrill: () => {},
+    tr: (matn) => matn,
+  };
+
+  if (!yuklandi) {
+    return <AlifboContext.Provider value={fallbackValue}>{children}</AlifboContext.Provider>;
+  }
 
   return (
-    <AlifboContext.Provider value={{ krill, setKrill, tr }}>
-      {children}
-    </AlifboContext.Provider>
+    <AlifboContext.Provider value={{ krill, setKrill, tr }}>{children}</AlifboContext.Provider>
   );
 }
 

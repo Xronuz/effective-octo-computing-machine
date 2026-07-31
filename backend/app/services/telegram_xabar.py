@@ -28,12 +28,21 @@ def _enum_qiymat(qiymat) -> str:
 
 
 def _turi_nomi(muammo: Muammo) -> str:
-    """Muammo turining o'zbekcha nomi (str/enum xavfsiz)."""
+    """Muammo turining o'zbekcha nomi (str/enum xavfsiz).
+
+    Yangi checklist oqimida `turi` bo'sh bo'ladi — bandlar ro'yxati
+    (`taklif_etilgan_tadbirlar`) mavjud bo'lsa, o'sha bandlar ko'rsatiladi.
+    """
     qiymat = _enum_qiymat(getattr(muammo, "turi", None))
     for kalit, nomi in MUAMMO_TURI_NOMLARI.items():
         if kalit.value == qiymat:
             return nomi
-    return str(qiymat) if qiymat else "Noma'lum"
+    if qiymat:
+        return str(qiymat)
+    bandlar = getattr(muammo, "taklif_etilgan_tadbirlar", None)
+    if bandlar:
+        return f"Yo'riqnoma bandlari: {bandlar}"
+    return "Noma'lum"
 
 
 def _manzil(muammo: Muammo) -> str:

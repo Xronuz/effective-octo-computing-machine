@@ -1,9 +1,31 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import api, { setLogoutHandler } from '../services/api';
-import { getAccessToken, getRefreshToken, setTokens, clearTokens, saveUser, getUserJson } from '../services/storage';
+import {
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+  clearTokens,
+  saveUser,
+  getUserJson,
+} from '../services/storage';
 import { startTracking, stopTracking } from '../services/location';
 import { registerForPushNotifications } from '../services/push';
 import type { UserBrief, LoginResponse, ApiResponse } from '../types';
+
+function normalizeUser(u: UserBrief): UserBrief {
+  const familiya = u.familiya?.trim() || '';
+  const ism = u.ism?.trim() || '';
+  const fullName = u.full_name?.trim() || `${familiya} ${ism}`.trim() || 'Xodim';
+  return {
+    ...u,
+    familiya,
+    ism,
+    full_name: fullName,
+    guvohnoma_raqami: u.guvohnoma_raqami?.trim() || '-',
+    lavozim: u.lavozim?.trim() || '-',
+    telefon: u.telefon?.trim() || '-',
+  };
+}
 
 interface AuthState {
   user: UserBrief | null;
@@ -31,25 +53,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const token = await getAccessToken();
         const refresh = await getRefreshToken();
-        if (!token || !refresh) { setIsLoading(false); return; }
+        if (!token || !refresh) {
+          setIsLoading(false);
+          return;
+        }
 
         const savedUser = await getUserJson();
+        let parsedUser: UserBrief | null = null;
         if (savedUser) {
-          setUser(JSON.parse(savedUser));
+          try {
+            parsedUser = JSON.parse(savedUser) as UserBrief;
+            parsedUser = normalizeUser(parsedUser);
+            setUser(parsedUser);
+          } catch {
+            parsedUser = null;
+          }
         }
 
         // Verify token
         const { data } = await api.get<ApiResponse<UserBrief>>('/auth/men');
         if (data.ok && data.data) {
-          setUser(data.data);
-          await saveUser(JSON.stringify(data.data));
-          // Sessiya tiklanganda ham tracking ishga tushadi
-          startTracking().catch(() => {});
+          const normalized = normalizeUser(data.data);
+          setUser(normalized);
+          await saveUser(JSON.stringify(normalized));
+          if (normalized.rol === 'xodim') {
+            startTracking().catch(() => {});
+          }
           registerForPushNotifications().catch(() => {});
         }
       } catch {
-        await clearTokens();
-        setUser(null);
+        // Token tekshiruvi muvaffaqiyatsiz bo'lsa ham saqlangan foydalanuvchi
+        // profili ko'rsatiladi, lekin tokenlar tozalanadi keyingi so'rovlar uchun.
+        const savedUser = await getUserJson().catch(() => null);
+        if (savedUser) {
+          try {
+            const parsedUser = normalizeUser(JSON.parse(savedUser) as UserBrief);
+            setUser(parsedUser);
+          } catch {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -74,11 +119,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!data.ok) return data.xato || 'Kirishda xatolik';
 
       const { access_token, refresh_token, user: loginUser } = data.data;
+      const normalized = normalizeUser(loginUser);
       await setTokens(access_token, refresh_token);
-      await saveUser(JSON.stringify(loginUser));
-      setUser(loginUser);
-      // Kirgandan keyin GPS tracking va push ro'yxatdan o'tadi
-      startTracking().catch(() => {});
+      await saveUser(JSON.stringify(normalized));
+      setUser(normalized);
+      // Kirgandan keyin xodim uchun GPS tracking va push ro'yxatdan o'tadi
+      if (loginUser.rol === 'xodim') {
+        startTracking().catch(() => {});
+      }
       registerForPushNotifications().catch(() => {});
       return null;
     } catch (err: unknown) {

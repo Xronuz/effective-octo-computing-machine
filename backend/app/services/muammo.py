@@ -12,7 +12,10 @@ from sqlalchemy import select, func, and_, or_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.muammo import Muammo, Foto, MuammoStatus, MuammoTuri, XavfDarajasi, FotoTuri
+from app.models.muammo import (
+    Muammo, Foto, MuammoStatus, MuammoTuri, XavfDarajasi, FotoTuri, TekshiruvNatijasi,
+    TEKSHIRUV_NATIJASI_NOMLARI,
+)
 from app.models.hudud import Xonadon, Kocha, Mfy
 from app.models.user import User, UserRole
 from app.core.exceptions import NotFoundException, ForbiddenException, ValidationException
@@ -30,7 +33,7 @@ async def create_muammo(
     xodim: User,
     *,
     xonadon_id: int,
-    turi: str,
+    turi: str | None,
     tavsif: str | None,
     xavf: str,
     lat: float,
@@ -45,8 +48,20 @@ async def create_muammo(
     fotos_sha256_list: list[str] | None = None,
     taklif_etilgan_tadbirlar: str | None = None,
     yoriqnomadan_otkanlar_soni: int | None = None,
+    kira_olmadi: bool = False,
 ) -> tuple[Muammo, bool]:
-    """Yangi muammo qayd etish.
+    """Yangi muammo yoki tekshiruv qayd etish.
+
+    `turi` va `taklif_etilgan_tadbirlar` ikkalasi ham bo'sh bo'lsa, bu
+    "tekshirildi, muammo topilmadi" tashrifi hisoblanadi — status darhol
+    yopilgan bo'ladi va Telegram/WebSocket bildirishnomalari yuborilmaydi.
+
+    `kira_olmadi=True` — xodim xonadonga kira olmadi (uyda hech kim yo'q,
+    eshik ochilmadi va h.k.). Bu ham "muammo topilmadi" kabi darhol
+    yopilgan hisoblanadi, lekin alohida `tekshiruv_natijasi` bilan
+    belgilanadi — chunki xonadon haqiqatda TEKSHIRILMAGAN va "bugun
+    tekshirilganlar" hisobiga kirmasligi kerak (xonadon.py service'da
+    filtrlanadi), qayta tashrif uchun navbatda qoladi.
 
     Qaytaradi: (muammo, dublikat) — dublikat=True bo'lsa, client_uuid bazada
     mavjud bo'lgani uchun mavjud muammo qaytarilgan (idempotent qayta yuborish).
@@ -87,15 +102,39 @@ async def create_muammo(
         if shubhali_sabab is None:
             shubhali_sabab = "gps_aniqlik_past"
 
-    # ornida_bartaraf validatsiyasi
-    if ornida_bartaraf and not has_keyin_foto:
-        raise ValidationException(
-            "O'rnida bartaraf etilgan muammo uchun 'keyin' foto majburiy."
-        )
-    if not ornida_bartaraf and muddat is None:
-        raise ValidationException(
-            "Bartaraf etilmagan muammo uchun muddat belgilashingiz majburiy."
-        )
+    # Muammo topilganmi? — legacy turi bilan yoki yangi checklist orqali
+    # (taklif_etilgan_tadbirlar'da band raqamlari bo'lsa) aniqlanadi.
+    # Ikkalasi ham bo'sh bo'lsa — "tekshirildi, muammo yo'q" tashrifi.
+    # Kira olmagan tashrifda muammo aniqlanishi mumkin emas — checklist
+    # ma'lumotlari e'tiborsiz qoldiriladi.
+    muammo_topildi = not kira_olmadi and (
+        bool(turi) or bool(taklif_etilgan_tadbirlar and taklif_etilgan_tadbirlar.strip())
+    )
+
+    if kira_olmadi:
+        turi = None
+        taklif_etilgan_tadbirlar = None
+        tekshiruv_natijasi = TekshiruvNatijasi.kira_olmadi
+    elif muammo_topildi:
+        tekshiruv_natijasi = TekshiruvNatijasi.muammo_topildi
+    else:
+        tekshiruv_natijasi = TekshiruvNatijasi.muammo_yoq
+
+    if muammo_topildi:
+        # ornida_bartaraf validatsiyasi — faqat haqiqiy muammo uchun
+        if ornida_bartaraf and not has_keyin_foto:
+            raise ValidationException(
+                "O'rnida bartaraf etilgan muammo uchun 'keyin' foto majburiy."
+            )
+        if not ornida_bartaraf and muddat is None:
+            raise ValidationException(
+                "Bartaraf etilmagan muammo uchun muddat belgilashingiz majburiy."
+            )
+    else:
+        # Tekshirildi, muammo yo'q — bartaraf/muddat holatiga oid maydonlar
+        # ma'nosiz, tozalab qo'yamiz.
+        ornida_bartaraf = False
+        muddat = None
 
     # Foto SHA256 dublikat tekshiruvi
     if fotos_sha256_list:
@@ -115,9 +154,10 @@ async def create_muammo(
     muammo = Muammo(
         xonadon_id=xonadon_id,
         xodim_id=xodim.id,
-        turi=MuammoTuri(turi),
+        turi=MuammoTuri(turi) if turi else None,
         tavsif=tavsif,
         xavf=XavfDarajasi(xavf),
+        tekshiruv_natijasi=tekshiruv_natijasi,
         lat=lat,
         lng=lng,
         gps_aniqlik=gps_aniqlik,
@@ -129,39 +169,53 @@ async def create_muammo(
         yoriqnomadan_otkanlar_soni=yoriqnomadan_otkanlar_soni,
     )
 
-    # ornida_bartaraf bo'lsa — status darhol yopilgan, aks holda muddat belgilansin
-    if ornida_bartaraf:
-        muammo.ornida_bartaraf = True
+    # ornida_bartaraf bo'lsa — status darhol yopilgan, aks holda muddat belgilansin.
+    # Muammo topilmagan (tekshirildi) tashrif ham darhol yopilgan hisoblanadi —
+    # kuzatib boriladigan hech narsa yo'q.
+    if ornida_bartaraf or not muammo_topildi:
+        muammo.ornida_bartaraf = ornida_bartaraf
         muammo.status = MuammoStatus.yopilgan
         muammo.yopilgan_sana = datetime.now(timezone.utc)
         muammo.yopgan_id = xodim.id
     else:
+        muammo.status = MuammoStatus.ochiq
         muammo.muddat = muddat
 
     db.add(muammo)
     await db.flush()
     await db.refresh(muammo)
 
-    logger.info(f"Yangi muammo: id={muammo.id}, turi={turi}, xodim={xodim.guvohnoma_raqami}")
+    logger.info(
+        f"Yangi {'muammo' if muammo_topildi else 'tekshiruv (muammo topilmadi)'}: "
+        f"id={muammo.id}, turi={turi}, xodim={xodim.guvohnoma_raqami}"
+    )
 
-    # Telegram avtopost — xatolik asosiy oqimni sindirmasligi kerak
-    try:
-        muammo.xonadon = xonadon
-        muammo.xodim = xodim
-        from app.services.telegram_xabar import yangi_muammo_xabar
-        await yangi_muammo_xabar(muammo)
-    except Exception as e:
-        logger.error(f"Telegram avtopost (yangi muammo) xatolik: {e}")
+    # Muammo topilmagan (oddiy tekshiruv) tashriflar uchun Telegram/WebSocket
+    # bildirishnomalari yuborilmaydi — har kunlik tekshiruvlar oqimi
+    # bildirishnomalarni spam qilib qo'ymasligi kerak. Shubhali (mock GPS
+    # va h.k.) signal esa firibgarlikni aniqlash uchun muhim bo'lgani sabab
+    # muammo topilgan-topilmaganidan qat'i nazar yuboriladi.
+    if muammo_topildi:
+        # Telegram avtopost — xatolik asosiy oqimni sindirmasligi kerak
+        try:
+            muammo.xonadon = xonadon
+            muammo.xodim = xodim
+            from app.services.telegram_xabar import yangi_muammo_xabar
+            await yangi_muammo_xabar(muammo)
+        except Exception as e:
+            logger.error(f"Telegram avtopost (yangi muammo) xatolik: {e}")
 
     # WebSocket broadcast — o'ng panel jonli yangilanishi (xatolik oqimni sindirmaydi)
     try:
         muammo.fotolar = []  # yangi muammo — lazy load'ga tushmasligi uchun
-        from app.ws.manager import broadcast_xavfsiz
-        await broadcast_xavfsiz({
-            "type": "yangi_muammo",
-            "muammo": _muammo_to_response(muammo, xodim),
-        })
+        if muammo_topildi:
+            from app.ws.manager import broadcast_xavfsiz
+            await broadcast_xavfsiz({
+                "type": "yangi_muammo",
+                "muammo": _muammo_to_response(muammo, xodim),
+            })
         if shubhali:
+            from app.ws.manager import broadcast_xavfsiz
             await broadcast_xavfsiz({
                 "type": "shubhali",
                 "muammo_id": muammo.id,
@@ -197,6 +251,7 @@ async def list_muammolar(
     turi: str | None = None,
     xavf: str | None = None,
     mfy_id: int | None = None,
+    xonadon_id: int | None = None,
     xodim_id: int | None = None,
     shubhali: bool | None = None,
     ornida_bartaraf: bool | None = None,
@@ -265,6 +320,10 @@ async def list_muammolar(
         query = query.join(Muammo.xonadon).join(Xonadon.kocha).join(Kocha.mfy)
         count_query = count_query.join(Muammo.xonadon).join(Xonadon.kocha).join(Kocha.mfy)
         filters.append(Mfy.id == mfy_id)
+
+    # Xonadon bo'yicha filtrlash
+    if xonadon_id is not None:
+        filters.append(Muammo.xonadon_id == xonadon_id)
 
     # Sana oralig'i
     if sana_dan:
@@ -562,6 +621,10 @@ def _muammo_to_response(muammo: Muammo, current_user: User | None = None) -> dic
         "tavsif": muammo.tavsif,
         "xavf": muammo.xavf.value if muammo.xavf else None,
         "status": muammo.status.value if muammo.status else None,
+        "tekshiruv_natijasi": muammo.tekshiruv_natijasi.value if muammo.tekshiruv_natijasi else None,
+        "tekshiruv_natijasi_nomi": TEKSHIRUV_NATIJASI_NOMLARI.get(
+            muammo.tekshiruv_natijasi.value if muammo.tekshiruv_natijasi else "", None
+        ),
         "ornida_bartaraf": muammo.ornida_bartaraf,
         "muddat": muammo.muddat.isoformat() if muammo.muddat else None,
         "muddat_qolgan_kun": muammo.muddat_qolgan_kun,
@@ -579,9 +642,14 @@ def _muammo_to_response(muammo: Muammo, current_user: User | None = None) -> dic
         "fotolar": [
             {
                 "id": f.id,
+                "muammo_id": f.muammo_id,
                 "turi": f.turi.value if f.turi else None,
                 "fayl_yoli": f.fayl_yoli,
+                # fayl_yoli allaqachon "uploads/..." prefiksi bilan saqlanadi
+                # (app/services/upload.py) — StaticFiles "/uploads" mountiga mos.
+                "url": f"/{f.fayl_yoli}" if f.fayl_yoli else None,
                 "yuklangan": f.yuklangan.isoformat() if f.yuklangan else None,
+                "yaratilgan": f.yuklangan.isoformat() if f.yuklangan else None,
             }
             for f in (muammo.fotolar or [])
         ],

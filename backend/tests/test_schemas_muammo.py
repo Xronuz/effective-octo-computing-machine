@@ -36,6 +36,7 @@ class TestMuammoCreate:
             mock_gps=False,
             client_uuid="12345678-1234-5678-1234-567812345678",
             qurilma_vaqti=ts,
+            yoriqnomadan_otkanlar_soni=2,
         )
         assert obj.xonadon_id == 1
         assert obj.turi == "ochiq_elektr_simi"
@@ -58,6 +59,7 @@ class TestMuammoCreate:
             lng=71.0,
             client_uuid="12345678-1234-5678-1234-567812345678",
             qurilma_vaqti=ts,
+            yoriqnomadan_otkanlar_soni=0,
         )
         assert obj.xonadon_id == 5
         assert obj.turi == "boshqa"
@@ -65,6 +67,98 @@ class TestMuammoCreate:
         assert obj.mock_gps is False    # default
         assert obj.tavsif is None
         assert obj.gps_aniqlik is None
+
+    def test_turi_none_allowed(self):
+        """turi endi ixtiyoriy — checklist oqimida None yuboriladi."""
+        ts = datetime.now()
+        obj = MuammoCreate(
+            xonadon_id=5,
+            turi=None,
+            lat=40.0,
+            lng=71.0,
+            client_uuid="12345678-1234-5678-1234-567812345678",
+            qurilma_vaqti=ts,
+            yoriqnomadan_otkanlar_soni=3,
+        )
+        assert obj.turi is None
+
+    def test_yoriqnomadan_otkanlar_soni_required(self):
+        """yoriqnomadan_otkanlar_soni endi majburiy — tushmasa ValidationError."""
+        ts = datetime.now()
+        with pytest.raises(ValidationError, match="yoriqnomadan_otkanlar_soni"):
+            MuammoCreate(
+                xonadon_id=1,
+                turi="boshqa",
+                lat=41.0,
+                lng=69.0,
+                client_uuid="12345678-1234-5678-1234-567812345678",
+                qurilma_vaqti=ts,
+            )
+
+    def test_yoriqnomadan_otkanlar_soni_negative(self):
+        """yoriqnomadan_otkanlar_soni manfiy bo'lsa — ValidationError."""
+        ts = datetime.now()
+        with pytest.raises(ValidationError):
+            MuammoCreate(
+                xonadon_id=1,
+                turi="boshqa",
+                lat=41.0,
+                lng=69.0,
+                client_uuid="12345678-1234-5678-1234-567812345678",
+                qurilma_vaqti=ts,
+                yoriqnomadan_otkanlar_soni=-1,
+            )
+
+    @pytest.mark.parametrize("bandlar", ["3,4,8", "1", "14", "1,14"])
+    def test_taklif_etilgan_tadbirlar_valid_bandlar(self, bandlar):
+        """turi=None bo'lganda 1-14 band raqamlari vergul bilan qabul qilinadi."""
+        ts = datetime.now()
+        obj = MuammoCreate(
+            xonadon_id=1,
+            turi=None,
+            lat=41.0,
+            lng=69.0,
+            client_uuid="12345678-1234-5678-1234-567812345678",
+            qurilma_vaqti=ts,
+            yoriqnomadan_otkanlar_soni=1,
+            taklif_etilgan_tadbirlar=bandlar,
+            ornida_bartaraf=True,
+            has_keyin_foto=True,
+        )
+        assert obj.taklif_etilgan_tadbirlar == bandlar
+
+    @pytest.mark.parametrize("bandlar", ["0", "15", "3,99", "3, 4", "3;4", "abc"])
+    def test_taklif_etilgan_tadbirlar_invalid_format(self, bandlar):
+        """turi=None bo'lganda 1-14 oralig'idan tashqari/formatga mos kelmagan qiymat rad etiladi."""
+        ts = datetime.now()
+        with pytest.raises(ValidationError, match="Yo'riqnoma bandlari"):
+            MuammoCreate(
+                xonadon_id=1,
+                turi=None,
+                lat=41.0,
+                lng=69.0,
+                client_uuid="12345678-1234-5678-1234-567812345678",
+                qurilma_vaqti=ts,
+                yoriqnomadan_otkanlar_soni=1,
+                taklif_etilgan_tadbirlar=bandlar,
+            )
+
+    def test_taklif_etilgan_tadbirlar_freeform_when_turi_set(self):
+        """turi belgilangan bo'lsa (legacy), taklif_etilgan_tadbirlar erkin matn bo'lishi mumkin."""
+        ts = datetime.now()
+        obj = MuammoCreate(
+            xonadon_id=1,
+            turi="gaz_hidi",
+            lat=41.0,
+            lng=69.0,
+            client_uuid="12345678-1234-5678-1234-567812345678",
+            qurilma_vaqti=ts,
+            yoriqnomadan_otkanlar_soni=0,
+            taklif_etilgan_tadbirlar="katta ta'mirlash kerak",
+            ornida_bartaraf=True,
+            has_keyin_foto=True,
+        )
+        assert obj.taklif_etilgan_tadbirlar == "katta ta'mirlash kerak"
 
     def test_invalid_client_uuid(self):
         """Noto'g'ri UUID format — ValidationError (500 emas, 422)."""
@@ -147,6 +241,7 @@ class TestMuammoCreate:
             lng=-180.0,
             client_uuid="12345678-1234-5678-1234-567812345678",
             qurilma_vaqti=ts,
+            yoriqnomadan_otkanlar_soni=0,
         )
         assert obj.lat == -90.0
         assert obj.lng == -180.0
@@ -158,6 +253,7 @@ class TestMuammoCreate:
             lng=180.0,
             client_uuid="12345678-1234-5678-1234-567812345678",
             qurilma_vaqti=ts,
+            yoriqnomadan_otkanlar_soni=0,
         )
         assert obj2.lat == 90.0
         assert obj2.lng == 180.0

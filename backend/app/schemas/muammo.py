@@ -2,18 +2,29 @@
 XAVFSIZ XONADON — Muammo Pydantic schemalari.
 Muammo CRUD uchun so'rov/javob modellari.
 """
+import re
 from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
+
+
+# 1-14 oralig'idagi yo'riqnoma band raqamlari, vergul bilan (masalan: "3,4,8")
+_TAKLIF_BANDLAR_RE = re.compile(r"^(?:[1-9]|1[0-4])(?:,(?:[1-9]|1[0-4]))*$")
 
 
 # ============ Muammo yaratish ============
 
 class MuammoCreate(BaseModel):
-    """Yangi muammo qayd etish (mobil ilovadan)."""
+    """Yangi muammo/tekshiruv qayd etish (mobil ilovadan).
+
+    `turi` endi ixtiyoriy: yangi tekshiruv oqimida xodim 14 bandli
+    yo'riqnoma checklistidan foydalanadi va aniqlangan bandlar
+    `taklif_etilgan_tadbirlar`ga vergul bilan yoziladi (masalan "3,4,8");
+    `turi` faqat eski (pre-checklist) yozuvlar uchun to'ldiriladi.
+    """
     xonadon_id: int
-    turi: str = Field(..., min_length=1, max_length=40)
+    turi: Optional[str] = Field(None, max_length=40)
     tavsif: Optional[str] = Field(None, max_length=2000)
     xavf: str = Field(default="orta", min_length=1, max_length=20)
     lat: float = Field(..., ge=-90, le=90)
@@ -27,11 +38,17 @@ class MuammoCreate(BaseModel):
     has_keyin_foto: bool = False
     fotos_sha256_list: Optional[list[str]] = None
     taklif_etilgan_tadbirlar: Optional[str] = Field(None, max_length=2000)
-    yoriqnomadan_otkanlar_soni: Optional[int] = Field(None, ge=0)
+    yoriqnomadan_otkanlar_soni: int = Field(..., ge=0)
+    kira_olmadi: bool = Field(
+        default=False,
+        description="Xodim xonadonga kira olmadi (uyda hech kim yo'q/eshik ochilmadi) — checklist o'tkazilmagan.",
+    )
 
     @field_validator("turi")
     @classmethod
-    def validate_turi(cls, v: str) -> str:
+    def validate_turi(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
         allowed = {
             "ochiq_elektr_simi", "elektr_shchit_nosoz", "gaz_shlangi_nosoz",
             "gaz_hidi", "isitish_uskunasi", "mo_ri_tozalanmagan",
@@ -46,6 +63,21 @@ class MuammoCreate(BaseModel):
     def validate_xavf(cls, v: str) -> str:
         if v not in {"past", "orta", "yuqori", "kritik"}:
             raise ValueError("Xavf darajasi: past, orta, yuqori yoki kritik")
+        return v
+
+    @field_validator("taklif_etilgan_tadbirlar")
+    @classmethod
+    def validate_taklif_etilgan_tadbirlar(cls, v: Optional[str], info: ValidationInfo) -> Optional[str]:
+        # Eski turi belgilangan yozuvlarda bu maydon erkin matn bo'lishi mumkin
+        # (backward compat) — format tekshiruvi faqat yangi checklist oqimida
+        # (turi=None) qo'llaniladi.
+        if v is None or not v.strip():
+            return v
+        v = v.strip()
+        if info.data.get("turi") is None and not _TAKLIF_BANDLAR_RE.fullmatch(v):
+            raise ValueError(
+                "Yo'riqnoma bandlari 1-14 oralig'ida, vergul bilan ajratilgan bo'lishi kerak (masalan: 3,4,8)"
+            )
         return v
 
 
@@ -97,7 +129,7 @@ class MuammoResponse(BaseModel):
     id: int
     xonadon_id: int
     xodim_id: int
-    turi: str
+    turi: Optional[str] = None
     turi_nomi: Optional[str] = None
     tavsif: Optional[str] = None
     xavf: str

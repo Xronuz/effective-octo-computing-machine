@@ -65,6 +65,9 @@ async def create_muammo(
         muddat=body.muddat,
         has_keyin_foto=body.has_keyin_foto,
         fotos_sha256_list=body.fotos_sha256_list,
+        taklif_etilgan_tadbirlar=body.taklif_etilgan_tadbirlar,
+        yoriqnomadan_otkanlar_soni=body.yoriqnomadan_otkanlar_soni,
+        kira_olmadi=body.kira_olmadi,
     )
 
     data = muammo_service._muammo_to_response(muammo, current_user)
@@ -85,6 +88,7 @@ async def list_muammolar(
     turi: str | None = Query(None),
     xavf: str | None = Query(None),
     mfy_id: int | None = Query(None),
+    xonadon_id: int | None = Query(None),
     xodim_id: int | None = Query(None),
     shubhali: bool | None = Query(None),
     ornida_bartaraf: bool | None = Query(None),
@@ -112,6 +116,7 @@ async def list_muammolar(
         turi=turi,
         xavf=xavf,
         mfy_id=mfy_id,
+        xonadon_id=xonadon_id,
         xodim_id=xodim_id,
         shubhali=shubhali,
         ornida_bartaraf=ornida_bartaraf,

@@ -1,42 +1,45 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, Alert,
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../contexts/AuthContext';
+import PullToRefresh from '../components/PullToRefresh';
+import Button from '../components/Button';
 import api from '../services/api';
-import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, StatusColors, tabBarContentPadding } from '../theme';
-import type { ApiResponse, Paginated } from '../types';
+import { cacheTopshiriqlar, getCacheTopshiriqlar } from '../services/cache';
+import {
+  Colors,
+  Fonts,
+  FontSizes,
+  FontWeights,
+  Spacing,
+  Radius,
+  StatusColors,
+  tabBarContentPadding,
+} from '../theme';
+import type { ApiResponse, Paginated, Topshiriq } from '../types';
 import { useAlifbo } from '../contexts/AlifboContext';
 
-interface Topshiriq {
-  id: number;
-  rahbar_id: number;
-  xodim_id: number;
-  mfy_id: number | null;
-  muammo_id: number | null;
-  sarlavha: string;
-  matn: string | null;
-  muddat: string;
-  status: string;
-  yaratilgan: string;
-  korilgan: string | null;
-  bajarilgan: string | null;
-  rahbar_fio: string | null;
-  xodim_fio: string | null;
-  mfy_nomi: string | null;
-}
-
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+type Segment = 'faol' | 'bajarildi';
 
-const STATUS_CFG = (tr: (s: string) => string): Record<string, { label: string; bg: string; text: string; icon: IconName }> => ({
-  yangi: { label: tr('Yangi'), bg: Colors.infoSurface, text: Colors.info, icon: 'star-circle-outline' },
-  korildi: { label: tr("Ko'rildi"), bg: StatusColors.jarayonda.bg, text: StatusColors.jarayonda.text, icon: 'eye-outline' },
-  bajarildi: { label: tr('Bajarildi'), bg: Colors.successSurface, text: Colors.success, icon: 'check-circle' },
-  kechikkan: { label: tr('Kechikkan'), bg: Colors.dangerSurface, text: Colors.danger, icon: 'clock-alert-outline' },
-});
+const STATUS_CFG: Record<string, { label: string; color: string; icon: IconName }> = {
+  yangi: { label: 'Yangi', color: Colors.info, icon: 'star-circle-outline' },
+  korildi: { label: "Ko'rildi", color: StatusColors.jarayonda.text, icon: 'eye-outline' },
+  bajarildi: { label: 'Bajarildi', color: Colors.success, icon: 'check-circle' },
+  kechikkan: { label: 'Kechikkan', color: Colors.danger, icon: 'clock-alert-outline' },
+};
 
 function formatDate(iso: string | null): string {
   if (!iso) return '-';
@@ -48,6 +51,12 @@ function formatDate(iso: string | null): string {
   }
 }
 
+function isOverdue(item: Topshiriq): boolean {
+  if (item.status === 'bajarildi') return false;
+  if (item.status === 'kechikkan') return true;
+  return Boolean(item.muddat) && new Date(item.muddat) < new Date(new Date().toDateString());
+}
+
 export default function TopshiriqlarScreen() {
   const { tr } = useAlifbo();
   const { user } = useAuth();
@@ -56,15 +65,24 @@ export default function TopshiriqlarScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionId, setActionId] = useState<number | null>(null);
+  const [segment, setSegment] = useState<Segment>('faol');
+  const [selected, setSelected] = useState<Topshiriq | null>(null);
 
   const fetchTopshiriqlar = useCallback(async () => {
-    if (!user?.id) { setLoading(false); setRefreshing(false); return; }
+    if (!user?.id) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
+      const cached = await getCacheTopshiriqlar<Topshiriq>();
+      if (cached) setItems(cached);
       const { data } = await api.get<ApiResponse<Paginated<Topshiriq>>>(
         `/topshiriqlar?xodim_id=${user.id}&size=100`,
       );
       if (data.ok && data.data) {
         setItems(data.data.items);
+        await cacheTopshiriqlar<Topshiriq>(data.data.items);
       }
     } catch {
       // Tarmoq xatosi — eski ro'yxat saqlanadi
@@ -72,7 +90,7 @@ export default function TopshiriqlarScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user?.id]);
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {
@@ -80,24 +98,48 @@ export default function TopshiriqlarScreen() {
     }, [fetchTopshiriqlar]),
   );
 
-  const onRefresh = () => { setRefreshing(true); fetchTopshiriqlar(); };
-
-  const updateStatus = async (item: Topshiriq, status: 'korildi' | 'bajarildi') => {
-    setActionId(item.id);
-    try {
-      const { data } = await api.patch<ApiResponse<Topshiriq>>(`/topshiriqlar/${item.id}`, { status });
-      if (data.ok && data.data) {
-        setItems((prev) => prev.map((t) => (t.id === item.id ? { ...t, ...data.data! } : t)));
-      } else {
-        Alert.alert(tr('Xatolik'), data.xato || tr('Statusni yangilashda xatolik'));
-      }
-    } catch (err: any) {
-      const msg = err?.response?.data?.xato || err?.response?.data?.detail || tr('Server bilan bog\'lanishda xatolik');
-      Alert.alert(tr('Xatolik'), typeof msg === 'string' ? msg : tr('Statusni yangilashda xatolik'));
-    } finally {
-      setActionId(null);
-    }
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchTopshiriqlar();
   };
+
+  const updateStatus = useCallback(
+    async (
+      item: Topshiriq,
+      status: 'korildi' | 'bajarildi',
+      opts: { silent?: boolean; onSuccess?: () => void } = {},
+    ) => {
+      if (!opts.silent) setActionId(item.id);
+      try {
+        const { data } = await api.patch<ApiResponse<Topshiriq>>(`/topshiriqlar/${item.id}`, {
+          status,
+        });
+        if (data.ok && data.data) {
+          setItems((prev) => prev.map((t) => (t.id === item.id ? { ...t, ...data.data! } : t)));
+          opts.onSuccess?.();
+        } else if (!opts.silent) {
+          Alert.alert(tr('Xatolik'), data.xato || tr('Statusni yangilashda xatolik'));
+        }
+      } catch (err: any) {
+        if (opts.silent) return; // korildi belgisi — fon rejimida, UI bezovta qilmaydi
+        const msg =
+          err?.response?.data?.xato ||
+          err?.response?.data?.detail ||
+          tr("Server bilan bog'lanishda xatolik");
+        Alert.alert(
+          tr('Xatolik'),
+          typeof msg === 'string' ? msg : tr('Statusni yangilashda xatolik'),
+          [
+            { text: tr('Bekor qilish'), style: 'cancel' },
+            { text: tr('Qayta urinish'), onPress: () => updateStatus(item, status, opts) },
+          ],
+        );
+      } finally {
+        if (!opts.silent) setActionId(null);
+      }
+    },
+    [tr],
+  );
 
   const confirmBajarildi = (item: Topshiriq) => {
     Alert.alert(
@@ -105,190 +147,453 @@ export default function TopshiriqlarScreen() {
       tr(`"${item.sarlavha}" topshirig'ini bajarildi deb belgilaysizmi?`),
       [
         { text: tr('Bekor qilish'), style: 'cancel' },
-        { text: tr('Bajarildi'), onPress: () => updateStatus(item, 'bajarildi') },
+        {
+          text: tr('Bajarildi'),
+          onPress: () => updateStatus(item, 'bajarildi', { onSuccess: () => setSelected(null) }),
+        },
       ],
     );
   };
 
-  const renderItem = ({ item }: { item: Topshiriq }) => {
-    const cfg = STATUS_CFG(tr)[item.status] || { label: item.status, bg: Colors.borderLight, text: Colors.textMuted, icon: 'help-circle-outline' as IconName };
-    const busy = actionId === item.id;
-    const isLate = item.status !== 'bajarildi' && item.muddat && new Date(item.muddat) < new Date(new Date().toDateString());
+  const openDetail = (item: Topshiriq) => {
+    setSelected(item);
+    if (item.status === 'yangi') {
+      updateStatus(item, 'korildi', { silent: true });
+    }
+  };
+
+  const { faol, bajarildi } = useMemo(() => {
+    const done: Topshiriq[] = [];
+    const active: Topshiriq[] = [];
+    for (const t of items) {
+      if (t.status === 'bajarildi') done.push(t);
+      else active.push(t);
+    }
+    active.sort((a, b) => {
+      const od = Number(isOverdue(b)) - Number(isOverdue(a));
+      if (od !== 0) return od;
+      return new Date(a.muddat).getTime() - new Date(b.muddat).getTime();
+    });
+    done.sort((a, b) => new Date(b.muddat).getTime() - new Date(a.muddat).getTime());
+    return { faol: active, bajarildi: done };
+  }, [items]);
+
+  const data = segment === 'faol' ? faol : bajarildi;
+
+  const renderItem = ({ item, index }: { item: Topshiriq; index: number }) => {
+    const cfg = STATUS_CFG[item.status] || {
+      label: item.status,
+      color: Colors.textMuted,
+      icon: 'help-circle-outline' as IconName,
+    };
+    const late = isOverdue(item);
+    const done = item.status === 'bajarildi';
 
     return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
-            <MaterialCommunityIcons name={cfg.icon} size={14} color={cfg.text} style={{ marginRight: 4 }} />
-            <Text style={[styles.badgeText, { color: cfg.text }]}>{cfg.label}</Text>
-          </View>
-          <View style={styles.muddatBox}>
+      <TouchableOpacity
+        style={[styles.row, index > 0 && styles.rowBorder, done && styles.rowDone]}
+        onPress={() => openDetail(item)}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.sarlavha}, ${tr(cfg.label)}`}
+      >
+        <MaterialCommunityIcons
+          name={done ? 'check-circle' : cfg.icon}
+          size={22}
+          color={done ? Colors.success : cfg.color}
+          style={styles.rowIcon}
+        />
+        <View style={styles.rowBody}>
+          <Text style={[styles.rowTitle, done && styles.rowTitleDone]} numberOfLines={2}>
+            {item.sarlavha}
+          </Text>
+          <View style={styles.rowMeta}>
             <MaterialCommunityIcons
               name="calendar-clock"
               size={13}
-              color={isLate ? Colors.danger : Colors.textMuted}
+              color={late ? Colors.danger : Colors.textMuted}
             />
-            <Text style={[styles.muddatText, isLate && { color: Colors.danger }]}>
+            <Text style={[styles.rowMetaText, late && styles.rowMetaLate]}>
               {formatDate(item.muddat)}
             </Text>
-          </View>
-        </View>
-
-        <Text style={styles.title}>{item.sarlavha}</Text>
-        {item.matn ? <Text style={styles.matn} numberOfLines={3}>{item.matn}</Text> : null}
-
-        <View style={styles.metaRow}>
-          {item.mfy_nomi ? (
-            <View style={styles.metaItem}>
-              <MaterialCommunityIcons name="map-marker-outline" size={13} color={Colors.textMuted} />
-              <Text style={styles.metaText}>{item.mfy_nomi}</Text>
-            </View>
-          ) : null}
-          {item.rahbar_fio ? (
-            <View style={styles.metaItem}>
-              <MaterialCommunityIcons name="account-tie-outline" size={13} color={Colors.textMuted} />
-              <Text style={styles.metaText}>{item.rahbar_fio}</Text>
-            </View>
-          ) : null}
-        </View>
-
-        {(item.status === 'yangi' || item.status === 'korildi' || item.status === 'kechikkan') && (
-          <View style={styles.actionsRow}>
-            {item.status === 'yangi' && (
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.actionOutline]}
-                onPress={() => updateStatus(item, 'korildi')}
-                disabled={busy}
-                activeOpacity={0.75}
-              >
-                {busy ? (
-                  <ActivityIndicator size="small" color={Colors.primary} />
-                ) : (
-                  <>
-                    <MaterialCommunityIcons name="eye-check-outline" size={18} color={Colors.primary} style={{ marginRight: 6 }} />
-                    <Text style={styles.actionOutlineText}>{tr("Ko'rildi")}</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+            {late && (
+              <View style={styles.latePill}>
+                <Text style={styles.latePillText}>{tr('Kechikkan')}</Text>
+              </View>
             )}
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.actionPrimary]}
-              onPress={() => confirmBajarildi(item)}
-              disabled={busy}
-              activeOpacity={0.75}
-            >
-              {busy ? (
-                <ActivityIndicator size="small" color={Colors.textInverse} />
-              ) : (
-                <>
-                  <MaterialCommunityIcons name="check-bold" size={18} color={Colors.textInverse} style={{ marginRight: 6 }} />
-                  <Text style={styles.actionPrimaryText}>{tr('Bajarildi')}</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            {item.mfy_nomi ? (
+              <>
+                <Text style={styles.rowMetaDot}>·</Text>
+                <Text style={styles.rowMetaText} numberOfLines={1}>
+                  {item.mfy_nomi}
+                </Text>
+              </>
+            ) : null}
           </View>
-        )}
-      </View>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={18} color={Colors.textMuted} />
+      </TouchableOpacity>
     );
   };
+
+  const selectedLate = selected ? isOverdue(selected) : false;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{tr('Topshiriqlarim')}</Text>
+        <Text style={styles.headerCount}>
+          {faol.length} {tr('faol')}
+        </Text>
+      </View>
+
+      {/* Segmented control */}
+      <View style={styles.segmentTrack}>
+        {(['faol', 'bajarildi'] as Segment[]).map((key) => {
+          const active = segment === key;
+          const count = key === 'faol' ? faol.length : bajarildi.length;
+          return (
+            <TouchableOpacity
+              key={key}
+              style={[styles.segment, active && styles.segmentActive]}
+              onPress={() => setSegment(key)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+            >
+              <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
+                {key === 'faol' ? tr('Faol') : tr('Bajarildi')}
+              </Text>
+              {key === 'faol' && count > 0 && (
+                <View style={[styles.segmentBadge, active && styles.segmentBadgeActive]}>
+                  <Text style={[styles.segmentBadgeText, active && styles.segmentBadgeTextActive]}>
+                    {count}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <FlatList
-        data={items}
+        data={data}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
-        contentContainerStyle={[styles.list, { paddingBottom: tabBarContentPadding(insets.bottom) }]}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />
-        }
+        style={data.length > 0 ? styles.listContainer : undefined}
+        contentContainerStyle={[
+          styles.list,
+          data.length === 0 && { paddingHorizontal: Spacing.base },
+          { paddingBottom: tabBarContentPadding(insets.bottom) },
+        ]}
+        refreshControl={<PullToRefresh refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           loading ? (
-            <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 80 }} />
+            <ActivityIndicator
+              size="large"
+              color={Colors.primary}
+              style={{ marginTop: Spacing['3xl'] }}
+            />
           ) : (
             <View style={styles.emptyBox}>
-              <View style={styles.emptyIcon}>
-                <MaterialCommunityIcons name="clipboard-check-outline" size={36} color={Colors.textMuted} />
-              </View>
-              <Text style={styles.emptyTitle}>{tr("Topshiriqlar yo'q")}</Text>
-              <Text style={styles.emptyText}>{tr('Sizga biriktirilgan topshiriqlar hali mavjud emas')}</Text>
+              <MaterialCommunityIcons
+                name={segment === 'faol' ? 'clipboard-check-outline' : 'check-all'}
+                size={28}
+                color={Colors.textMuted}
+              />
+              <Text style={styles.emptyText}>
+                {segment === 'faol'
+                  ? tr("Faol topshiriqlar yo'q")
+                  : tr("Bajarilgan topshiriqlar hali yo'q")}
+              </Text>
             </View>
           )
         }
       />
+
+      {/* Topshiriq tafsiloti — pastdan chiqadigan sheet */}
+      <Modal
+        visible={selected !== null}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setSelected(null)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setSelected(null)} />
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
+          <View style={styles.sheetHandle} />
+          {selected && (
+            <>
+              <Text style={styles.sheetTitle}>{selected.sarlavha}</Text>
+              {selected.matn ? <Text style={styles.sheetMatn}>{selected.matn}</Text> : null}
+
+              <View style={styles.sheetMeta}>
+                <View style={styles.sheetMetaRow}>
+                  <MaterialCommunityIcons
+                    name="calendar-clock"
+                    size={16}
+                    color={selectedLate ? Colors.danger : Colors.textMuted}
+                  />
+                  <Text style={[styles.sheetMetaText, selectedLate && styles.rowMetaLate]}>
+                    {formatDate(selected.muddat)}
+                  </Text>
+                  {selectedLate && (
+                    <View style={styles.latePill}>
+                      <Text style={styles.latePillText}>{tr('Kechikkan')}</Text>
+                    </View>
+                  )}
+                </View>
+                {selected.mfy_nomi ? (
+                  <View style={styles.sheetMetaRow}>
+                    <MaterialCommunityIcons
+                      name="map-marker-outline"
+                      size={16}
+                      color={Colors.textMuted}
+                    />
+                    <Text style={styles.sheetMetaText}>{selected.mfy_nomi}</Text>
+                  </View>
+                ) : null}
+                {selected.rahbar_fio ? (
+                  <View style={styles.sheetMetaRow}>
+                    <MaterialCommunityIcons
+                      name="account-tie-outline"
+                      size={16}
+                      color={Colors.textMuted}
+                    />
+                    <Text style={styles.sheetMetaText}>{selected.rahbar_fio}</Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {selected.status !== 'bajarildi' && (
+                <Button
+                  title={tr('Bajarildi')}
+                  icon="check-bold"
+                  loading={actionId === selected.id}
+                  onPress={() => confirmBajarildi(selected)}
+                />
+              )}
+              <Button
+                title={tr('Yopish')}
+                variant="ghost"
+                style={styles.sheetClose}
+                onPress={() => setSelected(null)}
+              />
+            </>
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
-  header: { paddingHorizontal: Spacing.base, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
   headerTitle: {
-    fontSize: FontSizes['2xl'], fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading, color: Colors.textPrimary,
+    fontSize: FontSizes['2xl'],
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.heading,
+    color: Colors.textPrimary,
   },
-  list: { padding: Spacing.base, paddingTop: Spacing.xs, flexGrow: 1 },
-  card: {
-    backgroundColor: Colors.surface, borderRadius: Radius.lg,
-    padding: Spacing.base, marginBottom: 10,
-    ...Shadows.sm,
+  headerCount: {
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.body,
+    color: Colors.textMuted,
+    fontVariant: ['tabular-nums'],
   },
-  cardHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  segmentTrack: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Radius.md,
+    padding: Spacing.xxs,
+    marginHorizontal: Spacing.base,
     marginBottom: Spacing.sm,
   },
-  badge: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radius.full,
+  segment: {
+    flex: 1,
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.sm,
+    gap: Spacing.xs,
   },
-  badgeText: { fontSize: FontSizes.xs, fontWeight: FontWeights.semibold, fontFamily: Fonts.body },
-  muddatBox: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  muddatText: { fontSize: FontSizes.xs, fontFamily: Fonts.body, color: Colors.textMuted },
-  title: {
-    fontSize: FontSizes.md, fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading, color: Colors.textPrimary,
+  segmentActive: {
+    backgroundColor: Colors.surface,
   },
-  matn: {
-    fontSize: FontSizes.sm, fontFamily: Fonts.body,
-    color: Colors.textSecondary, marginTop: 4, lineHeight: 19,
+  segmentText: {
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    fontWeight: FontWeights.medium,
+    color: Colors.textMuted,
   },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: Spacing.sm },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  metaText: { fontSize: FontSizes.xs, fontFamily: Fonts.body, color: Colors.textSecondary },
-  actionsRow: {
-    flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.md,
-    borderTopWidth: 1, borderTopColor: Colors.borderLight, paddingTop: Spacing.md,
+  segmentTextActive: {
+    color: Colors.primary,
+    fontWeight: FontWeights.semibold,
   },
-  actionBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 10, borderRadius: Radius.md,
+  segmentBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
   },
-  actionOutline: { borderWidth: 1.5, borderColor: Colors.primary },
-  actionOutlineText: {
-    fontSize: FontSizes.sm, fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading, color: Colors.primary,
+  segmentBadgeActive: {
+    backgroundColor: Colors.primarySurface,
   },
-  actionPrimary: { backgroundColor: Colors.success },
-  actionPrimaryText: {
-    fontSize: FontSizes.sm, fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading, color: Colors.textInverse,
+  segmentBadgeText: {
+    fontSize: FontSizes.xs,
+    fontFamily: Fonts.body,
+    fontWeight: FontWeights.semibold,
+    color: Colors.textSecondary,
+    fontVariant: ['tabular-nums'],
   },
-  emptyBox: { alignItems: 'center', marginTop: 80, paddingHorizontal: Spacing['2xl'] },
-  emptyIcon: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: Colors.surfaceSubtle, alignItems: 'center', justifyContent: 'center',
+  segmentBadgeTextActive: {
+    color: Colors.primary,
   },
-  emptyTitle: {
-    fontSize: FontSizes.md, fontWeight: FontWeights.bold, fontFamily: Fonts.heading,
-    color: Colors.textPrimary, marginTop: Spacing.md,
+  list: { flexGrow: 1 },
+  listContainer: {
+    marginHorizontal: Spacing.base,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    overflow: 'hidden',
+    flexGrow: 0,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 64,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+    backgroundColor: Colors.surface,
+  },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+  },
+  rowDone: {
+    opacity: 0.6,
+  },
+  rowIcon: { marginRight: Spacing.xxs },
+  rowBody: { flex: 1 },
+  rowTitle: {
+    fontSize: FontSizes.base,
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.body,
+    color: Colors.textPrimary,
+  },
+  rowTitleDone: {
+    color: Colors.textSecondary,
+  },
+  rowMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xxs,
+    marginTop: Spacing.xxs,
+  },
+  rowMetaText: {
+    fontSize: FontSizes.xs,
+    fontFamily: Fonts.body,
+    color: Colors.textMuted,
+    flexShrink: 1,
+  },
+  rowMetaLate: {
+    color: Colors.danger,
+  },
+  rowMetaDot: {
+    fontSize: FontSizes.xs,
+    fontFamily: Fonts.body,
+    color: Colors.textMuted,
+  },
+  latePill: {
+    backgroundColor: Colors.dangerSurface,
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 2,
+  },
+  latePillText: {
+    fontSize: FontSizes['2xs'],
+    fontFamily: Fonts.body,
+    fontWeight: FontWeights.semibold,
+    color: Colors.danger,
+  },
+  emptyBox: {
+    alignItems: 'center',
+    marginTop: Spacing['3xl'],
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing['2xl'],
   },
   emptyText: {
-    fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textMuted,
-    marginTop: 4, textAlign: 'center',
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(13, 27, 42, 0.4)',
+  },
+  sheet: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: Radius.lg,
+    borderTopRightRadius: Radius.lg,
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.sm,
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.border,
+    marginBottom: Spacing.md,
+  },
+  sheetTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.heading,
+    color: Colors.textPrimary,
+  },
+  sheetMatn: {
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    color: Colors.textSecondary,
+    lineHeight: 22,
+    marginTop: Spacing.sm,
+  },
+  sheetMeta: {
+    marginTop: Spacing.md,
+    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+    paddingTop: Spacing.md,
+  },
+  sheetMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  sheetMetaText: {
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.body,
+    color: Colors.textSecondary,
+    flexShrink: 1,
+  },
+  sheetClose: {
+    minHeight: 44,
   },
 });

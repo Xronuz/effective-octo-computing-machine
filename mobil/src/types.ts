@@ -54,6 +54,8 @@ export interface XonadonSummary {
   mfy_nomi: string | null;
   mfy_id: number | null;
   ochiq_muammolar_soni: number;
+  /** Joriy xodim ushbu xonadonni bugun tekshirganmi (muammo topilgan/topilmaganidan qat'i nazar). */
+  tekshirilgan_bugun: boolean;
 }
 
 // Alias: Xonadon = XonadonSummary (same from list and detail endpoints)
@@ -64,7 +66,8 @@ export interface MuammoSummary {
   id: number;
   xonadon_id: number;
   xodim_id: number;
-  turi: string;
+  /** Checklist oqimida (turi tanlanmagan) tekshiruvlarda bo'sh bo'ladi. */
+  turi: string | null;
   turi_nomi: string | null;
   tavsif: string | null;
   xavf: string;
@@ -86,6 +89,10 @@ export interface MuammoSummary {
   fotolar: FotoResponse[];
   xonadon_manzili: string | null;
   xodim_fio: string | null;
+  /** Yo'riqnoma bandlari, vergul bilan ("3,4,8") — muammo topilgan bo'lsa. */
+  taklif_etilgan_tadbirlar: string | null;
+  /** Ushbu tashrifda ogohlantirilgan aholi soni. */
+  yoriqnomadan_otkanlar_soni: number | null;
 }
 
 // Alias for full detail
@@ -157,4 +164,41 @@ export interface OfflineMuammo {
   foto_paths: string[];
   sinxronlandi: 0 | 1;
   yaratilgan: string;
+}
+
+// Dashboard summary stats
+export interface DashboardStats {
+  jami_xonadonlar: number;
+  jami_muammolar: number;
+  ochiq_muammolar: number;
+  yopilgan_muammolar: number;
+}
+
+// Topshiriq (assignment) from backend
+export interface Topshiriq {
+  id: number;
+  rahbar_id: number;
+  xodim_id: number;
+  mfy_id: number | null;
+  muammo_id: number | null;
+  sarlavha: string;
+  matn: string | null;
+  muddat: string;
+  status: string;
+  yaratilgan: string;
+  korilgan: string | null;
+  bajarilgan: string | null;
+  rahbar_fio: string | null;
+  xodim_fio: string | null;
+  mfy_nomi: string | null;
+}
+
+// Recent activity feed item
+export interface ActivityItem {
+  id: string;
+  type: 'issue_created' | 'issue_closed' | 'task_completed' | 'sync';
+  title: string;
+  subtitle?: string;
+  timestamp: string;
+  meta?: string;
 }

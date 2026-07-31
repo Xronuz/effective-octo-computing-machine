@@ -7,6 +7,7 @@ import { apiGet, apiPatch, apiDelete } from '@/api';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
 import type { XonadonBrief, MuammoBrief, ApiResponse, Paginated } from '@/types';
+import { bandlarniParse } from '@/lib/yoriqnoma';
 
 const STATUS_BADGE: Record<string, string> = {
   ochiq: 'badge-red',
@@ -459,7 +460,13 @@ export default function XonadonDetailPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-medium text-[#0F2033]">
-                        {tr(TURI_LABEL[muammo.turi] || muammo.turi)}
+                        {muammo.turi
+                          ? tr(TURI_LABEL[muammo.turi] || muammo.turi)
+                          : muammo.tekshiruv_natijasi === 'kira_olmadi'
+                            ? tr('Kira olmadi')
+                            : tr(bandlarniParse(muammo.taklif_etilgan_tadbirlar).length > 0
+                                ? "Yo'riqnoma bo'yicha kamchilik"
+                                : 'Tekshirildi')}
                       </span>
                       <span className={STATUS_BADGE[muammo.status] || 'badge-gray'}>
                         {tr(STATUS_LABEL[muammo.status] || muammo.status)}

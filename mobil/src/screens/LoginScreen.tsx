@@ -1,107 +1,159 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Image,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppNavigation } from '../navigation/hooks';
 import { useAlifbo } from '../contexts/AlifboContext';
-import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
+import FormField from '../components/FormField';
 
-export default function LoginScreen({ navigation }: any) {
+const loginSchema = z.object({
+  guvohnoma: z.string().min(1, 'Guvohnoma raqamini kiriting'),
+  parol: z.string().min(1, 'Parolni kiriting'),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
+
+export default function LoginScreen() {
+  const navigation = useAppNavigation();
   const { login } = useAuth();
   const { tr } = useAlifbo();
-  const [gr, setGr] = useState('');
-  const [parol, setParol] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const parolRef = useRef<TextInput>(null);
+  const { colors } = useTheme();
 
-  const handleLogin = async () => {
-    setError('');
-    if (!gr.trim() || !parol.trim()) {
-      setError(tr("Guvohnoma raqami va parolni kiriting"));
-      return;
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { guvohnoma: '', parol: '' },
+  });
+
+  const onSubmit = async (data: LoginForm) => {
+    const err = await login(data.guvohnoma.toUpperCase().trim(), data.parol);
+    if (err) {
+      setError('root', { message: err });
     }
-    setLoading(true);
-    const err = await login(gr.toUpperCase().trim(), parol);
-    setLoading(false);
-    if (err) setError(err);
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* Logo */}
           <View style={styles.logoArea}>
             <Image
               source={require('../../assets/fvv-icon.png')}
-              style={styles.logoImage}
+              style={[styles.logoImage, Shadows.xl]}
               resizeMode="contain"
             />
-            <Text style={styles.title}>{tr('XAVFSIZ XONADON')}</Text>
-            <Text style={styles.subtitle}>{tr("Yong'in va gaz xavfsizligi nazorati tizimi")}</Text>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>
+              {tr('XAVFSIZ XONADON')}
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              {tr("Yong'in va gaz xavfsizligi nazorati tizimi")}
+            </Text>
           </View>
 
           {/* Form */}
-          {/* GR Input */}
-          <View style={styles.card}>
-            <View style={styles.inputWrapper}>
-              <MaterialCommunityIcons name="card-account-details-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                value={gr}
-                onChangeText={setGr}
-                placeholder={tr('Guvohnoma raqami')}
-                placeholderTextColor={Colors.textMuted}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                editable={!loading}
-                returnKeyType="next"
-                onSubmitEditing={() => parolRef.current?.focus()}
-              />
-            </View>
+          <View style={[styles.card, { backgroundColor: colors.surface }, Shadows.md]}>
+            <Controller
+              control={control}
+              name="guvohnoma"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label={tr('Guvohnoma raqami')}
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={tr('Guvohnoma raqami')}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  editable={!isSubmitting}
+                  returnKeyType="next"
+                  error={errors.guvohnoma?.message}
+                />
+              )}
+            />
 
-            {/* Password Input */}
-            <View style={styles.inputWrapper}>
-              <MaterialCommunityIcons name="lock-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
-              <TextInput
-                ref={parolRef}
-                style={styles.input}
-                value={parol}
-                onChangeText={setParol}
-                placeholder={tr('Parol')}
-                placeholderTextColor={Colors.textMuted}
-                secureTextEntry
-                editable={!loading}
-                returnKeyType="go"
-                onSubmitEditing={handleLogin}
-              />
-            </View>
+            <Controller
+              control={control}
+              name="parol"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label={tr('Parol')}
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={tr('Parol')}
+                  secureTextEntry
+                  editable={!isSubmitting}
+                  returnKeyType="go"
+                  onSubmitEditing={handleSubmit(onSubmit)}
+                  error={errors.parol?.message}
+                />
+              )}
+            />
 
             {/* Error */}
-            {error ? (
-              <View style={styles.errorBox}>
-                <MaterialCommunityIcons name="alert-circle" size={18} color={Colors.danger} style={{ marginRight: 6 }} />
-                <Text style={styles.error}>{error}</Text>
+            {errors.root?.message ? (
+              <View style={[styles.errorBox, { backgroundColor: colors.dangerSurface }]}>
+                <MaterialCommunityIcons
+                  name="alert-circle"
+                  size={20}
+                  color={colors.danger}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={[styles.error, { color: colors.danger }]}>{errors.root.message}</Text>
               </View>
             ) : null}
 
             {/* Submit */}
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleLogin}
-              disabled={loading}
+              style={[
+                styles.button,
+                { backgroundColor: colors.primary },
+                isSubmitting && styles.buttonDisabled,
+                Shadows.md,
+              ]}
+              onPress={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={tr('Kirish')}
             >
-              {loading ? (
-                <ActivityIndicator color={Colors.textInverse} />
+              {isSubmitting ? (
+                <ActivityIndicator color={colors.textInverse} />
               ) : (
                 <>
-                  <MaterialCommunityIcons name="login" size={20} color={Colors.textInverse} style={{ marginRight: 8 }} />
-                  <Text style={styles.buttonText}>{tr('Kirish')}</Text>
+                  <MaterialCommunityIcons
+                    name="login"
+                    size={22}
+                    color={colors.textInverse}
+                    style={{ marginRight: 10 }}
+                  />
+                  <Text style={[styles.buttonText, { color: colors.textInverse }]}>
+                    {tr('Kirish')}
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
@@ -110,11 +162,14 @@ export default function LoginScreen({ navigation }: any) {
             <TouchableOpacity
               style={styles.registerLink}
               onPress={() => navigation.navigate('Royxat')}
-              disabled={loading}
+              disabled={isSubmitting}
               activeOpacity={0.7}
             >
-              <Text style={styles.registerLinkText}>
-                {tr("Hisobingiz yo'qmi? ")}<Text style={styles.registerLinkBold}>{tr("Ro'yxatdan o'tish")}</Text>
+              <Text style={[styles.registerLinkText, { color: colors.textSecondary }]}>
+                {tr("Hisobingiz yo'qmi? ")}
+                <Text style={[styles.registerLinkBold, { color: colors.textLink }]}>
+                  {tr("Ro'yxatdan o'tish")}
+                </Text>
               </Text>
             </TouchableOpacity>
           </View>
@@ -125,80 +180,55 @@ export default function LoginScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  safe: { flex: 1 },
   flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
   logoArea: { alignItems: 'center', marginBottom: Spacing['3xl'] },
   logoImage: {
     width: 96,
     height: 96,
-    marginBottom: Spacing.base,
+    borderRadius: 28,
+    marginBottom: Spacing.lg,
   },
   title: {
     fontSize: FontSizes['2xl'],
     fontWeight: FontWeights.extrabold,
     fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   subtitle: {
     fontSize: FontSizes.base,
     fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    marginTop: 4,
+    marginTop: 6,
   },
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
+    borderRadius: Radius['2xl'],
     padding: Spacing.xl,
-    ...Shadows.md,
-    gap: Spacing.base,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.background,
-  },
-  inputIcon: { marginLeft: Spacing.md },
-  input: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: Spacing.md,
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
+    gap: Spacing.lg,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.dangerSurface,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radius.sm,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    borderRadius: Radius.md,
   },
   error: {
     fontSize: FontSizes.sm,
     fontFamily: Fonts.body,
-    color: Colors.danger,
     fontWeight: FontWeights.medium,
   },
   button: {
-    backgroundColor: Colors.primary,
     borderRadius: Radius.md,
-    paddingVertical: 16,
+    paddingVertical: 17,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.sm,
-    ...Shadows.sm,
+    marginTop: Spacing.xs,
   },
-  buttonDisabled: { opacity: 0.7 },
+  buttonDisabled: { opacity: 0.55 },
   buttonText: {
-    color: Colors.textInverse,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
     fontFamily: Fonts.heading,
@@ -207,10 +237,8 @@ const styles = StyleSheet.create({
   registerLinkText: {
     fontSize: FontSizes.sm,
     fontFamily: Fonts.body,
-    color: Colors.textSecondary,
   },
   registerLinkBold: {
-    color: Colors.textLink,
     fontWeight: FontWeights.semibold,
   },
 });

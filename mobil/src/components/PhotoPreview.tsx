@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Image, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Colors, Fonts, FontSizes, FontWeights, Radius } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { Colors, Fonts, FontSizes, Radius, Shadows, Spacing } from '../theme';
 
 interface Props {
   photos: { uri: string }[];
@@ -11,20 +12,34 @@ interface Props {
 }
 
 export default function PhotoPreview({ photos, onRemove, onAdd, maxPhotos = 5 }: Props) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.row}>
       {photos.map((p, i) => (
-        <TouchableOpacity key={i} onPress={() => onRemove(i)} activeOpacity={0.7}>
+        <TouchableOpacity
+          key={i}
+          onPress={() => onRemove(i)}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`Rasm ${i + 1}, o'chirish uchun bosing`}
+        >
           <Image source={{ uri: p.uri }} style={styles.thumb} />
-          <View style={styles.removeBadge}>
-            <MaterialCommunityIcons name="close" size={12} color={Colors.textInverse} />
+          <View style={[styles.removeBadge, { backgroundColor: colors.danger }, Shadows.sm]}>
+            <MaterialCommunityIcons name="close" size={14} color={colors.textInverse} />
           </View>
         </TouchableOpacity>
       ))}
       {photos.length < maxPhotos && (
-        <TouchableOpacity style={styles.addBtn} onPress={onAdd} activeOpacity={0.7}>
-          <MaterialCommunityIcons name="camera-plus" size={24} color={Colors.textSecondary} />
-          <Text style={styles.addLabel}>Rasm</Text>
+        <TouchableOpacity
+          style={[styles.addBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
+          onPress={onAdd}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Rasm qo'shish"
+        >
+          <MaterialCommunityIcons name="camera-plus" size={28} color={colors.primary} />
+          <Text style={[styles.addLabel, { color: colors.textSecondary }]}>Rasm</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -32,23 +47,32 @@ export default function PhotoPreview({ photos, onRemove, onAdd, maxPhotos = 5 }:
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  thumb: { width: 72, height: 72, borderRadius: Radius.sm },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  thumb: { width: 88, height: 88, borderRadius: Radius.md },
   removeBadge: {
-    position: 'absolute', top: -6, right: -6,
-    backgroundColor: Colors.danger, width: 22, height: 22, borderRadius: 11,
-    alignItems: 'center', justifyContent: 'center',
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.surface,
   },
   addBtn: {
-    width: 72, height: 72, borderRadius: Radius.sm,
-    borderWidth: 1.5, borderColor: Colors.border,
-    borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: Colors.surface,
+    width: 88,
+    height: 88,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   addLabel: {
     fontSize: FontSizes.xs,
     fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    marginTop: 2,
+    marginTop: Spacing.xxs,
   },
 });

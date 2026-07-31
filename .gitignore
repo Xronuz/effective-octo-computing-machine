@@ -52,7 +52,7 @@ mobil/dist/
 mobil/.expo/
 
 # Test upload chiqindilari
-tests/test_uploads/
+**/tests/test_uploads/
 
 # Logs
 *.log

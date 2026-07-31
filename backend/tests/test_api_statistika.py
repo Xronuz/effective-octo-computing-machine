@@ -40,7 +40,7 @@ def _make_mock_statistika_response() -> StatistikaResponse:
         umumiy=UmumiyStatistika(
             xonadon_soni=500, muammo_soni=120, ochiq_muammolar=45,
             yopilgan_muammolar=75, xodim_soni=12, mfy_soni=53,
-            tekshirilgan_xonadon=320, foiz=64.0,
+            kocha_soni=50, tekshirilgan_xonadon=320, foiz=64.0,
         ),
         muammo_turlari=[
             MuammoTuriStat(turi="ochiq_elektr_simi", soni=40),

@@ -24,7 +24,7 @@ export async function registerForPushNotifications(): Promise<void> {
   try {
     // Expo Go'da (SDK 53+) remote push yo'q — development build kerak
     if (Constants.appOwnership === 'expo') {
-      console.warn('Push: Expo Go\'da remote bildirishnomalar ishlamaydi (dev build kerak)');
+      console.warn("Push: Expo Go'da remote bildirishnomalar ishlamaydi (dev build kerak)");
       return;
     }
 
@@ -59,8 +59,7 @@ export async function registerForPushNotifications(): Promise<void> {
     }
 
     // EAS projectId — push token uchun majburiy
-    const projectId =
-      Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
 
     const tokenResponse = await Notifications.getExpoPushTokenAsync(
       projectId ? { projectId } : undefined,
@@ -69,6 +68,6 @@ export async function registerForPushNotifications(): Promise<void> {
 
     await api.post('/auth/push-token', { push_token: pushToken });
   } catch (err) {
-    console.warn('Push token ro\'yxatdan o\'tkazishda xato:', err);
+    console.warn("Push token ro'yxatdan o'tkazishda xato:", err);
   }
 }

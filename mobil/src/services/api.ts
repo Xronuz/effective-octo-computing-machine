@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import Constants from 'expo-constants';
+import { ENV } from '../config/env';
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './storage';
 import type { ApiResponse, LoginResponse } from '../types';
 
@@ -9,10 +9,7 @@ export function setLogoutHandler(fn: () => void): void {
   onForceLogout = fn;
 }
 
-// app.json → expo.extra.apiUrl orqali sozlanadi; fallback — Android emulator → host
-const API_URL: string =
-  (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
-  'http://10.0.2.2:8000/api';
+const API_URL: string = ENV.API_URL;
 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -29,7 +26,7 @@ api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
 });
 
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
+let failedQueue: { resolve: (token: string) => void; reject: (err: unknown) => void }[] = [];
 
 function processQueue(error: unknown, token: string | null) {
   failedQueue.forEach((prom) => {
@@ -49,10 +46,13 @@ api.interceptors.response.use(
 
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
-        failedQueue.push({ resolve: (token: string) => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          resolve(api(originalRequest));
-        }, reject });
+        failedQueue.push({
+          resolve: (token: string) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(api(originalRequest));
+          },
+          reject,
+        });
       });
     }
 
@@ -61,7 +61,7 @@ api.interceptors.response.use(
 
     try {
       const refreshToken = await getRefreshToken();
-      if (!refreshToken) throw new Error('Refresh token yo\'q');
+      if (!refreshToken) throw new Error("Refresh token yo'q");
 
       const { data } = await axios.post<ApiResponse<LoginResponse>>(
         `${api.defaults.baseURL}/auth/yangilash`,

@@ -1,11 +1,18 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, type TouchableOpacityProps } from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  type TouchableOpacityProps,
+} from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Colors, Fonts, FontSizes, FontWeights, Radius, Shadows, Durations } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { Fonts, FontSizes, FontWeights, Radius, Shadows } from '../theme';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-interface Props extends TouchableOpacityProps {
+export interface ButtonProps extends TouchableOpacityProps {
   title: string;
   loading?: boolean;
   variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost';
@@ -13,17 +20,29 @@ interface Props extends TouchableOpacityProps {
   iconSize?: number;
 }
 
-const VARIANTS = {
-  primary:   { bg: Colors.primary, text: Colors.textInverse, icon: Colors.textInverse, border: Colors.primary },
-  secondary: { bg: Colors.secondary, text: Colors.textInverse, icon: Colors.textInverse, border: Colors.secondary },
-  danger:    { bg: Colors.danger, text: Colors.textInverse, icon: Colors.textInverse, border: Colors.danger },
-  outline:   { bg: 'transparent', text: Colors.primary, icon: Colors.primary, border: Colors.primary },
-  ghost:     { bg: 'transparent', text: Colors.primary, icon: Colors.primary, border: 'transparent' },
-};
+export default function Button({
+  title,
+  loading,
+  variant = 'primary',
+  icon,
+  iconSize = 22,
+  style,
+  disabled,
+  ...rest
+}: ButtonProps) {
+  const { colors } = useTheme();
 
-export default function Button({ title, loading, variant = 'primary', icon, iconSize = 20, style, disabled, ...rest }: Props) {
-  const v = VARIANTS[variant];
+  const variants = {
+    primary: { bg: colors.primary, text: colors.textInverse, border: colors.primary },
+    secondary: { bg: colors.secondary, text: colors.textInverse, border: colors.secondary },
+    danger: { bg: colors.danger, text: colors.textInverse, border: colors.danger },
+    outline: { bg: 'transparent', text: colors.primary, border: colors.primary },
+    ghost: { bg: 'transparent', text: colors.primary, border: 'transparent' },
+  };
+
+  const v = variants[variant];
   const isDisabled = disabled || loading;
+  const hasShadow = variant === 'primary' || variant === 'secondary' || variant === 'danger';
 
   return (
     <TouchableOpacity
@@ -32,21 +51,30 @@ export default function Button({ title, loading, variant = 'primary', icon, icon
         {
           backgroundColor: v.bg,
           borderColor: v.border,
-          borderWidth: variant === 'outline' ? 1.5 : variant === 'ghost' ? 0 : 0,
+          borderWidth: variant === 'outline' ? 1.5 : 0,
         },
-        (variant === 'primary' || variant === 'secondary' || variant === 'danger') && Shadows.sm,
+        hasShadow && !isDisabled && Shadows.md,
         isDisabled && styles.disabled,
         style,
       ]}
       disabled={isDisabled}
       activeOpacity={0.75}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       {...rest}
     >
       {loading ? (
         <ActivityIndicator color={v.text} size="small" />
       ) : (
         <>
-          {icon && <MaterialCommunityIcons name={icon} size={iconSize} color={v.icon} style={{ marginRight: 8 }} />}
+          {icon && (
+            <MaterialCommunityIcons
+              name={icon}
+              size={iconSize}
+              color={v.text}
+              style={{ marginRight: 10 }}
+            />
+          )}
           <Text style={[styles.text, { color: v.text }]}>{title}</Text>
         </>
       )}
@@ -57,16 +85,17 @@ export default function Button({ title, loading, variant = 'primary', icon, icon
 const styles = StyleSheet.create({
   base: {
     borderRadius: Radius.md,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  disabled: { opacity: 0.5 },
+  disabled: { opacity: 0.45 },
   text: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
     fontFamily: Fonts.heading,
+    letterSpacing: -0.2,
   },
 });

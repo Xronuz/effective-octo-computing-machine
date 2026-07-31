@@ -4,6 +4,7 @@ Biznes-logika: yaratish, ro'yxat, yangilash, qidirish.
 """
 import json
 import logging
+from datetime import datetime, timezone
 from math import ceil
 from typing import Optional
 
@@ -12,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.hudud import Xonadon, Kocha, Mfy
-from app.models.muammo import Muammo, MuammoStatus
+from app.models.muammo import Muammo, MuammoStatus, TekshiruvNatijasi
 from app.models.user import UserRole
 from app.core.exceptions import NotFoundException, ConflictException
 
@@ -496,6 +497,22 @@ def _xonadon_to_response(xonadon: Xonadon, current_user=None) -> dict:
 
     egasi_koradi = egasi_korish_huquqi(xonadon, current_user)
 
+    # "Mening xonadonlarim" navbati uchun: joriy xodim bu xonadonni
+    # bugun (UTC) tekshirganmi — muammo topilgan yoki topilmaganidan
+    # qat'i nazar, har qanday uning tashrifi hisobga olinadi. `kira_olmadi`
+    # tashriflar bundan mustasno — xonadon haqiqatda tekshirilmagan, shuning
+    # uchun navbatda "tekshirilmagan" bo'lib qolishi kerak.
+    tekshirilgan_bugun = False
+    if current_user is not None:
+        bugun = datetime.now(timezone.utc).date()
+        tekshirilgan_bugun = any(
+            m.xodim_id == current_user.id
+            and m.sinxron_vaqti is not None
+            and m.sinxron_vaqti.astimezone(timezone.utc).date() == bugun
+            and m.tekshiruv_natijasi != TekshiruvNatijasi.kira_olmadi
+            for m in (xonadon.muammolar or [])
+        )
+
     return {
         "id": xonadon.id,
         "kocha_id": xonadon.kocha_id,
@@ -511,4 +528,5 @@ def _xonadon_to_response(xonadon: Xonadon, current_user=None) -> dict:
         "mfy_nomi": kocha.mfy.nomi if kocha and kocha.mfy else None,
         "mfy_id": kocha.mfy.id if kocha and kocha.mfy else None,
         "ochiq_muammolar_soni": ochiq_muammolar,
+        "tekshirilgan_bugun": tekshirilgan_bugun,
     }

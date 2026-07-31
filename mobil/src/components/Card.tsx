@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, type ViewProps } from 'react-native';
-import { Colors, Radius, Shadows } from '../theme';
+import { View, StyleSheet, type ViewProps } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
+import { Radius, Shadows, Spacing } from '../theme';
 
 interface Props extends ViewProps {
   children: React.ReactNode;
@@ -8,35 +9,45 @@ interface Props extends ViewProps {
   variant?: 'elevated' | 'flat' | 'outlined';
 }
 
-export default function Card({ children, padded = true, variant = 'elevated', style, ...rest }: Props) {
+export default function Card({
+  children,
+  padded = true,
+  variant = 'elevated',
+  style,
+  ...rest
+}: Props) {
+  const { colors } = useTheme();
+
   const cardStyles = [
     styles.base,
-    variant === 'elevated' && styles.elevated,
-    variant === 'flat' && styles.flat,
+    {
+      backgroundColor: variant === 'flat' ? colors.surfaceSubtle : colors.surface,
+      borderColor: colors.border,
+    },
+    variant === 'elevated' && [styles.elevated, Shadows.md],
     variant === 'outlined' && styles.outlined,
     padded && styles.padded,
     style,
   ];
 
-  return <View style={cardStyles} {...rest}>{children}</View>;
+  return (
+    <View style={cardStyles} {...rest}>
+      {children}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
   },
   elevated: {
-    ...Shadows.md,
-  },
-  flat: {
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: 'transparent',
   },
   outlined: {
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   padded: {
-    padding: 16,
+    padding: Spacing.base,
   },
 });

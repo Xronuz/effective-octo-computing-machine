@@ -58,7 +58,7 @@ async function readPending(): Promise<LocationPoint[]> {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as LocationPoint[]) : [];
   } catch (err) {
-    console.warn('Lokatsiya navbatini o\'qishda xato:', err);
+    console.warn("Lokatsiya navbatini o'qishda xato:", err);
     return [];
   }
 }
@@ -137,7 +137,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
     try {
       await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
     } catch (err) {
-      console.warn('Lokatsiya kuzatuvini to\'xtatishda xato:', err);
+      console.warn("Lokatsiya kuzatuvini to'xtatishda xato:", err);
     }
     return;
   }
@@ -225,7 +225,7 @@ export async function stopTracking(): Promise<void> {
       await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
     }
   } catch (err) {
-    console.warn('Lokatsiya kuzatuvini to\'xtatishda xato:', err);
+    console.warn("Lokatsiya kuzatuvini to'xtatishda xato:", err);
   }
 }
 

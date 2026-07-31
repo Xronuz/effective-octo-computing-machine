@@ -1,9 +1,8 @@
 // Offline-first sinxronizatsiya xizmati
 // Yagona navbat manbai — src/services/db.ts (SQLite, muammo_navbat jadvali)
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
-import axios from 'axios';
+import { isAxiosError } from 'axios';
 import api from './api';
 import {
   getNavbatYozuvlari,
@@ -13,36 +12,49 @@ import {
   urinishniTozalash,
   type NavbatYozuvi,
 } from './db';
+import { getLastSync, setLastSync } from './storage';
 import type { ApiResponse, MuammoSummary } from '../types';
 import { flushPendingLocations } from './location';
-
-const LAST_SYNC_KEY = '@last_sync_time';
 
 // Exponential backoff: urinishlar soniga qarab keyingi urinish kechikishi
 const BACKOFF_MS = [5_000, 15_000, 60_000, 300_000];
 
-type SyncCallback = (status: { syncing: boolean; pendingCount: number; lastSync: string | null }) => void;
+export interface SyncProgress {
+  total: number;
+  processed: number;
+  failed: number;
+}
+
+export interface SyncStatus {
+  syncing: boolean;
+  pendingCount: number;
+  lastSync: string | null;
+  progress: SyncProgress | null;
+}
+
+type SyncCallback = (status: SyncStatus) => void;
 let onStatusChange: SyncCallback | null = null;
 
 export function setSyncCallback(cb: SyncCallback): void {
   onStatusChange = cb;
 }
 
-async function notifyStatus(syncing: boolean): Promise<void> {
+async function notifyStatus(syncing: boolean, progress: SyncProgress | null = null): Promise<void> {
   onStatusChange?.({
     syncing,
     pendingCount: await getKutilmaganSoni(),
     lastSync: await getLastSyncTime(),
+    progress,
   });
 }
 
 export async function getLastSyncTime(): Promise<string | null> {
-  return AsyncStorage.getItem(LAST_SYNC_KEY);
+  return getLastSync();
 }
 
 async function setLastSyncTime(): Promise<void> {
   const now = new Date().toLocaleString('uz-UZ');
-  await AsyncStorage.setItem(LAST_SYNC_KEY, now);
+  await setLastSync(now);
 }
 
 interface UploadFotoJavob {
@@ -56,16 +68,16 @@ interface UploadFotoJavob {
 
 // Xato xabarini axios javobidan ajratib olish
 function xatoXabari(err: unknown): string {
-  if (axios.isAxiosError(err)) {
+  if (isAxiosError(err)) {
     const data = err.response?.data as { xato?: string; detail?: string } | undefined;
     return data?.xato || data?.detail || err.message;
   }
-  return err instanceof Error ? err.message : 'Noma\'lum xatolik';
+  return err instanceof Error ? err.message : "Noma'lum xatolik";
 }
 
 // 4xx (422 kabi validatsiya xatolari) — qayta urinib bo'lmaydigan xato
 function qaytaribBolmasXato(err: unknown): boolean {
-  if (!axios.isAxiosError(err) || !err.response) return false;
+  if (!isAxiosError(err) || !err.response) return false;
   const s = err.response.status;
   return s >= 400 && s < 500 && s !== 408 && s !== 429;
 }
@@ -88,23 +100,32 @@ async function fotoYukla(faylYoli: string): Promise<UploadFotoJavob> {
 // 2) har bir foto uchun POST /api/upload/foto (multipart)
 // 3) POST /api/muammolar/{id}/fotolar — bog'lash
 async function yozuvniYubor(y: NavbatYozuvi): Promise<void> {
-  const { data } = await api.post<ApiResponse<MuammoSummary & { dublikat?: boolean }>>('/muammolar', {
-    xonadon_id: y.xonadon_id,
-    turi: y.turi,
-    tavsif: y.tavsif,
-    xavf: y.xavf,
-    lat: y.lat,
-    lng: y.lng,
-    gps_aniqlik: y.gps_aniqlik,
-    mock_gps: y.mock_gps,
-    client_uuid: y.client_uuid,
-    qurilma_vaqti: y.yaratilgan,
-    ornida_bartaraf: y.ornida_bartaraf,
-    muddat: y.ornida_bartaraf ? null : y.muddat,
-    has_keyin_foto: y.ornida_bartaraf && y.foto_paths.length > 0,
-    taklif_etilgan_tadbirlar: y.taklif_etilgan_tadbirlar,
-    yoriqnomadan_otkanlar_soni: y.yoriqnomadan_otkanlar_soni,
-  });
+  const { data } = await api.post<ApiResponse<MuammoSummary & { dublikat?: boolean }>>(
+    '/muammolar',
+    {
+      xonadon_id: y.xonadon_id,
+      turi: y.turi,
+      tavsif: y.tavsif,
+      xavf: y.xavf,
+      lat: y.lat,
+      lng: y.lng,
+      gps_aniqlik: y.gps_aniqlik,
+      mock_gps: y.mock_gps,
+      client_uuid: y.client_uuid,
+      qurilma_vaqti: y.yaratilgan,
+      ornida_bartaraf: y.ornida_bartaraf,
+      muddat: y.ornida_bartaraf ? null : y.muddat,
+      has_keyin_foto: y.ornida_bartaraf && y.foto_paths.length > 0,
+      taklif_etilgan_tadbirlar: y.taklif_etilgan_tadbirlar,
+      // Backend endi bu maydonni majburiy deb talab qiladi — eski
+      // navbatga tushib qolgan (yangilanishdan oldingi) yozuvlarda bo'sh
+      // bo'lishi mumkin, shuning uchun zaxira qiymat beriladi.
+      yoriqnomadan_otkanlar_soni: y.yoriqnomadan_otkanlar_soni ?? 0,
+      // Eski (yangilanishdan oldingi) navbat yozuvlarida bu maydon bo'lmagan —
+      // zaxira qiymat `false`.
+      kira_olmadi: y.kira_olmadi ?? false,
+    },
+  );
   // dublikat: true — backend'da client_uuid bilan yozuv allaqachon bor, id sini olamiz
   if (!data.ok || !data.data?.id) throw new Error(data.xato || 'Muammo yaratishda xatolik');
   const muammoId = data.data.id;
@@ -114,17 +135,20 @@ async function yozuvniYubor(y: NavbatYozuvi): Promise<void> {
     for (const path of y.foto_paths) {
       fotolar.push(await fotoYukla(path));
     }
-    const { data: boglash } = await api.post<ApiResponse<unknown>>(`/muammolar/${muammoId}/fotolar`, {
-      fotolar: fotolar.map((f) => ({
-        fayl_yoli: f.fayl_yoli,
-        sha256: f.sha256,
-        exif_lat: f.exif_lat,
-        exif_lng: f.exif_lng,
-        exif_vaqt: f.exif_vaqt,
-        olcham_byte: f.olcham_byte,
-      })),
-    });
-    if (!boglash.ok) throw new Error(boglash.xato || 'Fotolarni bog\'lashda xatolik');
+    const { data: boglash } = await api.post<ApiResponse<unknown>>(
+      `/muammolar/${muammoId}/fotolar`,
+      {
+        fotolar: fotolar.map((f) => ({
+          fayl_yoli: f.fayl_yoli,
+          sha256: f.sha256,
+          exif_lat: f.exif_lat,
+          exif_lng: f.exif_lng,
+          exif_vaqt: f.exif_vaqt,
+          olcham_byte: f.olcham_byte,
+        })),
+      },
+    );
+    if (!boglash.ok) throw new Error(boglash.xato || "Fotolarni bog'lashda xatolik");
   }
 }
 
@@ -133,8 +157,14 @@ let syncing = false;
 export async function syncNow(): Promise<{ yuborildi: number; xato: number }> {
   if (syncing) return { yuborildi: 0, xato: 0 };
 
+  // Faqat `isConnected`ga tayanamiz — `isInternetReachable` NetInfo'ning
+  // ichki (odatda Google) ulanish-tekshiruv URL'iga bog'liq va u ba'zi
+  // tarmoq/hotspot'larda bloklanib, internet aslida ishlayotgan bo'lsa ham
+  // noto'g'ri "false" qaytarib, sinxronlashni butunlay to'xtatib qo'yardi.
+  // Haqiqiy tarmoq xatosi bo'lsa, so'rovning o'zi xato beradi va pastdagi
+  // backoff logikasi ishlaydi.
   const net = await NetInfo.fetch();
-  if (net.isConnected !== true || net.isInternetReachable === false) {
+  if (net.isConnected !== true) {
     return { yuborildi: 0, xato: 0 };
   }
 
@@ -145,13 +175,23 @@ export async function syncNow(): Promise<{ yuborildi: number; xato: number }> {
   let xato = 0;
 
   try {
+    let yozuvlar: NavbatYozuvi[] = [];
+    try {
+      yozuvlar = await getNavbatYozuvlari();
+    } catch {
+      // SQLite ishga tushmaganda/yozuvlar olinmaganda navbatni bo'sh deb hisoblaymiz
+      return { yuborildi: 0, xato: 0 };
+    }
+
     const hozir = Date.now();
-    const yozuvlar = await getNavbatYozuvlari();
     const kutilmoqda = yozuvlar.filter(
       (y) =>
         y.status === 'kutilmoqda' &&
         (!y.keyingi_urinish || new Date(y.keyingi_urinish).getTime() <= hozir),
     );
+    const total = kutilmoqda.length;
+    let processed = 0;
+    let failed = 0;
 
     for (const y of kutilmoqda) {
       try {
@@ -159,18 +199,22 @@ export async function syncNow(): Promise<{ yuborildi: number; xato: number }> {
         await setNavbatStatus(y.client_uuid, 'yuborilgan');
         await urinishniTozalash(y.client_uuid);
         yuborildi++;
+        processed++;
       } catch (err) {
         if (qaytaribBolmasXato(err)) {
           // 4xx — ma'lumot noto'g'ri, qayta urinmaysiz: 'xato' statusga o'tkazamiz
           await setNavbatStatus(y.client_uuid, 'xato', xatoXabari(err));
           xato++;
+          failed++;
         } else {
           // 5xx / timeout / tarmoq — 'kutilmoqda' qoladi, exponential backoff
           const kechikish = BACKOFF_MS[Math.min(y.urinishlar_soni, BACKOFF_MS.length - 1)];
           await urinishniQaydEt(y.client_uuid, new Date(Date.now() + kechikish).toISOString());
           xato++;
+          failed++;
         }
       }
+      await notifyStatus(true, { total, processed, failed });
     }
 
     await setLastSyncTime();
@@ -189,7 +233,7 @@ export function setupAutoSync(): void {
 
   // Tarmoq qaytganda darhol sinxronlash (muammolar + to'plangan GPS nuqtalar)
   NetInfo.addEventListener((state) => {
-    if (state.isConnected === true && state.isInternetReachable !== false) {
+    if (state.isConnected === true) {
       syncNow();
       flushPendingLocations().catch(() => {});
     }

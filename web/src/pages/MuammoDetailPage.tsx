@@ -6,6 +6,7 @@ import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
 import type { MuammoDetail } from '@/types';
 import DateInput from '@/components/DateInput';
+import { bandlarniParse, bandMatni } from '@/lib/yoriqnoma';
 
 const STATUS_LABEL: Record<string, string> = {
   ochiq: 'Ochiq', jarayonda: 'Jarayonda', yopilgan: 'Yopilgan', qayta_ochilgan: 'Qayta ochilgan',
@@ -22,6 +23,18 @@ const XAVF_LABEL: Record<string, string> = {
 const XAVF_BADGE: Record<string, string> = {
   past: 'badge-green', orta: 'badge-yellow', yuqori: 'badge-red',
 };
+
+// Yo'riqnoma checklist oqimida (turi=null) sarlavha uchun zaxira matn
+function turiSarlavha(m: MuammoDetail, tr: (s: string) => string): string {
+  if (m.turi) {
+    return m.turi_nomi ? tr(m.turi_nomi) : (TURI_LABEL[m.turi] ? tr(TURI_LABEL[m.turi]) : m.turi);
+  }
+  if (m.tekshiruv_natijasi === 'kira_olmadi') {
+    return tr('Tekshiruv — kira olmadi (uyda hech kim yo\'q)');
+  }
+  const bandlar = bandlarniParse(m.taklif_etilgan_tadbirlar);
+  return bandlar.length > 0 ? tr('Tekshiruv — muammo aniqlandi') : tr("Tekshiruv — muammo yo'q");
+}
 
 export default function MuammoDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -148,7 +161,7 @@ export default function MuammoDetailPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-[#0F2033] sm:text-2xl">
-          {muammo.turi_nomi ? tr(muammo.turi_nomi) : (TURI_LABEL[muammo.turi] ? tr(TURI_LABEL[muammo.turi]) : muammo.turi)} — {muammo.xonadon_manzili ? tr(muammo.xonadon_manzili) : `${tr('Xonadon')} #${muammo.xonadon_id}`}
+          {turiSarlavha(muammo, tr)} — {muammo.xonadon_manzili ? tr(muammo.xonadon_manzili) : `${tr('Xonadon')} #${muammo.xonadon_id}`}
         </h1>
         <div className="flex items-center gap-3">
           <span className={STATUS_BADGE[muammo.status] || 'badge-gray'}>{STATUS_LABEL[muammo.status] ? tr(STATUS_LABEL[muammo.status]) : muammo.status}</span>
@@ -223,12 +236,17 @@ export default function MuammoDetailPage() {
         <div className="card space-y-4 p-6">
           <h3 className="text-base font-semibold text-[#0F2033]">{tr("Asosiy ma'lumot")}</h3>
           <div className="space-y-3">
-            <Row label="Turi" value={muammo.turi_nomi ? tr(muammo.turi_nomi) : (TURI_LABEL[muammo.turi] ? tr(TURI_LABEL[muammo.turi]) : muammo.turi)} />
-            <Row label="Xavf darajasi">
-              <span className={XAVF_BADGE[muammo.xavf] || 'badge-gray'}>{XAVF_LABEL[muammo.xavf] ? tr(XAVF_LABEL[muammo.xavf]) : muammo.xavf}</span>
-            </Row>
+            <Row label="Turi" value={turiSarlavha(muammo, tr)} />
+            {muammo.turi && (
+              <Row label="Xavf darajasi">
+                <span className={XAVF_BADGE[muammo.xavf] || 'badge-gray'}>{XAVF_LABEL[muammo.xavf] ? tr(XAVF_LABEL[muammo.xavf]) : muammo.xavf}</span>
+              </Row>
+            )}
             <Row label="Status" value={STATUS_LABEL[muammo.status] ? tr(STATUS_LABEL[muammo.status]) : muammo.status} />
             <Row label="O'rnida bartaraf" value={muammo.ornida_bartaraf ? tr('Ha') : tr("Yo'q")} />
+            {muammo.yoriqnomadan_otkanlar_soni != null && (
+              <Row label="Yo'riqnomadan o'tkanlar soni" value={String(muammo.yoriqnomadan_otkanlar_soni)} />
+            )}
             {muammo.muddat && (
               <Row label="Muddat" value={
                 <span>{tr(new Date(muammo.muddat).toLocaleDateString('uz-UZ'))} {muammo.muddat_qolgan_kun != null && (
@@ -260,6 +278,23 @@ export default function MuammoDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Aniqlangan kamchiliklar (yo'riqnoma bandlari) */}
+      {muammo.taklif_etilgan_tadbirlar && (
+        <div className="card p-6">
+          <h3 className="mb-3 text-base font-semibold text-[#0F2033]">
+            {tr("Aniqlangan kamchiliklar (yo'riqnoma bandlari)")}
+          </h3>
+          <ul className="space-y-2">
+            {bandlarniParse(muammo.taklif_etilgan_tadbirlar).map((bandId) => (
+              <li key={bandId} className="flex gap-2 text-sm text-slate-600">
+                <span className="shrink-0 font-semibold text-[#0F2033]">{bandId}.</span>
+                <span>{tr(bandMatni(bandId))}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Tavsif */}
       {muammo.tavsif && (

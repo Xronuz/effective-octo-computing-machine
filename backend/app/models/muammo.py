@@ -52,6 +52,13 @@ MUAMMO_TURI_NOMLARI = {
 }
 
 
+TEKSHIRUV_NATIJASI_NOMLARI = {
+    "muammo_topildi": "Muammo topildi",
+    "muammo_yoq": "Tekshirildi, muammo yo'q",
+    "kira_olmadi": "Kira olmadi (uyda hech kim yo'q)",
+}
+
+
 class MuammoStatus(str, enum.Enum):
     ochiq = "ochiq"
     jarayonda = "jarayonda"
@@ -71,6 +78,14 @@ class FotoTuri(str, enum.Enum):
     keyin = "keyin"
 
 
+class TekshiruvNatijasi(str, enum.Enum):
+    """Tashrif natijasi: muammo topildi, tekshirildi-muammo yo'q, yoki
+    xonadonga umuman kira olmadi (uyda hech kim yo'q/eshik ochilmadi)."""
+    muammo_topildi = "muammo_topildi"
+    muammo_yoq = "muammo_yoq"
+    kira_olmadi = "kira_olmadi"
+
+
 # ============ Muammo ============
 
 class Muammo(Base):
@@ -82,7 +97,7 @@ class Muammo(Base):
 
     turi = Column(
         PG_ENUM(MuammoTuri, name="muammo_turi", create_type=False),
-        nullable=False,
+        nullable=True,
     )
     tavsif = Column(Text, nullable=True)
 
@@ -95,6 +110,11 @@ class Muammo(Base):
         PG_ENUM(MuammoStatus, name="muammo_status", create_type=False),
         nullable=False,
         default="ochiq",
+    )
+    tekshiruv_natijasi = Column(
+        PG_ENUM(TekshiruvNatijasi, name="tekshiruv_natijasi", create_type=False),
+        nullable=False,
+        default="muammo_yoq",
     )
 
     ornida_bartaraf = Column(Boolean, default=False, nullable=False)
@@ -136,8 +156,12 @@ class Muammo(Base):
     fotolar = relationship("Foto", back_populates="muammo", lazy="selectin", cascade="all, delete-orphan")
 
     @property
-    def turi_nomi(self) -> str:
-        """Muammo turining o'zbekcha nomi."""
+    def turi_nomi(self) -> str | None:
+        """Muammo turining o'zbekcha nomi. Yo'riqnoma checklist bo'yicha
+        yozilgan (yoki muammo topilmagan) qatorlarda turi bo'sh bo'lishi
+        mumkin — bunday holda None qaytariladi."""
+        if self.turi is None:
+            return None
         return MUAMMO_TURI_NOMLARI.get(self.turi, self.turi.value)
 
     @property

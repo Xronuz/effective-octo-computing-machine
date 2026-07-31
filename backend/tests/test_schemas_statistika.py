@@ -22,7 +22,7 @@ class TestUmumiyStatistika:
         s = UmumiyStatistika(
             xonadon_soni=100, muammo_soni=50, ochiq_muammolar=10,
             yopilgan_muammolar=40, xodim_soni=5, mfy_soni=53,
-            tekshirilgan_xonadon=20, foiz=20.0,
+            kocha_soni=50, tekshirilgan_xonadon=20, foiz=20.0,
         )
         assert s.xonadon_soni == 100
         assert s.muammo_soni == 50
@@ -38,7 +38,7 @@ class TestUmumiyStatistika:
         s = UmumiyStatistika(
             xonadon_soni=1, muammo_soni=1, ochiq_muammolar=0,
             yopilgan_muammolar=0, xodim_soni=1, mfy_soni=1,
-            tekshirilgan_xonadon=0, foiz=0.0,
+            kocha_soni=50, tekshirilgan_xonadon=0, foiz=0.0,
         )
         d = s.model_dump()
         assert "xonadon_soni" in d
@@ -56,7 +56,7 @@ class TestUmumiyStatistika:
             s = UmumiyStatistika(
                 xonadon_soni=1, muammo_soni=0, ochiq_muammolar=0,
                 yopilgan_muammolar=0, xodim_soni=1, mfy_soni=1,
-                tekshirilgan_xonadon=0, foiz=val,
+                kocha_soni=50, tekshirilgan_xonadon=0, foiz=val,
             )
             assert s.foiz == val
 
@@ -152,7 +152,7 @@ class TestStatistikaResponse:
         u = UmumiyStatistika(
             xonadon_soni=100, muammo_soni=50, ochiq_muammolar=10,
             yopilgan_muammolar=40, xodim_soni=5, mfy_soni=53,
-            tekshirilgan_xonadon=20, foiz=20.0,
+            kocha_soni=50, tekshirilgan_xonadon=20, foiz=20.0,
         )
         turlar = [MuammoTuriStat(turi="gaz_hidi", soni=5)]
         xavf = [MuammoXavfStat(xavf="yuqori", soni=3)]
@@ -183,7 +183,7 @@ class TestStatistikaResponse:
         u = UmumiyStatistika(
             xonadon_soni=1, muammo_soni=1, ochiq_muammolar=0,
             yopilgan_muammolar=0, xodim_soni=1, mfy_soni=1,
-            tekshirilgan_xonadon=0, foiz=0.0,
+            kocha_soni=50, tekshirilgan_xonadon=0, foiz=0.0,
         )
         resp = StatistikaResponse(
             umumiy=u, muammo_turlari=[], muammo_xavf=[], muammo_status=[],

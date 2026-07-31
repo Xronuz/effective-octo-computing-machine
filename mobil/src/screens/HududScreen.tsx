@@ -1,16 +1,45 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator,
-  Modal, ScrollView, KeyboardAvoidingView, Platform, Alert,
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Modal,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import PullToRefresh from '../components/PullToRefresh';
 import api from '../services/api';
+import {
+  cacheMfylar,
+  getCacheMfylar,
+  cacheKochalar,
+  getCacheKochalar,
+  cacheXonadonlar,
+  getCacheXonadonlar,
+} from '../services/cache';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
-import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, tabBarContentPadding } from '../theme';
+import {
+  Colors,
+  Fonts,
+  FontSizes,
+  FontWeights,
+  Spacing,
+  Radius,
+  Shadows,
+  tabBarContentPadding,
+} from '../theme';
 import type { ApiResponse, Paginated, MfyBrief, KochaBrief, XonadonSummary } from '../types';
 import { useAlifbo } from '../contexts/AlifboContext';
+import { useTabScreenNavigation } from '../navigation/hooks';
 
 interface KochaDetail extends KochaBrief {
   expanded: boolean;
@@ -33,42 +62,62 @@ interface YangiXonadonForm {
 
 const EMPTY_FORM: YangiXonadonForm = { uy_raqami: '', egasi_fio: '', egasi_tel: '', izoh: '' };
 
-export default function HududScreen({ navigation }: any) {
+export default function HududScreen() {
+  const navigation = useTabScreenNavigation();
   const { tr } = useAlifbo();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<MfyDetail[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
-  // Yangi xonadon modali
   const [modalKocha, setModalKocha] = useState<KochaDetail | null>(null);
   const [form, setForm] = useState<YangiXonadonForm>(EMPTY_FORM);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
 
   const fetchMfylar = useCallback(async () => {
+    // /auth/men javobida maydon `mfy_id` deb kelishi mumkin — `id` ga normalize qilamiz,
+    // aks holda keyExtractor va /mfylar/{id} so'rovi undefined bilan ishlaydi.
+    const normalize = (m: MfyBrief & { mfy_id?: number }): MfyDetail => ({
+      ...m,
+      id: m.id ?? (m.mfy_id as number),
+      expanded: false,
+      kochalar: [],
+      loadingKochalar: false,
+    });
     try {
       setLoading(true);
-      const { data } = await api.get<ApiResponse<MfyBrief[]>>('/mfylar');
-      if (data.ok && data.data) {
-        setItems(
-          data.data.map((m) => ({
-            ...m,
-            expanded: false,
-            kochalar: [],
-            loadingKochalar: false,
-          }))
-        );
+      const cached = await getCacheMfylar();
+      if (cached) {
+        setItems(cached.map(normalize));
       }
+      // Faqat foydalanuvchiga biriktirilgan MFYlar
+      const { data } = await api.get<ApiResponse<{ mfy_biriktirishlar?: MfyBrief[] }>>('/auth/men');
+      if (data.ok && data.data?.mfy_biriktirishlar) {
+        const biriktirilgan = data.data.mfy_biriktirishlar.map(normalize);
+        setItems(biriktirilgan);
+        await cacheMfylar(data.data.mfy_biriktirishlar);
+      } else {
+        setItems([]);
+      }
+    } catch {
+      // Tarmoq yo'q — cache'dan ko'rsatiladi
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => { fetchMfylar(); }, [fetchMfylar]);
+  useEffect(() => {
+    fetchMfylar();
+  }, [fetchMfylar]);
 
-  const onRefresh = () => { setRefreshing(true); fetchMfylar(); };
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchMfylar();
+  };
 
   const patchMfy = (index: number, patch: Partial<MfyDetail>) => {
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
@@ -78,9 +127,12 @@ export default function HududScreen({ navigation }: any) {
     setItems((prev) =>
       prev.map((m, i) =>
         i === mfyIndex
-          ? { ...m, kochalar: m.kochalar.map((k, j) => (j === kochaIndex ? { ...k, ...patch } : k)) }
-          : m
-      )
+          ? {
+              ...m,
+              kochalar: m.kochalar.map((k, j) => (j === kochaIndex ? { ...k, ...patch } : k)),
+            }
+          : m,
+      ),
     );
   };
 
@@ -96,6 +148,20 @@ export default function HududScreen({ navigation }: any) {
     }
     patchMfy(index, { loadingKochalar: true });
     try {
+      const cached = await getCacheKochalar(mfy.id);
+      if (cached) {
+        patchMfy(index, {
+          kochalar: cached.map((k) => ({
+            ...k,
+            mfy_id: mfy.id,
+            expanded: false,
+            xonadonlar: [],
+            loadingXonadonlar: false,
+          })),
+          expanded: true,
+          loadingKochalar: false,
+        });
+      }
       const { data } = await api.get<ApiResponse<{ kochalar: KochaBrief[] }>>(`/mfylar/${mfy.id}`);
       if (data.ok && data.data) {
         patchMfy(index, {
@@ -109,10 +175,11 @@ export default function HududScreen({ navigation }: any) {
           expanded: true,
           loadingKochalar: false,
         });
-      } else {
-        patchMfy(index, { loadingKochalar: false });
+        await cacheKochalar(mfy.id, data.data.kochalar);
       }
     } catch {
+      // Tarmoq yo'q
+    } finally {
       patchMfy(index, { loadingKochalar: false });
     }
   };
@@ -129,6 +196,14 @@ export default function HududScreen({ navigation }: any) {
     }
     patchKocha(mfyIndex, kochaIndex, { loadingXonadonlar: true });
     try {
+      const cached = await getCacheXonadonlar(kocha.id);
+      if (cached) {
+        patchKocha(mfyIndex, kochaIndex, {
+          xonadonlar: cached,
+          expanded: true,
+          loadingXonadonlar: false,
+        });
+      }
       const { data } = await api.get<ApiResponse<Paginated<XonadonSummary>>>(
         `/xonadonlar?kocha_id=${kocha.id}&size=100`,
       );
@@ -138,10 +213,11 @@ export default function HududScreen({ navigation }: any) {
           expanded: true,
           loadingXonadonlar: false,
         });
-      } else {
-        patchKocha(mfyIndex, kochaIndex, { loadingXonadonlar: false });
+        await cacheXonadonlar(data.data.items, kocha.id);
       }
     } catch {
+      // Tarmoq yo'q
+    } finally {
       patchKocha(mfyIndex, kochaIndex, { loadingXonadonlar: false });
     }
   };
@@ -171,20 +247,26 @@ export default function HududScreen({ navigation }: any) {
       if (data.ok && data.data) {
         const yangi = data.data;
         setModalKocha(null);
-        // Ro'yxatni yangilash
         setItems((prev) =>
           prev.map((m) => ({
             ...m,
             kochalar: m.kochalar.map((k) =>
               k.id === yangi.kocha_id
                 ? { ...k, xonadonlar: [...k.xonadonlar, yangi], xonadon_soni: k.xonadon_soni + 1 }
-                : k
+                : k,
             ),
-          }))
+          })),
         );
-        Alert.alert('Muvaffaqiyat', tr(`№${yangi.uy_raqami} uy qo'shildi`), [
+        Alert.alert(tr('Muvaffaqiyat'), tr(`№${yangi.uy_raqami} uy qo'shildi`), [
           { text: tr('Yopish'), style: 'cancel' },
-          { text: tr('Muammo yaratish'), onPress: () => navigation.navigate('MuammoYaratish', { xonadonId: yangi.id }) },
+          ...(yangi?.id
+            ? [
+                {
+                  text: tr("Xonadonni ko'rish"),
+                  onPress: () => navigation.navigate('XonadonDetail', { id: yangi.id }),
+                },
+              ]
+            : []),
         ]);
       } else {
         setFormError(data.xato || tr("Xonadon qo'shishda xatolik"));
@@ -200,17 +282,30 @@ export default function HududScreen({ navigation }: any) {
     }
   };
 
+  const filteredItems = useMemo(() => {
+    if (!search.trim()) return items;
+    const q = search.toLowerCase();
+    return items.filter((m) => (m.nomi || '').toLowerCase().includes(q));
+  }, [items, search]);
+
   const renderXonadon = (x: XonadonSummary) => (
     <TouchableOpacity
       key={x.id}
       style={styles.xonadonRow}
-      onPress={() => navigation.navigate('MuammoYaratish', { xonadonId: x.id })}
+      onPress={() => navigation.navigate('XonadonDetail', { id: x.id })}
       activeOpacity={0.7}
     >
       <View style={styles.xonadonLeft}>
-        <MaterialCommunityIcons name="home-outline" size={16} color={Colors.primary} style={{ marginRight: 8 }} />
+        <MaterialCommunityIcons
+          name="home-outline"
+          size={16}
+          color={Colors.primary}
+          style={{ marginRight: 8 }}
+        />
         <View style={{ flex: 1 }}>
-          <Text style={styles.xonadonTitle}>{tr('Uy')} №{x.uy_raqami}</Text>
+          <Text style={styles.xonadonTitle}>
+            {tr('Uy')} №{x.uy_raqami}
+          </Text>
           {x.egasi_fio ? <Text style={styles.xonadonMeta}>{x.egasi_fio}</Text> : null}
         </View>
       </View>
@@ -234,17 +329,29 @@ export default function HududScreen({ navigation }: any) {
       >
         <View style={styles.mfyLeft}>
           <View style={styles.mfyIndexCircle}>
-            <Text style={styles.mfyIndexText}>{item.raqami}</Text>
+            <MaterialCommunityIcons name="home-city-outline" size={20} color={Colors.primary} />
           </View>
           <View style={styles.mfyInfo}>
-            <Text style={styles.mfyTitle} numberOfLines={1}>{item.nomi}</Text>
+            <Text style={styles.mfyTitle} numberOfLines={1}>
+              {item.nomi}
+            </Text>
             <View style={styles.mfyStats}>
               <View style={styles.statBadge}>
-                <MaterialCommunityIcons name="home-outline" size={12} color={Colors.primary} style={{ marginRight: 3 }} />
+                <MaterialCommunityIcons
+                  name="home-outline"
+                  size={12}
+                  color={Colors.primary}
+                  style={{ marginRight: 3 }}
+                />
                 <Text style={styles.statText}>{item.xonadon_soni}</Text>
               </View>
               <View style={styles.statBadge}>
-                <MaterialCommunityIcons name="road-variant" size={12} color={Colors.secondary} style={{ marginRight: 3 }} />
+                <MaterialCommunityIcons
+                  name="road-variant"
+                  size={12}
+                  color={Colors.secondary}
+                  style={{ marginRight: 3 }}
+                />
                 <Text style={styles.statText}>{item.kochalar_soni}</Text>
               </View>
             </View>
@@ -260,7 +367,11 @@ export default function HududScreen({ navigation }: any) {
       {item.expanded && (
         <View style={styles.kochalarList}>
           {item.loadingKochalar ? (
-            <ActivityIndicator size="small" color={Colors.primary} style={{ padding: Spacing.base }} />
+            <ActivityIndicator
+              size="small"
+              color={Colors.primary}
+              style={{ padding: Spacing.base }}
+            />
           ) : item.kochalar.length === 0 ? (
             <Text style={styles.noKochalar}>Ko'chalar mavjud emas</Text>
           ) : (
@@ -272,14 +383,48 @@ export default function HududScreen({ navigation }: any) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.kochaLeft}>
-                    <MaterialCommunityIcons name="map-marker-outline" size={14} color={Colors.textMuted} style={{ marginRight: 6 }} />
+                    <MaterialCommunityIcons
+                      name="map-marker-outline"
+                      size={14}
+                      color={Colors.textMuted}
+                      style={{ marginRight: 6 }}
+                    />
                     <Text style={styles.kochaNom}>{k.nomi}</Text>
                   </View>
                   <View style={styles.kochaRight}>
+                    {k.xonadonlar.length > 0 &&
+                      (() => {
+                        const ochiqSoni = k.xonadonlar.reduce(
+                          (sum, x) => sum + (x.ochiq_muammolar_soni || 0),
+                          0,
+                        );
+                        return ochiqSoni > 0 ? (
+                          <View style={styles.muammoBadge}>
+                            <Text style={styles.muammoBadgeText}>{ochiqSoni}</Text>
+                          </View>
+                        ) : null;
+                      })()}
                     <View style={styles.kochaCount}>
                       <Text style={styles.kochaSoni}>{k.xonadon_soni}</Text>
-                      <Text style={styles.kochaLabel}>xonadon</Text>
+                      <Text style={styles.kochaLabel}>{tr('xonadon')}</Text>
                     </View>
+                    <TouchableOpacity
+                      style={styles.kochaAddBtn}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        openXonadonModal(k);
+                      }}
+                      activeOpacity={0.7}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel={tr("Yangi xonadon qo'shish")}
+                    >
+                      <MaterialCommunityIcons
+                        name="plus-circle-outline"
+                        size={20}
+                        color={Colors.primary}
+                      />
+                    </TouchableOpacity>
                     <MaterialCommunityIcons
                       name={k.expanded ? 'chevron-up' : 'chevron-down'}
                       size={18}
@@ -291,7 +436,11 @@ export default function HududScreen({ navigation }: any) {
                 {k.expanded && (
                   <View style={styles.xonadonlarList}>
                     {k.loadingXonadonlar ? (
-                      <ActivityIndicator size="small" color={Colors.primary} style={{ padding: Spacing.sm }} />
+                      <ActivityIndicator
+                        size="small"
+                        color={Colors.primary}
+                        style={{ padding: Spacing.sm }}
+                      />
                     ) : (
                       <>
                         {k.xonadonlar.length === 0 ? (
@@ -304,7 +453,12 @@ export default function HududScreen({ navigation }: any) {
                           onPress={() => openXonadonModal(k)}
                           activeOpacity={0.75}
                         >
-                          <MaterialCommunityIcons name="plus-circle-outline" size={18} color={Colors.primary} style={{ marginRight: 6 }} />
+                          <MaterialCommunityIcons
+                            name="plus-circle-outline"
+                            size={16}
+                            color={Colors.primary}
+                            style={{ marginRight: 5 }}
+                          />
                           <Text style={styles.addXonadonText}>Yangi xonadon</Text>
                         </TouchableOpacity>
                       </>
@@ -323,30 +477,61 @@ export default function HududScreen({ navigation }: any) {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Hududlar</Text>
+        <Text style={styles.headerTitle}>{tr('Hududlar')}</Text>
+        <TouchableOpacity
+          style={styles.searchBtn}
+          onPress={() => setSearchOpen((v) => !v)}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons
+            name={searchOpen ? 'close' : 'magnify'}
+            size={22}
+            color={Colors.primary}
+          />
+        </TouchableOpacity>
       </View>
 
+      {searchOpen && (
+        <View style={styles.searchRow}>
+          <View style={styles.searchBar}>
+            <MaterialCommunityIcons
+              name="magnify"
+              size={18}
+              color={Colors.textMuted}
+              style={{ marginLeft: Spacing.md }}
+            />
+            <TextInput
+              style={styles.searchInput}
+              value={search}
+              onChangeText={setSearch}
+              placeholder={tr("MFY nomi bo'yicha qidirish...")}
+              placeholderTextColor={Colors.textMuted}
+              autoFocus
+            />
+          </View>
+        </View>
+      )}
+
       <FlatList
-        data={items}
-        keyExtractor={(item) => String(item.id)}
+        data={filteredItems}
+        keyExtractor={(item, index) => String(item.id ?? index)}
         renderItem={renderItem}
-        contentContainerStyle={[styles.list, { paddingBottom: tabBarContentPadding(insets.bottom) }]}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.primary}
-            colors={[Colors.primary]}
-          />
-        }
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: tabBarContentPadding(insets.bottom) },
+        ]}
+        refreshControl={<PullToRefresh refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyBox}>
-              <View style={styles.emptyIcon}>
-                <MaterialCommunityIcons name="map-search-outline" size={36} color={Colors.textMuted} />
-              </View>
-              <Text style={styles.emptyTitle}>Hududlar yuklanmadi</Text>
-              <Text style={styles.emptyText}>MFY ma'lumotlarini yuklab bo'lmadi. Internet aloqasini tekshirib, qayta urinib ko'ring.</Text>
+              <Text style={styles.emptyTitle}>
+                {search.trim() ? tr('Natija topilmadi') : tr('Sizga hudud biriktirilmagan')}
+              </Text>
+              {!search.trim() && (
+                <Text style={styles.emptyText}>
+                  {tr('Sizga biriktirilgan MFYlar mavjud emas. Administratorga murojaat qiling.')}
+                </Text>
+              )}
             </View>
           ) : null
         }
@@ -371,7 +556,7 @@ export default function HududScreen({ navigation }: any) {
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.modalTitle}>Yangi xonadon</Text>
+                <Text style={styles.modalTitle}>{tr('Yangi xonadon')}</Text>
                 {modalKocha ? (
                   <Text style={styles.modalSubtitle}>{modalKocha.nomi} ko'chasi</Text>
                 ) : null}
@@ -381,16 +566,19 @@ export default function HududScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
 
-            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: Spacing.base }}>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ gap: Spacing.base }}
+            >
               <FormField
-                label="Uy raqami *"
+                label={tr('Uy raqami *')}
                 value={form.uy_raqami}
                 onChangeText={(v) => setForm((p) => ({ ...p, uy_raqami: v }))}
                 placeholder={tr('Masalan: 12 yoki 45-A')}
                 editable={!saving}
               />
               <FormField
-                label="Egasi F.I.O."
+                label={tr('Egasi F.I.O.')}
                 value={form.egasi_fio}
                 onChangeText={(v) => setForm((p) => ({ ...p, egasi_fio: v }))}
                 placeholder={tr('Xonadon egasining ismi')}
@@ -398,7 +586,7 @@ export default function HududScreen({ navigation }: any) {
                 editable={!saving}
               />
               <FormField
-                label="Egasi telefoni"
+                label={tr('Egasi telefoni')}
                 value={form.egasi_tel}
                 onChangeText={(v) => setForm((p) => ({ ...p, egasi_tel: v }))}
                 placeholder={tr('+998 90 123 45 67')}
@@ -406,7 +594,7 @@ export default function HududScreen({ navigation }: any) {
                 editable={!saving}
               />
               <FormField
-                label="Izoh"
+                label={tr('Izoh')}
                 value={form.izoh}
                 onChangeText={(v) => setForm((p) => ({ ...p, izoh: v }))}
                 placeholder={tr("Qo'shimcha ma'lumot")}
@@ -416,7 +604,12 @@ export default function HududScreen({ navigation }: any) {
 
               {formError ? (
                 <View style={styles.formErrorBox}>
-                  <MaterialCommunityIcons name="alert-circle" size={18} color={Colors.danger} style={{ marginRight: 6 }} />
+                  <MaterialCommunityIcons
+                    name="alert-circle"
+                    size={18}
+                    color={Colors.danger}
+                    style={{ marginRight: 6 }}
+                  />
                   <Text style={styles.formErrorText}>{formError}</Text>
                 </View>
               ) : null}
@@ -437,10 +630,45 @@ export default function HududScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
-  header: { paddingHorizontal: Spacing.base, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
   headerTitle: {
-    fontSize: FontSizes['2xl'], fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading, color: Colors.textPrimary,
+    fontSize: FontSizes['2xl'],
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.heading,
+    color: Colors.textPrimary,
+  },
+  searchBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.sm,
+  },
+  searchRow: { paddingHorizontal: Spacing.base, paddingBottom: Spacing.sm },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.sm,
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    color: Colors.textPrimary,
   },
   list: { padding: Spacing.base, paddingTop: Spacing.xs, flexGrow: 1 },
   mfyCard: {
@@ -458,17 +686,14 @@ const styles = StyleSheet.create({
   },
   mfyLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, flex: 1 },
   mfyIndexCircle: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.primarySurface,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  mfyIndexText: {
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.primary,
-  },
-  mfyInfo: { flex: 1, gap: 4 },
+  mfyInfo: { flex: 1, gap: 3 },
   mfyTitle: {
     fontSize: FontSizes.base,
     fontWeight: FontWeights.semibold,
@@ -477,8 +702,11 @@ const styles = StyleSheet.create({
   },
   mfyStats: { flexDirection: 'row', gap: 10 },
   statBadge: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.background, paddingHorizontal: 8, paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: Radius.sm,
   },
   statText: { fontSize: FontSizes.xs, fontFamily: Fonts.body, color: Colors.textSecondary },
@@ -491,15 +719,23 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   kochaRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 8,
   },
   kochaLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   kochaNom: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textPrimary },
   kochaRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   kochaCount: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  kochaSoni: { fontSize: FontSizes.sm, fontWeight: FontWeights.bold, fontFamily: Fonts.heading, color: Colors.primary },
+  kochaSoni: {
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.heading,
+    color: Colors.primary,
+  },
   kochaLabel: { fontSize: FontSizes.xs, fontFamily: Fonts.body, color: Colors.textMuted },
+  kochaAddBtn: { padding: 2 },
   xonadonlarList: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
@@ -508,79 +744,125 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   xonadonRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 10, paddingHorizontal: Spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: Colors.borderLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
   },
   xonadonLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   xonadonTitle: {
-    fontSize: FontSizes.sm, fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body, color: Colors.textPrimary,
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.body,
+    color: Colors.textPrimary,
   },
-  xonadonMeta: { fontSize: FontSizes.xs, fontFamily: Fonts.body, color: Colors.textMuted, marginTop: 1 },
+  xonadonMeta: {
+    fontSize: FontSizes.xs,
+    fontFamily: Fonts.body,
+    color: Colors.textMuted,
+    marginTop: 1,
+  },
   xonadonRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   muammoBadge: {
-    minWidth: 20, height: 20, borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: Colors.dangerSurface,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 5,
   },
-  muammoBadgeText: { fontSize: FontSizes.xs, fontWeight: FontWeights.bold, fontFamily: Fonts.body, color: Colors.danger },
+  muammoBadgeText: {
+    fontSize: FontSizes.xs,
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.body,
+    color: Colors.danger,
+  },
   addXonadonBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 10, marginTop: 4,
-    borderWidth: 1.5, borderColor: Colors.primary, borderRadius: Radius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    marginTop: 4,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderRadius: Radius.md,
     borderStyle: 'dashed',
   },
   addXonadonText: {
-    fontSize: FontSizes.sm, fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading, color: Colors.primary,
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.heading,
+    color: Colors.primary,
   },
   noKochalar: {
-    fontSize: FontSizes.sm, fontFamily: Fonts.body, fontStyle: 'italic',
-    color: Colors.textMuted, padding: Spacing.sm, textAlign: 'center',
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.body,
+    fontStyle: 'italic',
+    color: Colors.textMuted,
+    padding: Spacing.sm,
+    textAlign: 'center',
   },
-  emptyBox: { alignItems: 'center', marginTop: 80, paddingHorizontal: Spacing['2xl'] },
-  emptyIcon: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: Colors.surfaceSubtle, alignItems: 'center', justifyContent: 'center',
-  },
+  emptyBox: { alignItems: 'center', marginTop: Spacing['3xl'], paddingHorizontal: Spacing['2xl'] },
   emptyTitle: {
-    fontSize: FontSizes.md, fontWeight: FontWeights.bold, fontFamily: Fonts.heading,
-    color: Colors.textPrimary, marginTop: Spacing.md,
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.heading,
+    color: Colors.textPrimary,
+    marginTop: Spacing.md,
   },
   emptyText: {
-    fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textMuted,
-    marginTop: 4, textAlign: 'center',
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.body,
+    color: Colors.textMuted,
+    marginTop: 4,
+    textAlign: 'center',
   },
-  // Modal
   modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(10, 30, 60, 0.45)',
+    flex: 1,
+    backgroundColor: 'rgba(10, 30, 60, 0.45)',
     justifyContent: 'flex-end',
   },
   modalCard: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: Radius['2xl'], borderTopRightRadius: Radius['2xl'],
-    padding: Spacing.xl, maxHeight: '85%',
+    borderTopLeftRadius: Radius['2xl'],
+    borderTopRightRadius: Radius['2xl'],
+    padding: Spacing.xl,
+    maxHeight: '85%',
   },
   modalHeader: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: Spacing.lg,
   },
   modalTitle: {
-    fontSize: FontSizes.lg, fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading, color: Colors.textPrimary,
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.heading,
+    color: Colors.textPrimary,
   },
   modalSubtitle: {
-    fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textSecondary, marginTop: 2,
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.body,
+    color: Colors.textSecondary,
+    marginTop: 2,
   },
   formErrorBox: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.dangerSurface, borderRadius: Radius.sm,
-    paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dangerSurface,
+    borderRadius: Radius.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
   },
   formErrorText: {
-    flex: 1, fontSize: FontSizes.sm, fontFamily: Fonts.body,
-    color: Colors.danger, fontWeight: FontWeights.medium,
+    flex: 1,
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.body,
+    color: Colors.danger,
+    fontWeight: FontWeights.medium,
   },
 });

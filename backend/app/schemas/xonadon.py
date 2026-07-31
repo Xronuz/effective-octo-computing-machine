@@ -46,6 +46,7 @@ class XonadonResponse(BaseModel):
     mfy_nomi: Optional[str] = None
     mfy_id: Optional[int] = None
     ochiq_muammolar_soni: int = 0
+    tekshirilgan_bugun: bool = False
 
     model_config = {"from_attributes": True}
 

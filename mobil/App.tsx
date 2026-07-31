@@ -1,52 +1,44 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
-import { Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
+import {
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+  Outfit_800ExtraBold,
+} from '@expo-google-fonts/outfit';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import NetInfo from '@react-native-community/netinfo';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { AlifboProvider } from './src/contexts/AlifboContext';
-import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows, Layout } from './src/theme';
-import { initDB, getKutilmaganSoni } from './src/services/db';
+import { ThemeProvider } from './src/contexts/ThemeContext';
+import { Colors, Fonts, FontSizes, FontWeights, Shadows, Layout } from './src/theme';
+import { initDB } from './src/services/db';
 import { setupAutoSync } from './src/services/sync';
-import OfflineBanner from './src/components/OfflineBanner';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 import LoginScreen from './src/screens/LoginScreen';
 import RoyxatScreen from './src/screens/RoyxatScreen';
-import HomeScreen from './src/screens/HomeScreen';
+import MaydonScreen from './src/screens/MaydonScreen';
 import XonadonlarScreen from './src/screens/XonadonlarScreen';
 import XonadonDetailScreen from './src/screens/XonadonDetailScreen';
-import MuammoYaratishScreen from './src/screens/MuammoYaratishScreen';
+import TekshiruvScreen from './src/screens/TekshiruvScreen';
 import TopshiriqlarScreen from './src/screens/TopshiriqlarScreen';
 import NavbatScreen from './src/screens/NavbatScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import HududScreen from './src/screens/HududScreen';
-
-import type { UserBrief } from './src/types';
-
-// ── Types ──────────────────────────────────────────
-export type RootStackParamList = {
-  Login: undefined;
-  Royxat: undefined;
-  MainTabs: undefined;
-  XonadonDetail: { id: number };
-  MuammoYaratish: { xonadonId?: number };
-  Navbat: undefined;
-};
-
-export type MainTabParamList = {
-  Home: undefined;
-  Xonadonlar: undefined;
-  Hududlar: undefined;
-  Topshiriqlar: undefined;
-  Settings: undefined;
-};
+import { RootStackParamList, MainTabParamList } from './src/navigation/types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -73,30 +65,46 @@ const NavTheme: Theme = {
 };
 
 // ── Tab Icon Map ───────────────────────────────────
-const TAB_ICONS: Record<string, { active: React.ComponentProps<typeof MaterialCommunityIcons>['name']; inactive: React.ComponentProps<typeof MaterialCommunityIcons>['name'] }> = {
-  Home: { active: 'home', inactive: 'home-outline' },
+const TAB_ICONS: Record<
+  string,
+  {
+    active: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+    inactive: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+  }
+> = {
+  Home: { active: 'compass', inactive: 'compass-outline' },
   Xonadonlar: { active: 'clipboard-list', inactive: 'clipboard-list-outline' },
   Hududlar: { active: 'map-marker-radius', inactive: 'map-marker-radius-outline' },
   Topshiriqlar: { active: 'clipboard-check', inactive: 'clipboard-check-outline' },
   Settings: { active: 'account', inactive: 'account-outline' },
 };
 
-function TabBarIcon({ routeName, focused, color }: { routeName: string; focused: boolean; color: string }) {
+function TabBarIcon({
+  routeName,
+  focused,
+}: {
+  routeName: string;
+  focused: boolean;
+  color: string;
+}) {
   const icons = TAB_ICONS[routeName];
   if (!icons) return null;
   return (
     <View
       style={{
-        // Aktiv: oltin soft chip (web pill uslubida) — to'rtburchak blob emas
-        backgroundColor: focused ? 'rgba(201,162,39,0.16)' : 'transparent',
+        backgroundColor: focused ? '#FFFFFF' : 'transparent',
         borderRadius: 999,
-        paddingHorizontal: focused ? 14 : 0,
-        paddingVertical: 3,
+        minWidth: focused ? 48 : 24,
+        height: 32,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <MaterialCommunityIcons name={focused ? icons.active : icons.inactive} size={22} color={color} />
+      <MaterialCommunityIcons
+        name={focused ? icons.active : icons.inactive}
+        size={22}
+        color={focused ? Colors.primary : 'rgba(255,255,255,0.6)'}
+      />
     </View>
   );
 }
@@ -113,16 +121,18 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarHideOnKeyboard: true,
-        tabBarIcon: ({ focused, color }) => <TabBarIcon routeName={route.name} focused={focused} color={color} />,
-        tabBarActiveTintColor: Colors.accent,
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.6)',
+        tabBarIcon: ({ focused, color }) => (
+          <TabBarIcon routeName={route.name} focused={focused} color={color} />
+        ),
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.55)',
         tabBarStyle: {
           position: 'absolute',
           bottom,
           left: Layout.tabBarMargin,
           right: Layout.tabBarMargin,
-          height: Layout.tabBarHeight,
-          borderRadius: 28,
+          height: 64,
+          borderRadius: 24,
           backgroundColor: Colors.primary,
           borderTopWidth: 0,
           paddingBottom: 0,
@@ -131,21 +141,29 @@ function MainTabs() {
         },
         tabBarItemStyle: {
           marginHorizontal: 2,
-          marginVertical: 6,
+          marginVertical: 4,
           paddingVertical: 2,
         },
         tabBarLabelStyle: {
           fontSize: 10,
           fontFamily: Fonts.body,
           fontWeight: FontWeights.medium,
-          marginTop: 1,
+          marginTop: 2,
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Asosiy' }} />
-      <Tab.Screen name="Xonadonlar" component={XonadonlarScreen} options={{ tabBarLabel: 'Xonadon' }} />
+      <Tab.Screen name="Home" component={MaydonScreen} options={{ tabBarLabel: 'Maydon' }} />
+      <Tab.Screen
+        name="Xonadonlar"
+        component={XonadonlarScreen}
+        options={{ tabBarLabel: 'Xonadon' }}
+      />
       <Tab.Screen name="Hududlar" component={HududScreen} options={{ tabBarLabel: 'Hudud' }} />
-      <Tab.Screen name="Topshiriqlar" component={TopshiriqlarScreen} options={{ tabBarLabel: 'Topshiriq' }} />
+      <Tab.Screen
+        name="Topshiriqlar"
+        component={TopshiriqlarScreen}
+        options={{ tabBarLabel: 'Topshiriq' }}
+      />
       <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarLabel: 'Profil' }} />
     </Tab.Navigator>
   );
@@ -192,47 +210,24 @@ function RootNavigator() {
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-          <Stack.Screen name="XonadonDetail" component={XonadonDetailScreen} options={{ title: 'Xonadon' }} />
-          <Stack.Screen name="MuammoYaratish" component={MuammoYaratishScreen} options={{ title: 'Yangi muammo' }} />
-          <Stack.Screen name="Navbat" component={NavbatScreen} options={{ title: 'Sinxronlash navbati' }} />
+          <Stack.Screen
+            name="XonadonDetail"
+            component={XonadonDetailScreen}
+            options={{ title: 'Xonadon' }}
+          />
+          <Stack.Screen
+            name="Tekshiruv"
+            component={TekshiruvScreen}
+            options={{ title: 'Tekshiruv' }}
+          />
+          <Stack.Screen
+            name="Navbat"
+            component={NavbatScreen}
+            options={{ title: 'Sinxronlash navbati' }}
+          />
         </>
       )}
     </Stack.Navigator>
-  );
-}
-
-// ── Global Offline Banner ──────────────────────────
-function GlobalOfflineBanner() {
-  const insets = useSafeAreaInsets();
-  const [isOffline, setIsOffline] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
-
-  useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      const offline = !(state.isConnected === true && state.isInternetReachable !== false);
-      setIsOffline(offline);
-    });
-
-    const refreshCount = async () => {
-      try {
-        setPendingCount(await getKutilmaganSoni());
-      } catch {
-        // DB hali ishga tushmagan
-      }
-    };
-    refreshCount();
-    const interval = setInterval(refreshCount, 5000);
-
-    return () => {
-      unsubscribe();
-      clearInterval(interval);
-    };
-  }, []);
-
-  return (
-    <View style={{ paddingTop: insets.top, backgroundColor: Colors.background }}>
-      <OfflineBanner isOffline={isOffline} pendingCount={pendingCount} />
-    </View>
   );
 }
 
@@ -263,22 +258,26 @@ export default function App() {
   const renderApp = useCallback(() => {
     if (!fontsLoaded) return <LoadingScreen />;
     return (
-      <View style={styles.root}>
-        <GlobalOfflineBanner />
-        <NavigationContainer theme={NavTheme}>
-          <RootNavigator />
-        </NavigationContainer>
-      </View>    );
+      <ErrorBoundary>
+        <View style={styles.root}>
+          <NavigationContainer theme={NavTheme}>
+            <RootNavigator />
+          </NavigationContainer>
+        </View>
+      </ErrorBoundary>
+    );
   }, [fontsLoaded]);
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <AlifboProvider>
-          <StatusBar style="dark" />
-          {renderApp()}
-        </AlifboProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AlifboProvider>
+            <StatusBar style="dark" />
+            {renderApp()}
+          </AlifboProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

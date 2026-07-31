@@ -9,17 +9,12 @@
     "splash": {
       "backgroundColor": "#0A1E3C"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "uz.uychi.xavfsizxonadon",
       "infoPlist": {
-        "UIBackgroundModes": [
-          "location",
-          "fetch"
-        ],
+        "UIBackgroundModes": ["location", "fetch"],
         "NSLocationWhenInUseUsageDescription": "Ish vaqtida joylashuvingizni kuzatish uchun lokatsiya ruxsati kerak",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Ish vaqtida joylashuvingizni fonda kuzatish uchun doimiy lokatsiya ruxsati kerak",
         "NSLocationAlwaysUsageDescription": "Ish vaqtida joylashuvingizni fonda kuzatish uchun doimiy lokatsiya ruxsati kerak"
@@ -35,7 +30,14 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
-        "FOREGROUND_SERVICE"
+        "FOREGROUND_SERVICE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ]
     },
     "plugins": [
@@ -60,7 +62,10 @@
       "expo-notifications"
     ],
     "extra": {
-      "apiUrl": "https://fvv.xron.uz/api"
+      "apiUrl": "https://fvv.xron.uz/api",
+      "eas": {
+        "projectId": "7e3af72e-54ee-41ff-8724-01a86e398a32"
+      }
     }
   }
 }

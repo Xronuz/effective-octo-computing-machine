@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from app.services import xonadon as xonadon_service
 from app.models.hudud import Xonadon, Kocha, Mfy
-from app.models.muammo import Muammo, MuammoStatus
+from app.models.muammo import Muammo, MuammoStatus, TekshiruvNatijasi
 from app.core.exceptions import NotFoundException, ConflictException
 
 
@@ -562,3 +562,43 @@ class TestXonadonToResponse:
 
         assert resp["egasi_fio"] is None
         assert resp["egasi_tel"] is None
+
+    def _make_tashrif(self, xodim_id, bugun, tekshiruv_natijasi=TekshiruvNatijasi.muammo_yoq):
+        m = MagicMock(spec=Muammo)
+        m.xodim_id = xodim_id
+        m.sinxron_vaqti = bugun
+        m.tekshiruv_natijasi = tekshiruv_natijasi
+        return m
+
+    def test_tekshirilgan_bugun_true_for_own_visit_today(self):
+        """Joriy xodim bugun tashrif buyurgan bo'lsa — tekshirilgan_bugun=True."""
+        from app.models.user import User, UserRole
+        bugun = datetime.now(timezone.utc)
+        xonadon = _make_xonadon(1, 1, "12")
+        xonadon.muammolar = [self._make_tashrif(xodim_id=1, bugun=bugun)]
+        user = MagicMock(spec=User)
+        user.id = 1
+        user.rol = UserRole.xodim
+        user.xodim_mfylar = []
+
+        resp = xonadon_service._xonadon_to_response(xonadon, user)
+
+        assert resp["tekshirilgan_bugun"] is True
+
+    def test_tekshirilgan_bugun_false_when_kira_olmadi(self):
+        """`kira_olmadi` tashrif xonadonni 'tekshirilgan' deb belgilamaydi —
+        xodim uyga kira olmagan, qayta tashrif uchun navbatda qolishi kerak."""
+        from app.models.user import User, UserRole
+        bugun = datetime.now(timezone.utc)
+        xonadon = _make_xonadon(1, 1, "12")
+        xonadon.muammolar = [
+            self._make_tashrif(xodim_id=1, bugun=bugun, tekshiruv_natijasi=TekshiruvNatijasi.kira_olmadi)
+        ]
+        user = MagicMock(spec=User)
+        user.id = 1
+        user.rol = UserRole.xodim
+        user.xodim_mfylar = []
+
+        resp = xonadon_service._xonadon_to_response(xonadon, user)
+
+        assert resp["tekshirilgan_bugun"] is False

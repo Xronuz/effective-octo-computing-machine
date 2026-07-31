@@ -1,22 +1,61 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+  Linking,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import PullToRefresh from '../components/PullToRefresh';
+import Button from '../components/Button';
+import SectionLabel from '../components/SectionLabel';
 import api from '../services/api';
-import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
-import type { ApiResponse, Xonadon } from '../types';
+import {
+  Colors,
+  Fonts,
+  FontSizes,
+  FontWeights,
+  Spacing,
+  Radius,
+  XavfColors,
+  StatusColors,
+} from '../theme';
+import type { ApiResponse, Paginated, Xonadon, MuammoSummary } from '../types';
 import { useAlifbo } from '../contexts/AlifboContext';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
+import { cacheMuammolar, getCacheMuammolar } from '../services/cache';
+import { warmFotoCache, resolveFotoSource } from '../services/fotoCache';
+import { bandlarniParse, bandMatni } from '../constants/yoriqnoma';
+
+type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 interface InfoRow {
+  key: string;
   label: string;
-  icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+  icon: IconName;
   value: string;
+  tel?: boolean;
 }
 
-export default function XonadonDetailScreen({ route, navigation }: any) {
+/**
+ * XONADON PROFILI — inspektor eshik oldida kerakli hamma narsani ko'radi:
+ * manzil, MFY, egasi va telefon (bosing — qo'ng'iroq). Bezakli banner olib tashlandi.
+ * Yagona asosiy amal — pastdagi «Yangi muammo» tugmasi.
+ * Muammo qatorlari faqat o'qish uchun: chevron yo'q, bosilib ko'rinmaydi.
+ */
+export default function XonadonDetailScreen() {
+  const route = useAppRoute<'XonadonDetail'>();
+  const navigation = useAppNavigation();
   const { tr } = useAlifbo();
+  const insets = useSafeAreaInsets();
   const { id } = route.params;
   const [xonadon, setXonadon] = useState<Xonadon | null>(null);
+  const [muammolar, setMuammolar] = useState<MuammoSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -27,15 +66,43 @@ export default function XonadonDetailScreen({ route, navigation }: any) {
       if (xonRes.data.ok && xonRes.data.data) {
         setXonadon(xonRes.data.data);
       }
-    } catch { /* handled by UI */ }
-    finally {
+
+      const cached = await getCacheMuammolar(id);
+      if (cached) setMuammolar(cached);
+
+      const muamRes = await api.get<ApiResponse<Paginated<MuammoSummary>>>(
+        `/muammolar?xonadon_id=${id}&size=100`,
+      );
+      if (muamRes.data.ok && muamRes.data.data) {
+        setMuammolar(muamRes.data.data.items);
+        await cacheMuammolar(muamRes.data.data.items, id);
+      }
+    } catch {
+      /* handled by UI */
+    } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [id]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
-  const onRefresh = () => { setRefreshing(true); fetchData(); };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (muammolar.length > 0) {
+      warmFotoCache(muammolar).catch(() => {});
+    }
+  }, [muammolar]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+  };
+
+  const openTel = (tel: string) => {
+    Linking.openURL(`tel:${tel}`).catch(() => {});
+  };
 
   if (loading && !xonadon) {
     return (
@@ -47,114 +114,379 @@ export default function XonadonDetailScreen({ route, navigation }: any) {
   }
 
   const infoRows: InfoRow[] = [
-    { label: tr('MFY'), icon: 'map-marker', value: xonadon?.mfy_nomi || '-' },
-    { label: tr('Xonadon raqami'), icon: 'home-outline', value: xonadon?.uy_raqami || '-' },
-    { label: tr('Ochiq muammolar'), icon: 'alert-circle-outline', value: String(xonadon?.ochiq_muammolar_soni || 0) },
+    { key: 'mfy', label: tr('MFY'), icon: 'map-marker-outline', value: xonadon?.mfy_nomi || '-' },
+    {
+      key: 'uy',
+      label: tr('Uy raqami'),
+      icon: 'home-outline',
+      value: xonadon?.uy_raqami || '-',
+    },
+    {
+      key: 'egasi',
+      label: tr('Egasi'),
+      icon: 'account-outline',
+      value: xonadon?.egasi_fio || '-',
+    },
   ];
+  if (xonadon?.egasi_tel) {
+    infoRows.push({
+      key: 'tel',
+      label: tr('Telefon'),
+      icon: 'phone-outline',
+      value: xonadon.egasi_tel,
+      tel: true,
+    });
+  }
+  if (xonadon?.izoh) {
+    infoRows.push({
+      key: 'izoh',
+      label: tr('Izoh'),
+      icon: 'note-text-outline',
+      value: xonadon.izoh,
+    });
+  }
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
-      >
-        {/* Address Card */}
-        <View style={styles.addressCard}>
-          <View style={styles.addressRow}>
-            <MaterialCommunityIcons name="home-map-marker" size={28} color={Colors.primary} />
-            <Text style={styles.address} numberOfLines={2}>
-              {xonadon?.full_address || tr('Manzil mavjud emas')}
+  const renderMuammo = (m: MuammoSummary) => {
+    // Checklist oqimida (turi=null) turi/xavf endi ma'nosiz — o'rniga
+    // yo'riqnoma bandlari (yoki "muammo yo'q") ko'rsatiladi.
+    const bandlar = bandlarniParse(m.taklif_etilgan_tadbirlar);
+    const isChecklistYozuvi = m.turi === null;
+    const sarlavha = m.turi
+      ? m.turi_nomi || m.turi
+      : bandlar.length > 0
+        ? tr("Yo'riqnoma bandlari") + `: ${bandlar.join(', ')}`
+        : tr('Tekshirildi — muammo topilmadi');
+    const xavfCfg = isChecklistYozuvi ? null : XavfColors[m.xavf];
+    const isOpen = m.status !== 'yopilgan';
+    const statusCfg = isOpen ? StatusColors.ochiq : StatusColors.yopilgan;
+
+    // Muddat dolzarbligi: qolgan kun ma'lum bo'lsa sanadan ustun
+    const qolgan = m.muddat_qolgan_kun;
+    const overdue = qolgan !== null && qolgan < 0;
+    let deadlineText: string;
+    if (overdue) {
+      deadlineText = tr("Muddati o'tgan");
+    } else if (qolgan !== null) {
+      deadlineText = tr('{n} kun qoldi').replace('{n}', String(qolgan));
+    } else {
+      deadlineText = m.muddat ? new Date(m.muddat).toLocaleDateString('uz-UZ') : '-';
+    }
+
+    return (
+      <View key={m.id} style={styles.muammoRow}>
+        <View style={styles.muammoHeader}>
+          <Text style={styles.muammoTitle} numberOfLines={1}>
+            {sarlavha}
+          </Text>
+          <View
+            style={[styles.pill, { backgroundColor: statusCfg.bg, borderColor: statusCfg.border }]}
+          >
+            <MaterialCommunityIcons
+              name={isOpen ? 'alert-circle' : 'check-circle'}
+              size={14}
+              color={statusCfg.icon}
+            />
+            <Text style={[styles.pillText, { color: statusCfg.text }]}>
+              {isOpen ? tr('Ochiq') : tr('Yopilgan')}
             </Text>
           </View>
         </View>
 
-        {/* Info Card */}
-        <View style={styles.card}>
+        {isChecklistYozuvi && bandlar.length > 0 ? (
+          <View style={styles.bandlarLegend}>
+            {bandlar.map((id) => (
+              <Text key={id} style={styles.bandlarLegendText} numberOfLines={2}>
+                {id}. {bandMatni(id)}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+
+        {m.tavsif ? (
+          <Text style={styles.muammoText} numberOfLines={2}>
+            {m.tavsif}
+          </Text>
+        ) : null}
+
+        {m.yoriqnomadan_otkanlar_soni !== null ? (
+          <View style={styles.metaItem}>
+            <MaterialCommunityIcons
+              name="account-group-outline"
+              size={14}
+              color={Colors.textMuted}
+            />
+            <Text style={styles.metaText}>
+              {tr('Ogohlantirilgan')}: {m.yoriqnomadan_otkanlar_soni}
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={styles.muammoMetaRow}>
+          {xavfCfg ? (
+            <View
+              style={[
+                styles.xavfBadge,
+                { backgroundColor: xavfCfg.bg, borderColor: xavfCfg.border },
+              ]}
+            >
+              <Text style={[styles.xavfText, { color: xavfCfg.text }]}>{m.xavf}</Text>
+            </View>
+          ) : null}
+          {!isChecklistYozuvi || isOpen ? (
+            <View style={styles.metaItem}>
+              <MaterialCommunityIcons
+                name={overdue ? 'calendar-alert' : 'calendar-clock'}
+                size={14}
+                color={overdue ? Colors.danger : Colors.textMuted}
+              />
+              <Text style={[styles.metaText, overdue && styles.metaTextOverdue]}>
+                {deadlineText}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        {m.fotolar && m.fotolar.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fotoScroll}>
+            {m.fotolar.map((f) => (
+              <FotoImage
+                key={f.id}
+                muammoId={m.id}
+                faylYoli={f.fayl_yoli}
+                style={styles.fotoThumb}
+              />
+            ))}
+          </ScrollView>
+        ) : null}
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: 96 + insets.bottom }]}
+        refreshControl={<PullToRefresh refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {/* Sarlavha — bezaksiz */}
+        <View style={styles.headerBox}>
+          <Text style={styles.headerTitle}>
+            {xonadon?.full_address || tr('Manzil mavjud emas')}
+          </Text>
+          {xonadon?.mfy_nomi ? <Text style={styles.headerSub}>{xonadon.mfy_nomi}</Text> : null}
+        </View>
+
+        {/* Ma'lumotlar — bitta ramkali konteyner */}
+        <View style={styles.infoList}>
           {infoRows.map((row, i) => (
-            <View key={row.label}>
-              <View style={styles.infoRow}>
-                <View style={styles.infoIcon}>
-                  <MaterialCommunityIcons name={row.icon} size={18} color={Colors.primary} />
-                </View>
-                <Text style={styles.infoLabel}>{row.label}</Text>
-                <Text style={[styles.infoValue, row.label === tr('Ochiq muammolar') && {
-                  color: (xonadon?.ochiq_muammolar_soni || 0) > 0 ? Colors.danger : Colors.success,
-                  fontWeight: FontWeights.bold,
-                }]}>{row.value}</Text>
-              </View>
-              {i < infoRows.length - 1 && <View style={styles.divider} />}
+            <View key={row.key} style={[styles.infoRow, i > 0 && styles.infoRowBorder]}>
+              <MaterialCommunityIcons name={row.icon} size={20} color={Colors.textMuted} />
+              <Text style={styles.infoLabel}>{row.label}</Text>
+              {row.tel ? (
+                <TouchableOpacity
+                  onPress={() => openTel(row.value)}
+                  hitSlop={8}
+                  accessibilityRole="link"
+                  accessibilityLabel={`${row.label}: ${row.value}`}
+                >
+                  <Text style={[styles.infoValue, styles.infoLink]}>{row.value}</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={styles.infoValue}>{row.value}</Text>
+              )}
             </View>
           ))}
         </View>
 
-        {/* Muammolar Section */}
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleBox}>
-            <MaterialCommunityIcons name="alert-octagon-outline" size={20} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>
-              {tr('Muammolar')} ({xonadon?.ochiq_muammolar_soni || 0} {tr('ochiq')})
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={() => navigation.navigate('MuammoYaratish', { xonadonId: id })}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="plus-circle-outline" size={18} color={Colors.textInverse} style={{ marginRight: 4 }} />
-            <Text style={styles.addBtnText}>{tr('Yangi muammo')}</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Muammolar */}
+        <SectionLabel title={tr('Muammolar')} trailing={`${muammolar.length} ${tr('ta')}`} />
 
-        {/* Empty Muammo */}
-        <View style={styles.emptyBox}>
-          <MaterialCommunityIcons name="information-outline" size={36} color={Colors.textMuted} />
-          <Text style={styles.emptyText}>
-            {tr("Muammolarni ko'rish uchun veb-dashboarddan foydalaning yoki yangi muammo qo'shing.")}
-          </Text>
-        </View>
+        {muammolar.length === 0 ? (
+          <Text style={styles.emptyText}>{tr('Bu xonadonda hali muammo qayd etilmagan')}</Text>
+        ) : (
+          <View style={styles.muammoList}>{muammolar.map(renderMuammo)}</View>
+        )}
       </ScrollView>
+
+      {/* Yagona asosiy amal */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing.sm }]}>
+        <Button
+          title={tr('Tekshiruv qilish')}
+          icon="clipboard-check-outline"
+          onPress={() => navigation.navigate('Tekshiruv', { xonadonId: id })}
+        />
+      </View>
     </SafeAreaView>
   );
 }
 
+interface FotoImageProps {
+  muammoId: number;
+  faylYoli: string;
+  style?: import('react-native').ImageStyle;
+}
+
+function FotoImage({ muammoId, faylYoli, style }: FotoImageProps) {
+  const [uri, setUri] = useState<string>(faylYoli);
+  useEffect(() => {
+    let mounted = true;
+    resolveFotoSource(muammoId, faylYoli)
+      .then((src) => {
+        if (mounted) setUri(src);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, [muammoId, faylYoli]);
+  return <Image source={{ uri }} style={style} />;
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
-  loadingText: { marginTop: Spacing.md, fontSize: FontSizes.base, fontFamily: Fonts.body, color: Colors.textSecondary },
-  content: { padding: Spacing.base, paddingBottom: Spacing['4xl'] },
-  addressCard: {
-    backgroundColor: Colors.primary, borderRadius: Radius.xl,
-    padding: Spacing.xl, marginBottom: Spacing.base, ...Shadows.lg,
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
   },
-  addressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  address: {
-    fontSize: FontSizes.lg, fontWeight: FontWeights.bold, fontFamily: Fonts.heading,
-    color: Colors.textInverse, flex: 1,
+  loadingText: {
+    marginTop: Spacing.md,
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    color: Colors.textSecondary,
   },
-  card: {
-    backgroundColor: Colors.surface, borderRadius: Radius.lg,
-    paddingHorizontal: Spacing.base, marginBottom: Spacing.xl, ...Shadows.sm,
+  content: { padding: Spacing.base },
+  headerBox: { marginBottom: Spacing.xs },
+  headerTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.bold,
+    fontFamily: Fonts.heading,
+    color: Colors.textPrimary,
   },
-  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
-  infoIcon: {
-    width: 34, height: 34, borderRadius: 8,
-    backgroundColor: Colors.primarySurface, alignItems: 'center', justifyContent: 'center',
-    marginRight: Spacing.md,
+  headerSub: {
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    color: Colors.textMuted,
+    marginTop: Spacing.xxs,
   },
-  infoLabel: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textSecondary, width: 130 },
-  infoValue: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textPrimary, flex: 1, fontWeight: FontWeights.medium },
-  divider: { height: 1, backgroundColor: Colors.borderLight, marginLeft: 46 },
-  sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginBottom: Spacing.md,
+  infoList: {
+    marginTop: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
-  sectionTitleBox: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  sectionTitle: { fontSize: FontSizes.md, fontWeight: FontWeights.bold, fontFamily: Fonts.heading, color: Colors.textPrimary },
-  addBtn: {
-    backgroundColor: Colors.primary, borderRadius: Radius.md,
-    paddingHorizontal: 14, paddingVertical: 8, flexDirection: 'row', alignItems: 'center',
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
   },
-  addBtnText: { color: Colors.textInverse, fontWeight: FontWeights.semibold, fontFamily: Fonts.body, fontSize: FontSizes.sm },
-  emptyBox: { alignItems: 'center', marginTop: Spacing.xl, paddingHorizontal: Spacing['2xl'] },
-  emptyText: { textAlign: 'center', fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textMuted, marginTop: Spacing.sm, lineHeight: 20 },
+  infoRowBorder: { borderTopWidth: 1, borderTopColor: Colors.borderLight },
+  infoLabel: {
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    color: Colors.textSecondary,
+  },
+  infoValue: {
+    flex: 1,
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    fontWeight: FontWeights.semibold,
+    color: Colors.textPrimary,
+    textAlign: 'right',
+  },
+  infoLink: { color: Colors.textLink },
+  emptyText: {
+    fontSize: FontSizes.base,
+    fontFamily: Fonts.body,
+    color: Colors.textMuted,
+    paddingVertical: Spacing.sm,
+  },
+  muammoList: { gap: Spacing.sm },
+  muammoRow: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    padding: Spacing.md,
+  },
+  muammoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  muammoTitle: {
+    flex: 1,
+    fontSize: FontSizes.base,
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.body,
+    color: Colors.textPrimary,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xxs,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: Spacing.xxs,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+  },
+  pillText: {
+    fontSize: FontSizes.xs,
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.body,
+  },
+  muammoText: {
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.body,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: Spacing.sm,
+  },
+  bandlarLegend: {
+    marginBottom: Spacing.sm,
+    gap: Spacing.xxs,
+  },
+  bandlarLegendText: {
+    fontSize: FontSizes.xs,
+    fontFamily: Fonts.body,
+    color: Colors.textSecondary,
+    lineHeight: 17,
+  },
+  muammoMetaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  xavfBadge: {
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: Spacing.xxs,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+  },
+  xavfText: {
+    fontSize: FontSizes.xs,
+    fontWeight: FontWeights.semibold,
+    fontFamily: Fonts.body,
+    textTransform: 'capitalize',
+  },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xxs },
+  metaText: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textMuted },
+  metaTextOverdue: { color: Colors.danger, fontWeight: FontWeights.semibold },
+  fotoScroll: { marginTop: Spacing.md },
+  fotoThumb: {
+    width: 88,
+    height: 88,
+    borderRadius: Radius.md,
+    marginRight: Spacing.sm,
+    backgroundColor: Colors.surfaceSubtle,
+  },
+  bottomBar: {
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.sm,
+  },
 });

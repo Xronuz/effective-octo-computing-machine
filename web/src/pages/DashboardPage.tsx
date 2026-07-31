@@ -320,7 +320,7 @@ export default function DashboardPage() {
             ) : (
               <ul className="divide-y divide-slate-100">
                 {songgiMuammolar.map((m) => {
-                  const Icon = TURI_ICON[m.turi] ?? AlertCircle;
+                  const Icon = m.turi ? (TURI_ICON[m.turi] ?? AlertCircle) : AlertCircle;
                   return (
                     <li key={m.id}>
                       <Link
@@ -332,7 +332,7 @@ export default function DashboardPage() {
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-[#0F2033]">
-                            {m.tavsif || `${tr(TURI_LABEL[m.turi] || m.turi)} — #${m.id}`}
+                            {m.tavsif || `${tr(m.turi ? (TURI_LABEL[m.turi] || m.turi) : "Tekshiruv")} — #${m.id}`}
                           </p>
                           <p className="mt-0.5 truncate text-xs text-slate-500">
                             {m.xonadon_manzili ? tr(m.xonadon_manzili) : tr("Manzil ko‘rsatilmagan")}

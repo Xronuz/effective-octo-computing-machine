@@ -32,12 +32,52 @@ function harfmi(ch: string | undefined): boolean {
 // ── Asosiy xaritalar ────────────────────────────────────────────────
 
 const LOTIN_KRILL: Record<string, string> = {
-  a: 'а', b: 'б', d: 'д', f: 'ф', g: 'г', h: 'ҳ', i: 'и', j: 'ж',
-  k: 'к', l: 'л', m: 'м', n: 'н', o: 'о', p: 'п', q: 'қ', r: 'р',
-  s: 'с', t: 'т', u: 'у', v: 'в', x: 'х', y: 'й', z: 'з',
-  A: 'А', B: 'Б', D: 'Д', F: 'Ф', G: 'Г', H: 'Ҳ', I: 'И', J: 'Ж',
-  K: 'К', L: 'Л', M: 'М', N: 'Н', O: 'О', P: 'П', Q: 'Қ', R: 'Р',
-  S: 'С', T: 'Т', U: 'У', V: 'В', X: 'Х', Y: 'Й', Z: 'З',
+  a: 'а',
+  b: 'б',
+  d: 'д',
+  f: 'ф',
+  g: 'г',
+  h: 'ҳ',
+  i: 'и',
+  j: 'ж',
+  k: 'к',
+  l: 'л',
+  m: 'м',
+  n: 'н',
+  o: 'о',
+  p: 'п',
+  q: 'қ',
+  r: 'р',
+  s: 'с',
+  t: 'т',
+  u: 'у',
+  v: 'в',
+  x: 'х',
+  y: 'й',
+  z: 'з',
+  A: 'А',
+  B: 'Б',
+  D: 'Д',
+  F: 'Ф',
+  G: 'Г',
+  H: 'Ҳ',
+  I: 'И',
+  J: 'Ж',
+  K: 'К',
+  L: 'Л',
+  M: 'М',
+  N: 'Н',
+  O: 'О',
+  P: 'П',
+  Q: 'Қ',
+  R: 'Р',
+  S: 'С',
+  T: 'Т',
+  U: 'У',
+  V: 'В',
+  X: 'Х',
+  Y: 'Й',
+  Z: 'З',
 };
 
 const Y_DIGRAF: Record<string, string> = { a: 'я', u: 'ю', o: 'ё', e: 'е' };
@@ -99,18 +139,12 @@ export function lotindanKrillga(matn: string): string {
     // y digraflari
     if (kichik === 'y') {
       const sozBoshi = oldingi === undefined || !harfmi(oldingi);
-      const unlidan =
-        sozBoshi || unlidanKeyin(oldingi, oldingi2) || oldingi?.toLowerCase() === 'y';
+      const unlidan = sozBoshi || unlidanKeyin(oldingi, oldingi2) || oldingi?.toLowerCase() === 'y';
       if (keyingiKichik === 'i' && unlidan && !sozBoshi) {
         continue;
       }
       const digrafEmas = keyingiKichik === 'o' && isApostrof(keyingi2);
-      if (
-        keyingiKichik !== undefined &&
-        keyingiKichik in Y_DIGRAF &&
-        !digrafEmas &&
-        unlidan
-      ) {
+      if (keyingiKichik !== undefined && keyingiKichik in Y_DIGRAF && !digrafEmas && unlidan) {
         chiqish.push(katta ? Y_DIGRAF_KATTA[keyingiKichik] : Y_DIGRAF[keyingiKichik]);
         i++;
         continue;
@@ -146,16 +180,74 @@ export function lotindanKrillga(matn: string): string {
 // ── Krill → Lotin (qidiruv normalizatsiyasi uchun) ──────────────────
 
 const KRILL_LOTIN: Record<string, string> = {
-  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'j',
-  з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o',
-  п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'x', ц: 'ts',
-  ч: 'ch', ш: 'sh', ъ: "'", э: 'e', ю: 'yu', я: 'ya',
-  ў: "o'", ғ: "g'", қ: 'q', ҳ: 'h',
-  А: 'A', Б: 'B', В: 'V', Г: 'G', Д: 'D', Е: 'E', Ё: 'Yo', Ж: 'J',
-  З: 'Z', И: 'I', Й: 'Y', К: 'K', Л: 'L', М: 'M', Н: 'N', О: 'O',
-  П: 'P', Р: 'R', С: 'S', Т: 'T', У: 'U', Ф: 'F', Х: 'X', Ц: 'Ts',
-  Ч: 'Ch', Ш: 'Sh', Ъ: "'", Э: 'E', Ю: 'Yu', Я: 'Ya',
-  Ў: "O'", Ғ: "G'", Қ: 'Q', Ҳ: 'H',
+  а: 'a',
+  б: 'b',
+  в: 'v',
+  г: 'g',
+  д: 'd',
+  е: 'e',
+  ё: 'yo',
+  ж: 'j',
+  з: 'z',
+  и: 'i',
+  й: 'y',
+  к: 'k',
+  л: 'l',
+  м: 'm',
+  н: 'n',
+  о: 'o',
+  п: 'p',
+  р: 'r',
+  с: 's',
+  т: 't',
+  у: 'u',
+  ф: 'f',
+  х: 'x',
+  ц: 'ts',
+  ч: 'ch',
+  ш: 'sh',
+  ъ: "'",
+  э: 'e',
+  ю: 'yu',
+  я: 'ya',
+  ў: "o'",
+  ғ: "g'",
+  қ: 'q',
+  ҳ: 'h',
+  А: 'A',
+  Б: 'B',
+  В: 'V',
+  Г: 'G',
+  Д: 'D',
+  Е: 'E',
+  Ё: 'Yo',
+  Ж: 'J',
+  З: 'Z',
+  И: 'I',
+  Й: 'Y',
+  К: 'K',
+  Л: 'L',
+  М: 'M',
+  Н: 'N',
+  О: 'O',
+  П: 'P',
+  Р: 'R',
+  С: 'S',
+  Т: 'T',
+  У: 'U',
+  Ф: 'F',
+  Х: 'X',
+  Ц: 'Ts',
+  Ч: 'Ch',
+  Ш: 'Sh',
+  Ъ: "'",
+  Э: 'E',
+  Ю: 'Yu',
+  Я: 'Ya',
+  Ў: "O'",
+  Ғ: "G'",
+  Қ: 'Q',
+  Ҳ: 'H',
 };
 
 export function krilldanLotinga(matn: string): string {

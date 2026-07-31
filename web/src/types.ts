@@ -94,7 +94,8 @@ export interface MuammoBrief {
   id: number;
   xonadon_id: number;
   xodim_id: number;
-  turi: MuammoTuri;
+  /** Yo'riqnoma checklist oqimidagi tekshiruvlarda bo'sh (null) bo'ladi. */
+  turi: MuammoTuri | null;
   tavsif: string | null;
   xavf: XavfDaraja;
   status: MuammoStatus;
@@ -113,6 +114,9 @@ export interface MuammoBrief {
   egasi_tel: string | null;
   taklif_etilgan_tadbirlar: string | null;
   yoriqnomadan_otkanlar_soni: number | null;
+  /** 'muammo_topildi' | 'muammo_yoq' | 'kira_olmadi' */
+  tekshiruv_natijasi: string | null;
+  tekshiruv_natijasi_nomi: string | null;
 }
 
 export interface MuammoCreatePayload {
@@ -153,7 +157,8 @@ export interface MuammoDetail {
   id: number;
   xonadon_id: number;
   xodim_id: number;
-  turi: string;
+  /** Yo'riqnoma checklist oqimidagi tekshiruvlarda bo'sh (null) bo'ladi. */
+  turi: string | null;
   turi_nomi: string | null;
   tavsif: string | null;
   xavf: string;
@@ -175,6 +180,13 @@ export interface MuammoDetail {
   fotolar: FotoResponse[];
   xonadon_manzili: string | null;
   xodim_fio: string | null;
+  /** Yo'riqnoma bandlari, vergul bilan ("3,4,8") — muammo topilgan bo'lsa. */
+  taklif_etilgan_tadbirlar: string | null;
+  /** Ushbu tashrifda ogohlantirilgan aholi soni. */
+  yoriqnomadan_otkanlar_soni: number | null;
+  /** 'muammo_topildi' | 'muammo_yoq' | 'kira_olmadi' */
+  tekshiruv_natijasi: string | null;
+  tekshiruv_natijasi_nomi: string | null;
 }
 
 // Hudud

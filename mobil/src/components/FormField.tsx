@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, type TextInputProps } from 'react-native';
-import { Colors, Fonts, FontSizes, FontWeights, Radius, Spacing } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { Fonts, FontSizes, FontWeights, Radius, Spacing } from '../theme';
 
 interface Props extends TextInputProps {
   label: string;
@@ -8,24 +9,36 @@ interface Props extends TextInputProps {
 }
 
 export default function FormField({ label, error, style, ...rest }: Props) {
+  const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: colors.textPrimary }]}>{label}</Text>
       <TextInput
         style={[
           styles.input,
-          focused && styles.inputFocused,
-          error ? styles.inputError : null,
+          {
+            borderColor: error ? colors.danger : focused ? colors.primary : colors.border,
+            backgroundColor: colors.surface,
+            color: colors.textPrimary,
+          },
           style,
         ]}
-        placeholderTextColor={Colors.textMuted}
-        onFocus={(e) => { setFocused(true); rest.onFocus?.(e); }}
-        onBlur={(e) => { setFocused(false); rest.onBlur?.(e); }}
+        placeholderTextColor={colors.textMuted}
+        onFocus={(e) => {
+          setFocused(true);
+          rest.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          rest.onBlur?.(e);
+        }}
+        accessibilityLabel={label}
+        accessibilityHint={error || undefined}
         {...rest}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
     </View>
   );
 }
@@ -36,29 +49,18 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.semibold,
     fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
   },
   input: {
     borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
     fontSize: FontSizes.base,
     fontFamily: Fonts.body,
-    backgroundColor: Colors.surface,
-    color: Colors.textPrimary,
-  },
-  inputFocused: {
-    borderColor: Colors.primary,
-  },
-  inputError: {
-    borderColor: Colors.danger,
   },
   error: {
     fontSize: FontSizes.xs,
     fontFamily: Fonts.body,
-    color: Colors.danger,
-    marginTop: 2,
+    marginTop: Spacing.xxs,
   },
 });
