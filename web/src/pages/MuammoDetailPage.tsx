@@ -6,6 +6,7 @@ import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
 import type { MuammoDetail } from '@/types';
 import DateInput from '@/components/DateInput';
+import StatusSelect from '@/components/StatusSelect';
 import { bandlarniParse, bandMatni } from '@/lib/yoriqnoma';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -176,19 +177,27 @@ export default function MuammoDetailPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Holat')}</label>
-              <select className="select" value={editStatus} onChange={e => setEditStatus(e.target.value)}>
-                <option value="ochiq">{tr('Ochiq')}</option>
-                <option value="jarayonda">{tr('Jarayonda')}</option>
-                <option value="yopilgan">{tr('Yopilgan')}</option>
-              </select>
+              <StatusSelect
+                options={[
+                  { value: 'ochiq', label: tr('Ochiq') },
+                  { value: 'jarayonda', label: tr('Jarayonda') },
+                  { value: 'yopilgan', label: tr('Yopilgan') },
+                ]}
+                value={editStatus}
+                onChange={setEditStatus}
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Xavf darajasi')}</label>
-              <select className="select" value={editXavf} onChange={e => setEditXavf(e.target.value)}>
-                <option value="past">{tr('Past')}</option>
-                <option value="orta">{tr("O'rta")}</option>
-                <option value="yuqori">{tr('Yuqori')}</option>
-              </select>
+              <StatusSelect
+                options={[
+                  { value: 'past', label: tr('Past') },
+                  { value: 'orta', label: tr("O'rta") },
+                  { value: 'yuqori', label: tr('Yuqori') },
+                ]}
+                value={editXavf}
+                onChange={setEditXavf}
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Muddat')}</label>

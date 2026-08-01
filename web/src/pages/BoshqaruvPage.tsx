@@ -7,6 +7,7 @@ import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
 import { krilldanLotinga, mfyNomiTozala } from '@/lib/alifbo';
 import { SkeletonTable } from '@/components/Skeleton';
+import StatusSelect from '@/components/StatusSelect';
 import type { Foydalanuvchi, Paginated, MfyBrief } from '@/types';
 
 // ── helpers ──────────────────────────────────────────────────────────
@@ -244,31 +245,31 @@ export default function BoshqaruvPage() {
           {/* Rol filter */}
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Rol')}</label>
-            <select
-              className="select"
+            <StatusSelect
+              options={[
+                { value: 'xodim', label: tr('Xodim') },
+                { value: 'rahbar', label: tr('Rahbar') },
+                ...(isSuperadmin ? [{ value: 'superadmin', label: tr('Superadmin') }] : []),
+              ]}
               value={rolFilter}
-              onChange={(e) => { setRolFilter(e.target.value); setPage(1); }}
-            >
-              <option value="">{tr('Barcha')}</option>
-              <option value="xodim">{tr('Xodim')}</option>
-              <option value="rahbar">{tr('Rahbar')}</option>
-              {isSuperadmin && <option value="superadmin">{tr('Superadmin')}</option>}
-            </select>
+              onChange={(v) => { setRolFilter(v); setPage(1); }}
+              barchasiLabel={tr('Barcha')}
+            />
           </div>
 
           {/* Holat filter */}
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Holat')}</label>
-            <select
-              className="select"
+            <StatusSelect
+              options={[
+                { value: 'kutilmoqda', label: tr('Kutilmoqda') },
+                { value: 'faol', label: tr('Faol') },
+                { value: 'bloklangan', label: tr('Bloklangan') },
+              ]}
               value={holatFilter}
-              onChange={(e) => { setHolatFilter(e.target.value); setPage(1); }}
-            >
-              <option value="">{tr('Barcha')}</option>
-              <option value="kutilmoqda">{tr('Kutilmoqda')}</option>
-              <option value="faol">{tr('Faol')}</option>
-              <option value="bloklangan">{tr('Bloklangan')}</option>
-            </select>
+              onChange={(v) => { setHolatFilter(v); setPage(1); }}
+              barchasiLabel={tr('Barcha')}
+            />
           </div>
 
           {/* Qidiruv */}

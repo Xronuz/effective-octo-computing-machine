@@ -10,6 +10,7 @@ import { useAlifbo } from '@/alifbo';
 import type { Foydalanuvchi, MfyBrief, KochaBrief, Paginated } from '@/types';
 import DateInput from '@/components/DateInput';
 import MfySelect from '@/components/MfySelect';
+import StatusSelect from '@/components/StatusSelect';
 
 // Backend TopshiriqResponse (app/schemas/topshiriq_intizom.py) bilan mos
 interface TopshiriqItem {
@@ -191,19 +192,14 @@ export default function TopshiriqPage() {
               <label className="mb-1 block text-xs font-medium text-slate-500">
                 {tr('Xodim')} <span className="text-[#C0392B]">*</span>
               </label>
-              <select
-                className="select"
+              <StatusSelect
+                options={xodimlar.map((x) => ({ value: String(x.id), label: tr(x.full_name) }))}
                 value={xodimId}
-                onChange={(e) => setXodimId(e.target.value)}
-                required
-              >
-                <option value="">{tr('— Xodimni tanlang —')}</option>
-                {xodimlar.map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {tr(x.full_name)}
-                  </option>
-                ))}
-              </select>
+                onChange={setXodimId}
+                barchasiLabel={tr('— Xodimni tanlang —')}
+                searchable
+                qidiruvPlaceholder={tr('Inspektor F.I.Sh...')}
+              />
             </div>
 
             {/* MFY (ixtiyoriy) — qidiruvli tanlov */}
@@ -224,18 +220,13 @@ export default function TopshiriqPage() {
               <label className="mb-1 block text-xs font-medium text-slate-500">
                 {tr("Ko'cha (ixtiyoriy)")}
               </label>
-              <select
-                className="select"
+              <StatusSelect
+                options={filtrlanganKochalar.map((k) => ({ value: String(k.id), label: tr(k.nomi) }))}
                 value={kochaId}
-                onChange={(e) => setKochaId(e.target.value)}
-              >
-                <option value="">{tr('— Barchasi —')}</option>
-                {filtrlanganKochalar.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {tr(k.nomi)}
-                  </option>
-                ))}
-              </select>
+                onChange={setKochaId}
+                barchasiLabel={tr('— Barchasi —')}
+                searchable
+              />
             </div>
           </div>
 

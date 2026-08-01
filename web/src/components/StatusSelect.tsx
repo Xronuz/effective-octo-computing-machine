@@ -16,7 +16,9 @@ interface StatusSelectProps {
   options: StatusOption[];
   value: string;
   onChange: (value: string) => void;
-  barchasiLabel: string;
+  /** Ro'yxat tepasidagi "hammasi/tozalash" tugmasi — berilmasa (majburiy
+   *  maydonlar uchun), tugma umuman chiqmaydi va faqat variantlar ko'rinadi. */
+  barchasiLabel?: string;
   className?: string;
   searchable?: boolean;
   qidiruvPlaceholder?: string;
@@ -65,7 +67,7 @@ export default function StatusSelect({
   }, [options, qidiruv, searchable]);
 
   const tanlangan = options.find((o) => o.value === value);
-  const tanlanganMatn = tanlangan ? tanlangan.label : barchasiLabel;
+  const tanlanganMatn = tanlangan ? tanlangan.label : (barchasiLabel ?? '');
 
   return (
     <div ref={qutiRef} className="relative">
@@ -93,18 +95,20 @@ export default function StatusSelect({
             </div>
           )}
           <div className="max-h-64 overflow-y-auto p-1">
-            <button
-              type="button"
-              onClick={() => {
-                onChange('');
-                setOchiq(false);
-              }}
-              className={`block w-full rounded-lg px-3 py-2 text-left text-sm ${
-                value === '' ? 'bg-[#3D6FB4]/10 font-medium text-[#2a5489]' : 'text-[#0F2033] hover:bg-slate-50'
-              }`}
-            >
-              {barchasiLabel}
-            </button>
+            {barchasiLabel !== undefined && (
+              <button
+                type="button"
+                onClick={() => {
+                  onChange('');
+                  setOchiq(false);
+                }}
+                className={`block w-full rounded-lg px-3 py-2 text-left text-sm ${
+                  value === '' ? 'bg-[#3D6FB4]/10 font-medium text-[#2a5489]' : 'text-[#0F2033] hover:bg-slate-50'
+                }`}
+              >
+                {barchasiLabel}
+              </button>
+            )}
             {filtrlangan.length === 0 ? (
               <p className="px-3 py-4 text-center text-sm text-slate-400">Topilmadi</p>
             ) : (

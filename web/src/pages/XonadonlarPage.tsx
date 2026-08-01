@@ -7,6 +7,7 @@ import { useAlifbo } from '@/alifbo';
 import { krilldanLotinga } from '@/lib/alifbo';
 import { SkeletonTable } from '@/components/Skeleton';
 import MfySelect from '@/components/MfySelect';
+import StatusSelect from '@/components/StatusSelect';
 import type { Paginated, XonadonBrief, MfyBrief, KochaBrief, XonadonCreatePayload } from '@/types';
 
 export default function XonadonlarPage() {
@@ -97,10 +98,13 @@ export default function XonadonlarPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Ko'cha")} *</label>
-              <select className="select" value={createForm.kocha_id || ''} onChange={e => setCreateForm({...createForm, kocha_id: Number(e.target.value)})}>
-                <option value="">{tr('Tanlang')}</option>
-                {kochalar.map(k => <option key={k.id} value={k.id}>{tr(k.nomi)}</option>)}
-              </select>
+              <StatusSelect
+                options={kochalar.map(k => ({ value: String(k.id), label: tr(k.nomi) }))}
+                value={createForm.kocha_id ? String(createForm.kocha_id) : ''}
+                onChange={(v) => setCreateForm({...createForm, kocha_id: Number(v)})}
+                barchasiLabel={tr('Tanlang')}
+                searchable
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Uy raqami")} *</label>
@@ -143,18 +147,25 @@ export default function XonadonlarPage() {
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Ko'cha")}</label>
-            <select className="select" value={kocha_id} onChange={e => updateFilter('kocha_id', e.target.value)}>
-              <option value="">{tr("Barcha ko'chalar")}</option>
-              {kochalar.map(k => <option key={k.id} value={k.id}>{tr(k.nomi)}</option>)}
-            </select>
+            <StatusSelect
+              options={kochalar.map(k => ({ value: String(k.id), label: tr(k.nomi) }))}
+              value={kocha_id}
+              onChange={(v) => updateFilter('kocha_id', v)}
+              barchasiLabel={tr("Barcha ko'chalar")}
+              searchable
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Ochiq muammo')}</label>
-            <select className="select" value={ochiq_muammo} onChange={e => updateFilter('ochiq_muammo', e.target.value)}>
-              <option value="">{tr('Barchasi')}</option>
-              <option value="true">{tr('Faqat ochiq muammosi bor')}</option>
-              <option value="false">{tr('Muammosiz')}</option>
-            </select>
+            <StatusSelect
+              options={[
+                { value: 'true', label: tr('Faqat ochiq muammosi bor') },
+                { value: 'false', label: tr('Muammosiz') },
+              ]}
+              value={ochiq_muammo}
+              onChange={(v) => updateFilter('ochiq_muammo', v)}
+              barchasiLabel={tr('Barchasi')}
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Qidiruv')}</label>

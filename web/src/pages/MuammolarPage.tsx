@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, ClipboardList, FilterX } from 'lucide-react'
 import { apiGet } from '@/api';
 import { SkeletonTable } from '@/components/Skeleton';
 import DateInput from '@/components/DateInput';
+import StatusSelect from '@/components/StatusSelect';
 import NatijaBadge from '@/components/NatijaBadge';
 import { ddMmYyyy } from '@/lib/sana';
 import { useAlifbo } from '@/alifbo';
@@ -120,10 +121,12 @@ export default function MuammolarPage() {
       <div className="card flex flex-wrap items-end gap-3 p-4">
         <div className="min-w-[140px]">
           <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Holat')}</label>
-          <select className="select" value={holat} onChange={e => updateFilter('holat', e.target.value)}>
-            <option value="">{tr('Barcha holatlar')}</option>
-            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{tr(STATUS_LABELS[s])}</option>)}
-          </select>
+          <StatusSelect
+            options={STATUS_OPTIONS.map(s => ({ value: s, label: tr(STATUS_LABELS[s]) }))}
+            value={holat}
+            onChange={(v) => updateFilter('holat', v)}
+            barchasiLabel={tr('Barcha holatlar')}
+          />
         </div>
         <div className="min-w-[150px]">
           <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Sana')}</label>
@@ -135,12 +138,15 @@ export default function MuammolarPage() {
         </div>
         <div className="min-w-[170px]">
           <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Inspektor')}</label>
-          <select className="select" value={xodimId} onChange={e => updateFilter('xodim_id', e.target.value)}>
-            <option value="">{tr('Barcha inspektorlar')}</option>
-            {xodimlar.map(x => (
-              <option key={x.id} value={String(x.id)}>{tr(x.full_name)}</option>
-            ))}
-          </select>
+          <StatusSelect
+            options={xodimlar.map(x => ({ value: String(x.id), label: tr(x.full_name) }))}
+            value={xodimId}
+            onChange={(v) => updateFilter('xodim_id', v)}
+            barchasiLabel={tr('Barcha inspektorlar')}
+            searchable
+            qidiruvPlaceholder={tr('Inspektor F.I.Sh...')}
+            className="select sm:!w-[280px]"
+          />
         </div>
         <div className="min-w-[150px]">
           <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Yong'inga qarshi tadbirlar soni")}</label>

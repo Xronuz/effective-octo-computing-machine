@@ -124,7 +124,7 @@ function HisobotYuklabOlish({ boshlangichSana, xodimId }: { boshlangichSana: str
       </button>
 
       {ochiq && (
-        <div className="absolute right-0 z-20 mt-1 w-72 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-lift">
+        <div className="absolute right-0 z-20 mt-1 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-lift">
           <p className="mb-3 text-xs font-medium text-slate-500">{tr('Hisobot uchun sana oralig\'i')}</p>
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
@@ -235,7 +235,7 @@ export default function KunlikTekshiruvPanel() {
               value={holatiFilter}
               onChange={(v) => setHolatiFilter(v as typeof holatiFilter)}
               barchasiLabel={tr('Barchasi')}
-              className="select !w-auto !py-1.5 text-sm max-w-[150px]"
+              className="select sm:!w-[170px] !py-1.5 text-sm"
             />
           </label>
 
@@ -248,7 +248,7 @@ export default function KunlikTekshiruvPanel() {
               barchasiLabel={tr('Barchasi')}
               searchable
               qidiruvPlaceholder={tr('Inspektor F.I.Sh...')}
-              className="select !w-auto !py-1.5 text-sm max-w-[640px]"
+              className="select sm:!w-[420px] !py-1.5 text-sm"
             />
           </label>
 

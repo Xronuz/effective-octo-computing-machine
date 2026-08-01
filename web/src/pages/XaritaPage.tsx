@@ -441,7 +441,7 @@ export default function XaritaPage() {
             value={statusFilter}
             onChange={setStatusFilter}
             barchasiLabel={tr('Barchasi')}
-            className="select !w-auto !py-1.5 text-sm max-w-[200px]"
+            className="select sm:!w-[180px] !py-1.5 text-sm"
           />
         </label>
 
@@ -452,7 +452,7 @@ export default function XaritaPage() {
             value={selectedMfyId !== null ? String(selectedMfyId) : ''}
             onChange={handleMfyTanlash}
             barchasiLabel={tr('Tanlang…')}
-            className="select !w-auto !py-1.5 text-sm max-w-[480px]"
+            className="select sm:!w-[420px] !py-1.5 text-sm"
           />
         </label>
 
