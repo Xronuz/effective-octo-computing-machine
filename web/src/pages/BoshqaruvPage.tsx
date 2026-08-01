@@ -241,7 +241,7 @@ export default function BoshqaruvPage() {
     <div className="space-y-6">
       {/* Filters */}
       <div className="card p-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-3">
           {/* Rol filter */}
           <div>
             <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -280,14 +280,16 @@ export default function BoshqaruvPage() {
 
           {/* Qidiruv */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Qidiruv')}</label>
-            <input
-              className="input"
-              type="text"
-              placeholder={tr("Ism, familiya yoki guvohnoma...")}
-              value={qidiruv}
-              onChange={(e) => { setQidiruv(e.target.value); setPage(1); }}
-            />
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="whitespace-nowrap font-medium">{tr('Qidiruv')}:</span>
+              <input
+                className="input"
+                type="text"
+                placeholder={tr("Ism, familiya yoki guvohnoma...")}
+                value={qidiruv}
+                onChange={(e) => { setQidiruv(e.target.value); setPage(1); }}
+              />
+            </label>
           </div>
         </div>
       </div>

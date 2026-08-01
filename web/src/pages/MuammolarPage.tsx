@@ -118,7 +118,7 @@ export default function MuammolarPage() {
       </div>
 
       {/* Filters */}
-      <div className="card flex flex-wrap items-end gap-3 p-4">
+      <div className="card flex flex-wrap items-center gap-3 p-4">
         <div>
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <span className="whitespace-nowrap font-medium">{tr('Holat')}:</span>
@@ -131,13 +131,15 @@ export default function MuammolarPage() {
             />
           </label>
         </div>
-        <div className="min-w-[150px]">
-          <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Sana')}</label>
-          <DateInput
-            className="input"
-            value={sana}
-            onChange={iso => updateFilter('sana', iso)}
-          />
+        <div>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="whitespace-nowrap font-medium">{tr('Sana')}:</span>
+            <DateInput
+              className="input sm:!w-[150px]"
+              value={sana}
+              onChange={iso => updateFilter('sana', iso)}
+            />
+          </label>
         </div>
         <div>
           <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -153,20 +155,24 @@ export default function MuammolarPage() {
             />
           </label>
         </div>
-        <div className="min-w-[150px]">
-          <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Yong'inga qarshi tadbirlar soni")}</label>
-          <input
-            type="number"
-            min={0}
-            className="input"
-            value={tadbirlarSoni}
-            onChange={e => updateFilter('tadbirlar_soni', e.target.value)}
-            placeholder={tr('masalan, 4')}
-          />
+        <div>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="whitespace-nowrap font-medium">{tr("Yong'inga qarshi tadbirlar soni")}:</span>
+            <input
+              type="number"
+              min={0}
+              className="input sm:!w-[110px]"
+              value={tadbirlarSoni}
+              onChange={e => updateFilter('tadbirlar_soni', e.target.value)}
+              placeholder={tr('masalan, 4')}
+            />
+          </label>
         </div>
         <div className="min-w-[180px] flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Qidiruv')}</label>
-          <input className="input" value={qidiruv} onChange={e => updateFilter('qidiruv', e.target.value)} placeholder={tr('Tavsif yoki manzil...')} />
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="whitespace-nowrap font-medium">{tr('Qidiruv')}:</span>
+            <input className="input" value={qidiruv} onChange={e => updateFilter('qidiruv', e.target.value)} placeholder={tr('Tavsif yoki manzil...')} />
+          </label>
         </div>
         <button onClick={() => setSearchParams({})} className="btn-soft gap-2 py-2.5 text-sm">
           <FilterX className="h-4 w-4" />
