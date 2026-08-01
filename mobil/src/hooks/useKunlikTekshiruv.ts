@@ -1,69 +1,105 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
-import type { ApiResponse, MuammoSummary, Paginated } from '../types';
+import { getNavbatYozuvlari, type NavbatYozuvi } from '../services/db';
+import { isoVaqtningKuni } from '../lib/sana';
+import type { ApiResponse } from '../types';
 
 export interface KunlikStat {
   jami: number;
   muammosiz: number;
   muammoli: number;
   kiraOlmadi: number;
+  /** Shu kunda hali serverga yuborilmagan (navbatdagi) tashriflar soni. */
+  yuborilmagan: number;
 }
 
-const BOSH: KunlikStat = { jami: 0, muammosiz: 0, muammoli: 0, kiraOlmadi: 0 };
+const BOSH: KunlikStat = { jami: 0, muammosiz: 0, muammoli: 0, kiraOlmadi: 0, yuborilmagan: 0 };
 
-function isoSana(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-function ertangiKun(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + 1);
-  return isoSana(d);
+interface KunlikJavob {
+  jami: number;
+  muammosiz: number;
+  muammoli: number;
+  kira_olmadi: number;
 }
 
 /**
- * Tanlangan kunda joriy xodimning tekshiruv statistikasi:
- * nechta xonadon tekshirildi, nechtasi muammosiz/muammoli/kira olmadi.
- * Yagona manba — GET /muammolar (xodim_id + sana_dan/sana_gacha filtri),
- * alohida backend agregat kerak emas.
+ * Navbatdagi yozuv natijasi — backend `create_muammo` mantig'ining nusxasi:
+ * kira olmadi > checklist bandlari bor (muammo) > muammo yo'q.
  */
-export function useKunlikTekshiruv(sanaIso: string): { stat: KunlikStat; loading: boolean } {
-  const { user } = useAuth();
+function navbatNatijasi(y: NavbatYozuvi): 'kira_olmadi' | 'muammoli' | 'muammosiz' {
+  if (y.kira_olmadi) return 'kira_olmadi';
+  const bandlar = y.taklif_etilgan_tadbirlar?.trim();
+  return y.turi || bandlar ? 'muammoli' : 'muammosiz';
+}
+
+/**
+ * Tanlangan kunda joriy xodimning tekshiruv statistikasi.
+ *
+ * Serverdagi (sinxronlangan) yozuvlar `/statistika/kunlik` dan olinadi va
+ * ustiga qurilmada hali yuborilmagan navbat yozuvlari qo'shiladi — aks holda
+ * offline ishlagan xodim o'z ishini "0" deb ko'rardi.
+ */
+export function useKunlikTekshiruv(sanaIso: string): {
+  stat: KunlikStat;
+  loading: boolean;
+  yangila: () => void;
+} {
   const [stat, setStat] = useState<KunlikStat>(BOSH);
   const [loading, setLoading] = useState(false);
 
   const yuklash = useCallback(async () => {
-    if (!user?.id) {
-      setStat(BOSH);
-      return;
-    }
     setLoading(true);
+
+    // 1) Qurilmadagi navbat (server bilan bog'liq emas — doim hisoblanadi)
+    let navbat: KunlikStat = { ...BOSH };
     try {
-      const params = new URLSearchParams({
-        xodim_id: String(user.id),
-        sana_dan: sanaIso,
-        sana_gacha: ertangiKun(sanaIso),
-        size: '100',
-      });
-      const { data } = await api.get<ApiResponse<Paginated<MuammoSummary>>>(`/muammolar?${params}`);
-      const items = data.ok ? (data.data?.items ?? []) : [];
+      const yozuvlar = await getNavbatYozuvlari();
+      for (const y of yozuvlar) {
+        if (y.status === 'yuborilgan' || y.status === 'xato') continue;
+        if (isoVaqtningKuni(y.yaratilgan) !== sanaIso) continue;
+        navbat.jami += 1;
+        navbat.yuborilmagan += 1;
+        const natija = navbatNatijasi(y);
+        if (natija === 'kira_olmadi') navbat.kiraOlmadi += 1;
+        else if (natija === 'muammoli') navbat.muammoli += 1;
+        else navbat.muammosiz += 1;
+      }
+    } catch {
+      navbat = { ...BOSH };
+    }
+
+    // 2) Serverdagi sinxronlangan yozuvlar
+    try {
+      const { data } = await api.get<ApiResponse<KunlikJavob>>(
+        `/statistika/kunlik?sana=${sanaIso}`,
+      );
+      const s = data.ok && data.data ? data.data : null;
       setStat({
-        jami: data.data?.total ?? items.length,
-        muammosiz: items.filter((m) => m.tekshiruv_natijasi === 'muammo_yoq').length,
-        muammoli: items.filter((m) => m.tekshiruv_natijasi === 'muammo_topildi').length,
-        kiraOlmadi: items.filter((m) => m.tekshiruv_natijasi === 'kira_olmadi').length,
+        jami: (s?.jami ?? 0) + navbat.jami,
+        muammosiz: (s?.muammosiz ?? 0) + navbat.muammosiz,
+        muammoli: (s?.muammoli ?? 0) + navbat.muammoli,
+        kiraOlmadi: (s?.kira_olmadi ?? 0) + navbat.kiraOlmadi,
+        yuborilmagan: navbat.yuborilmagan,
       });
     } catch {
-      setStat(BOSH);
+      // Tarmoq yo'q — hech bo'lmasa qurilmadagi ish ko'rinib tursin
+      setStat(navbat);
     } finally {
       setLoading(false);
     }
-  }, [user?.id, sanaIso]);
+  }, [sanaIso]);
 
   useEffect(() => {
     yuklash();
   }, [yuklash]);
 
-  return { stat, loading };
+  // Tekshiruv saqlab qaytilganda ko'rsatkich darhol yangilanadi
+  useFocusEffect(
+    useCallback(() => {
+      yuklash();
+    }, [yuklash]),
+  );
+
+  return { stat, loading, yangila: yuklash };
 }

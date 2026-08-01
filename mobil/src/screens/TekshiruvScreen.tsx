@@ -408,9 +408,14 @@ export default function TekshiruvScreen() {
       await muammoniNavbatgaQosh(yozuv);
       setPendingCount(await getKutilmaganSoni());
 
+      // Xabar haqiqiy holatga mos bo'lsin — "internet bo'lsa yuboriladi"
+      // degan umumiy matn xodimni ish yuborildimi yoki yo'qmi degan
+      // savolda qoldirardi.
       Alert.alert(
-        tr('Saqlandi'),
-        tr("Tekshiruv qurilmaga saqlandi. Internet bo'lsa avtomatik yuboriladi."),
+        tr('Tekshiruv qabul qilindi'),
+        isOffline
+          ? tr('Internet yo‘q — qurilmada saqlandi va aloqa tiklanishi bilan avtomatik yuboriladi.')
+          : tr('Serverga yuborilmoqda. Yuborilgani «Asosiy» ekranidagi holat satrida ko‘rinadi.'),
         [{ text: 'OK', onPress: () => navigation.goBack() }],
       );
       syncNow();

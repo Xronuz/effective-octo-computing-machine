@@ -74,6 +74,17 @@ export default function KunlikStatistika({
           label={tr('Kira olmadi')}
         />
       </View>
+
+      {/* Offline ishlaganda son "0" bo'lib qolmasligi uchun navbatdagi
+          tashriflar ham yuqoridagi songa kiritilgan — buni aytib qo'yamiz. */}
+      {stat.yuborilmagan > 0 && (
+        <View style={styles.navbatIzoh}>
+          <MaterialCommunityIcons name="cloud-upload-outline" size={14} color={Colors.warning} />
+          <Text style={styles.navbatIzohText}>
+            {tr('Shundan {n} tasi hali yuborilmagan').replace('{n}', String(stat.yuborilmagan))}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -121,5 +132,16 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
     lineHeight: 12,
+  },
+  navbatIzoh: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  navbatIzohText: {
+    flex: 1,
+    fontSize: FontSizes.xs,
+    fontFamily: Fonts.body,
+    color: Colors.textSecondary,
   },
 });

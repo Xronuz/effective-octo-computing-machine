@@ -17,11 +17,8 @@ import StatusStrip from '../components/StatusStrip';
 import QuickButtonsRow from '../components/maydon/QuickButtonsRow';
 import HaftaTanlagich from '../components/maydon/HaftaTanlagich';
 import KunlikStatistika from '../components/maydon/KunlikStatistika';
+import { bugunIso } from '../lib/sana';
 import { Colors, tabBarContentPadding } from '../theme';
-
-function bugunIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 /**
  * ASOSIY — operativ boshqaruv ekrani.
@@ -35,7 +32,7 @@ export default function MaydonScreen() {
   const { data, loading, refresh } = useMaydonData();
   const [refreshing, setRefreshing] = useState(false);
   const [tanlanganSana, setTanlanganSana] = useState(bugunIso());
-  const { stat, loading: statLoading } = useKunlikTekshiruv(tanlanganSana);
+  const { stat, loading: statLoading, yangila: statYangila } = useKunlikTekshiruv(tanlanganSana);
 
   useFocusEffect(
     useCallback(() => {
@@ -46,8 +43,9 @@ export default function MaydonScreen() {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     refresh();
+    statYangila();
     setTimeout(() => setRefreshing(false), 400);
-  }, [refresh]);
+  }, [refresh, statYangila]);
 
   const overdue = useMemo(() => {
     const t = data.nextTask;

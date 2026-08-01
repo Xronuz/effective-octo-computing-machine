@@ -5,9 +5,10 @@ import NetInfo from '@react-native-community/netinfo';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAlifbo } from '../contexts/AlifboContext';
 import { getKutilmaganSoni } from '../services/db';
+import { setSyncCallback, syncNow } from '../services/sync';
 import { Colors, Fonts, FontSizes, FontWeights } from '../theme';
 
-type StripState = 'offline' | 'pending' | 'synced';
+type StripState = 'offline' | 'yuborilmoqda' | 'pending' | 'synced';
 
 /**
  * Yagona "rasmiy holat" satri: tarmoq + sinxronlash navbati.
@@ -19,6 +20,8 @@ export default function StatusStrip() {
   const { tr } = useAlifbo();
   const [isOffline, setIsOffline] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<string | null>(null);
 
   useEffect(() => {
     // `isInternetReachable`ga tayanmaymiz — ba'zi tarmoqlarda internet
@@ -46,30 +49,55 @@ export default function StatusStrip() {
     refreshCount();
     const interval = setInterval(refreshCount, 5000);
 
+    // Jonli sinxronlash holati — "nima bo'layotgani" ko'rinib tursin
+    setSyncCallback((s) => {
+      setSyncing(s.syncing);
+      setPendingCount(s.pendingCount);
+      setLastSync(s.lastSync);
+    });
+
     return () => {
       if (oflaynTaymer) clearTimeout(oflaynTaymer);
       unsubscribe();
       clearInterval(interval);
+      setSyncCallback(() => {});
     };
   }, []);
 
-  const state: StripState = isOffline ? 'offline' : pendingCount > 0 ? 'pending' : 'synced';
+  const state: StripState = isOffline
+    ? 'offline'
+    : syncing && pendingCount > 0
+      ? 'yuborilmoqda'
+      : pendingCount > 0
+        ? 'pending'
+        : 'synced';
 
-  const config: Record<StripState, { color: string; icon: string; label: string }> = {
+  // Matnlar harakatga yo'naltirilgan: xodim "nima bo'lyapti va men nima
+  // qilishim kerak" degan savolga darhol javob olishi kerak. Avvalgi
+  // "{n} ta yozuv navbatda" holatni tushuntirmasdi.
+  const nQator = (matn: string) => tr(matn).replace('{n}', String(pendingCount));
+
+  const config: Record<StripState, { color: string; label: string }> = {
     synced: {
       color: Colors.success,
-      icon: 'check-circle',
-      label: tr('Onlayn · Sinxronlangan'),
+      label: lastSync
+        ? tr('Hammasi yuborilgan · {vaqt}').replace('{vaqt}', lastSync)
+        : tr('Hammasi yuborilgan'),
+    },
+    yuborilmoqda: {
+      color: Colors.info,
+      label: nQator('{n} ta tekshiruv yuborilmoqda...'),
     },
     pending: {
       color: Colors.warning,
-      icon: 'sync-alert',
-      label: tr('{count} ta yozuv navbatda').replace('{count}', String(pendingCount)),
+      label: nQator('{n} ta tekshiruv yuborilishi kutilmoqda'),
     },
     offline: {
       color: Colors.textMuted,
-      icon: 'cloud-off-outline',
-      label: tr("Offlayn · yozuvlar navbatga qo'shiladi"),
+      label:
+        pendingCount > 0
+          ? nQator("Internet yo'q · {n} ta tekshiruv saqlangan")
+          : tr("Internet yo'q · tekshiruvlar qurilmada saqlanadi"),
     },
   };
 
@@ -79,8 +107,13 @@ export default function StatusStrip() {
     <TouchableOpacity
       style={styles.strip}
       onPress={() => navigation.navigate('Navbat' as never)}
+      onLongPress={() => {
+        // Uzoq bosish — darhol yuborishga urinish (kutib turishga majbur qilmaslik)
+        if (!isOffline) syncNow();
+      }}
       accessibilityRole="button"
       accessibilityLabel={c.label}
+      accessibilityHint={tr('Sinxronlash navbatini ochish; uzoq bosilsa darhol yuboriladi')}
     >
       <View style={[styles.dot, { backgroundColor: c.color }]} />
       <Text style={[styles.label, { color: c.color }]}>{c.label}</Text>

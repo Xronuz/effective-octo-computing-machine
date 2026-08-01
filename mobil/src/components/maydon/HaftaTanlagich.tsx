@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAlifbo } from '../../contexts/AlifboContext';
+import { bugunIso, isoSana, kunOldin } from '../../lib/sana';
 import { Colors, Fonts, FontSizes, FontWeights, Radius } from '../../theme';
 
 const KUNLAR_SONI = 21;
@@ -17,23 +18,17 @@ interface KunItem {
   bugun: boolean;
 }
 
-function isoSana(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
 function oxirgiKunlar(soni: number): KunItem[] {
-  const bugun = new Date();
-  const bugunIso = isoSana(bugun);
+  const hozirgiKun = bugunIso();
   const natija: KunItem[] = [];
   for (let i = soni - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
+    const d = kunOldin(i);
     const iso = isoSana(d);
     natija.push({
       iso,
       kun: d.getDate(),
       haftaKuni: HAFTA_QISQA[d.getDay()],
-      bugun: iso === bugunIso,
+      bugun: iso === hozirgiKun,
     });
   }
   return natija;

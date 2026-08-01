@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
 import { getNavbatYozuvlari } from '../services/db';
+import { bugunIso, isoVaqtningKuni } from '../lib/sana';
 import type { ApiResponse, Paginated, XonadonSummary } from '../types';
 
 export interface MfyBiriktirish {
@@ -56,14 +57,15 @@ export function useMeningXonadonlarim() {
         // Hali sinxronlanmagan (offline navbatdagi) bugungi tashriflarni ham
         // "tekshirilgan" deb hisoblaymiz — aks holda ro'yxat ularni yana
         // "tekshirilmagan" qilib ko'rsatib, chalkashlik yaratadi.
-        const bugun = new Date().toISOString().slice(0, 10);
+        const bugun = bugunIso();
         const pending = await getNavbatYozuvlari().catch(() => []);
         // `kira_olmadi` yozuvlar bundan mustasno — xonadon haqiqatda
         // tekshirilmagan (backend'dagi xuddi shu qoidaga mos).
         const bugungiPendingIds = new Set(
           pending
             .filter(
-              (p) => p.status !== 'xato' && !p.kira_olmadi && p.yaratilgan.slice(0, 10) === bugun,
+              (p) =>
+                p.status !== 'xato' && !p.kira_olmadi && isoVaqtningKuni(p.yaratilgan) === bugun,
             )
             .map((p) => p.xonadon_id),
         );
