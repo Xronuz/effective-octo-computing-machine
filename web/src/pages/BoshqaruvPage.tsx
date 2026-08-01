@@ -244,32 +244,38 @@ export default function BoshqaruvPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {/* Rol filter */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Rol')}</label>
-            <StatusSelect
-              options={[
-                { value: 'xodim', label: tr('Xodim') },
-                { value: 'rahbar', label: tr('Rahbar') },
-                ...(isSuperadmin ? [{ value: 'superadmin', label: tr('Superadmin') }] : []),
-              ]}
-              value={rolFilter}
-              onChange={(v) => { setRolFilter(v); setPage(1); }}
-              barchasiLabel={tr('Barcha')}
-            />
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="whitespace-nowrap font-medium">{tr('Rol')}:</span>
+              <StatusSelect
+                options={[
+                  { value: 'xodim', label: tr('Xodim') },
+                  { value: 'rahbar', label: tr('Rahbar') },
+                  ...(isSuperadmin ? [{ value: 'superadmin', label: tr('Superadmin') }] : []),
+                ]}
+                value={rolFilter}
+                onChange={(v) => { setRolFilter(v); setPage(1); }}
+                barchasiLabel={tr('Barcha')}
+                className="select sm:!w-[160px]"
+              />
+            </label>
           </div>
 
           {/* Holat filter */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Holat')}</label>
-            <StatusSelect
-              options={[
-                { value: 'kutilmoqda', label: tr('Kutilmoqda') },
-                { value: 'faol', label: tr('Faol') },
-                { value: 'bloklangan', label: tr('Bloklangan') },
-              ]}
-              value={holatFilter}
-              onChange={(v) => { setHolatFilter(v); setPage(1); }}
-              barchasiLabel={tr('Barcha')}
-            />
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="whitespace-nowrap font-medium">{tr('Holat')}:</span>
+              <StatusSelect
+                options={[
+                  { value: 'kutilmoqda', label: tr('Kutilmoqda') },
+                  { value: 'faol', label: tr('Faol') },
+                  { value: 'bloklangan', label: tr('Bloklangan') },
+                ]}
+                value={holatFilter}
+                onChange={(v) => { setHolatFilter(v); setPage(1); }}
+                barchasiLabel={tr('Barcha')}
+                className="select sm:!w-[160px]"
+              />
+            </label>
           </div>
 
           {/* Qidiruv */}

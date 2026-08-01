@@ -97,14 +97,17 @@ export default function XonadonlarPage() {
           <h3 className="text-base font-semibold text-[#0F2033]">{tr("Yangi xonadon qo'shish")}</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Ko'cha")} *</label>
-              <StatusSelect
-                options={kochalar.map(k => ({ value: String(k.id), label: tr(k.nomi) }))}
-                value={createForm.kocha_id ? String(createForm.kocha_id) : ''}
-                onChange={(v) => setCreateForm({...createForm, kocha_id: Number(v)})}
-                barchasiLabel={tr('Tanlang')}
-                searchable
-              />
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="whitespace-nowrap font-medium">{tr("Ko'cha")} *:</span>
+                <StatusSelect
+                  options={kochalar.map(k => ({ value: String(k.id), label: tr(k.nomi) }))}
+                  value={createForm.kocha_id ? String(createForm.kocha_id) : ''}
+                  onChange={(v) => setCreateForm({...createForm, kocha_id: Number(v)})}
+                  barchasiLabel={tr('Tanlang')}
+                  searchable
+                  className="select sm:!w-[200px]"
+                />
+              </label>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Uy raqami")} *</label>
@@ -137,35 +140,44 @@ export default function XonadonlarPage() {
       <div className="card p-4">
         <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.3fr]">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">MFY</label>
-            <MfySelect
-              mfylar={mfylar}
-              value={mfy_id}
-              onChange={(v) => updateFilter('mfy_id', v)}
-              barchasiLabel={tr('Barcha MFY')}
-            />
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="whitespace-nowrap font-medium">MFY:</span>
+              <MfySelect
+                mfylar={mfylar}
+                value={mfy_id}
+                onChange={(v) => updateFilter('mfy_id', v)}
+                barchasiLabel={tr('Barcha MFY')}
+                className="select sm:!w-[220px]"
+              />
+            </label>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Ko'cha")}</label>
-            <StatusSelect
-              options={kochalar.map(k => ({ value: String(k.id), label: tr(k.nomi) }))}
-              value={kocha_id}
-              onChange={(v) => updateFilter('kocha_id', v)}
-              barchasiLabel={tr("Barcha ko'chalar")}
-              searchable
-            />
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="whitespace-nowrap font-medium">{tr("Ko'cha")}:</span>
+              <StatusSelect
+                options={kochalar.map(k => ({ value: String(k.id), label: tr(k.nomi) }))}
+                value={kocha_id}
+                onChange={(v) => updateFilter('kocha_id', v)}
+                barchasiLabel={tr("Barcha ko'chalar")}
+                searchable
+                className="select sm:!w-[200px]"
+              />
+            </label>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Ochiq muammo')}</label>
-            <StatusSelect
-              options={[
-                { value: 'true', label: tr('Faqat ochiq muammosi bor') },
-                { value: 'false', label: tr('Muammosiz') },
-              ]}
-              value={ochiq_muammo}
-              onChange={(v) => updateFilter('ochiq_muammo', v)}
-              barchasiLabel={tr('Barchasi')}
-            />
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="whitespace-nowrap font-medium">{tr('Ochiq muammo')}:</span>
+              <StatusSelect
+                options={[
+                  { value: 'true', label: tr('Faqat ochiq muammosi bor') },
+                  { value: 'false', label: tr('Muammosiz') },
+                ]}
+                value={ochiq_muammo}
+                onChange={(v) => updateFilter('ochiq_muammo', v)}
+                barchasiLabel={tr('Barchasi')}
+                className="select sm:!w-[220px]"
+              />
+            </label>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Qidiruv')}</label>

@@ -176,28 +176,34 @@ export default function MuammoDetailPage() {
           <h3 className="text-base font-semibold text-[#0F2033]">{tr("Ma'lumotlarni yangilash")}</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Holat')}</label>
-              <StatusSelect
-                options={[
-                  { value: 'ochiq', label: tr('Ochiq') },
-                  { value: 'jarayonda', label: tr('Jarayonda') },
-                  { value: 'yopilgan', label: tr('Yopilgan') },
-                ]}
-                value={editStatus}
-                onChange={setEditStatus}
-              />
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="whitespace-nowrap font-medium">{tr('Holat')}:</span>
+                <StatusSelect
+                  options={[
+                    { value: 'ochiq', label: tr('Ochiq') },
+                    { value: 'jarayonda', label: tr('Jarayonda') },
+                    { value: 'yopilgan', label: tr('Yopilgan') },
+                  ]}
+                  value={editStatus}
+                  onChange={setEditStatus}
+                  className="select sm:!w-[180px]"
+                />
+              </label>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Xavf darajasi')}</label>
-              <StatusSelect
-                options={[
-                  { value: 'past', label: tr('Past') },
-                  { value: 'orta', label: tr("O'rta") },
-                  { value: 'yuqori', label: tr('Yuqori') },
-                ]}
-                value={editXavf}
-                onChange={setEditXavf}
-              />
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="whitespace-nowrap font-medium">{tr('Xavf darajasi')}:</span>
+                <StatusSelect
+                  options={[
+                    { value: 'past', label: tr('Past') },
+                    { value: 'orta', label: tr("O'rta") },
+                    { value: 'yuqori', label: tr('Yuqori') },
+                  ]}
+                  value={editXavf}
+                  onChange={setEditXavf}
+                  className="select sm:!w-[180px]"
+                />
+              </label>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Muddat')}</label>

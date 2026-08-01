@@ -189,44 +189,49 @@ export default function TopshiriqPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {/* Xodim */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">
-                {tr('Xodim')} <span className="text-[#C0392B]">*</span>
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="whitespace-nowrap font-medium">
+                  {tr('Xodim')} <span className="text-[#C0392B]">*</span>:
+                </span>
+                <StatusSelect
+                  options={xodimlar.map((x) => ({ value: String(x.id), label: tr(x.full_name) }))}
+                  value={xodimId}
+                  onChange={setXodimId}
+                  barchasiLabel={tr('— Xodimni tanlang —')}
+                  searchable
+                  qidiruvPlaceholder={tr('Inspektor F.I.Sh...')}
+                  className="select sm:!w-[200px]"
+                />
               </label>
-              <StatusSelect
-                options={xodimlar.map((x) => ({ value: String(x.id), label: tr(x.full_name) }))}
-                value={xodimId}
-                onChange={setXodimId}
-                barchasiLabel={tr('— Xodimni tanlang —')}
-                searchable
-                qidiruvPlaceholder={tr('Inspektor F.I.Sh...')}
-              />
             </div>
 
             {/* MFY (ixtiyoriy) — qidiruvli tanlov */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">
-                {tr('MFY (ixtiyoriy)')}
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="whitespace-nowrap font-medium">{tr('MFY (ixtiyoriy)')}:</span>
+                <MfySelect
+                  mfylar={mfylar}
+                  value={mfyId}
+                  onChange={setMfyId}
+                  barchasiLabel={tr('— Barcha MFY lar —')}
+                  className="select sm:!w-[200px]"
+                />
               </label>
-              <MfySelect
-                mfylar={mfylar}
-                value={mfyId}
-                onChange={setMfyId}
-                barchasiLabel={tr('— Barcha MFY lar —')}
-              />
             </div>
 
             {/* Ko'cha (ixtiyoriy) */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">
-                {tr("Ko'cha (ixtiyoriy)")}
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="whitespace-nowrap font-medium">{tr("Ko'cha (ixtiyoriy)")}:</span>
+                <StatusSelect
+                  options={filtrlanganKochalar.map((k) => ({ value: String(k.id), label: tr(k.nomi) }))}
+                  value={kochaId}
+                  onChange={setKochaId}
+                  barchasiLabel={tr('— Barchasi —')}
+                  searchable
+                  className="select sm:!w-[200px]"
+                />
               </label>
-              <StatusSelect
-                options={filtrlanganKochalar.map((k) => ({ value: String(k.id), label: tr(k.nomi) }))}
-                value={kochaId}
-                onChange={setKochaId}
-                barchasiLabel={tr('— Barchasi —')}
-                searchable
-              />
             </div>
           </div>
 

@@ -119,14 +119,17 @@ export default function MuammolarPage() {
 
       {/* Filters */}
       <div className="card flex flex-wrap items-end gap-3 p-4">
-        <div className="min-w-[140px]">
-          <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Holat')}</label>
-          <StatusSelect
-            options={STATUS_OPTIONS.map(s => ({ value: s, label: tr(STATUS_LABELS[s]) }))}
-            value={holat}
-            onChange={(v) => updateFilter('holat', v)}
-            barchasiLabel={tr('Barcha holatlar')}
-          />
+        <div>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="whitespace-nowrap font-medium">{tr('Holat')}:</span>
+            <StatusSelect
+              options={STATUS_OPTIONS.map(s => ({ value: s, label: tr(STATUS_LABELS[s]) }))}
+              value={holat}
+              onChange={(v) => updateFilter('holat', v)}
+              barchasiLabel={tr('Barcha holatlar')}
+              className="select sm:!w-[160px]"
+            />
+          </label>
         </div>
         <div className="min-w-[150px]">
           <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Sana')}</label>
@@ -136,17 +139,19 @@ export default function MuammolarPage() {
             onChange={iso => updateFilter('sana', iso)}
           />
         </div>
-        <div className="min-w-[170px]">
-          <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Inspektor')}</label>
-          <StatusSelect
-            options={xodimlar.map(x => ({ value: String(x.id), label: tr(x.full_name) }))}
-            value={xodimId}
-            onChange={(v) => updateFilter('xodim_id', v)}
-            barchasiLabel={tr('Barcha inspektorlar')}
-            searchable
-            qidiruvPlaceholder={tr('Inspektor F.I.Sh...')}
-            className="select sm:!w-[280px]"
-          />
+        <div>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="whitespace-nowrap font-medium">{tr('Inspektor')}:</span>
+            <StatusSelect
+              options={xodimlar.map(x => ({ value: String(x.id), label: tr(x.full_name) }))}
+              value={xodimId}
+              onChange={(v) => updateFilter('xodim_id', v)}
+              barchasiLabel={tr('Barcha inspektorlar')}
+              searchable
+              qidiruvPlaceholder={tr('Inspektor F.I.Sh...')}
+              className="select sm:!w-[260px]"
+            />
+          </label>
         </div>
         <div className="min-w-[150px]">
           <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Yong'inga qarshi tadbirlar soni")}</label>
