@@ -17,7 +17,7 @@ from app.schemas.statistika import (
     UmumiyStatistika, MuammoTuriStat, MuammoXavfStat,
     MuammoStatusStat, MFYStatistika, TopshiriqStat,
     IntizomStat, VaqtDavriStat, StatistikaResponse,
-    XodimStatistika,
+    XodimStatistika, KunlikStatistika, XodimKunlikStat,
 )
 
 
@@ -330,4 +330,119 @@ class TestGetPdfExport:
         mock_db = AsyncMock()
         client = client_factory(user_override=None, db_override=lambda: mock_db)
         resp = client.get("/api/statistika/pdf")
+        assert resp.status_code in [422, 403]
+
+
+# ============ GET /api/statistika/kunlik ============
+
+def _make_mock_kunlik(sana="2026-08-01"):
+    return KunlikStatistika(
+        sana=sana,
+        jami=12,
+        muammosiz=7,
+        muammoli=3,
+        kira_olmadi=2,
+        tekshirilgan_xonadon=10,
+        xodimlar=[
+            XodimKunlikStat(
+                xodim_id=1, xodim_fio="Ali Valiyev",
+                jami=8, muammosiz=5, muammoli=2, kira_olmadi=1,
+                tekshirilgan_xonadon=7, oxirgi_faollik="2026-08-01T12:00:00Z",
+            ),
+            XodimKunlikStat(
+                xodim_id=2, xodim_fio="Bekzod Karimov",
+                jami=4, muammosiz=2, muammoli=1, kira_olmadi=1,
+                tekshirilgan_xonadon=3, oxirgi_faollik=None,
+            ),
+        ],
+    )
+
+
+class TestGetKunlikStatistika:
+
+    def test_success_returns_natijalar(self, client_factory):
+        """Kunlik hisobot 4 ta natija ko'rsatkichini qaytaradi."""
+        mock_user = _make_user(rol=UserRole.rahbar)
+        mock_db = AsyncMock()
+
+        with patch.object(stat_service, "get_kunlik_statistika", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = _make_mock_kunlik()
+            client = client_factory(user_override=lambda: mock_user, db_override=lambda: mock_db)
+            resp = client.get("/api/statistika/kunlik?sana=2026-08-01")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert data["data"]["jami"] == 12
+        assert data["data"]["muammosiz"] == 7
+        assert data["data"]["muammoli"] == 3
+        assert data["data"]["kira_olmadi"] == 2
+
+    def test_xodimlar_kesimi_qaytadi(self, client_factory):
+        """Admin uchun 'bugun kim nechta tekshirdi' ro'yxati keladi."""
+        mock_user = _make_user(rol=UserRole.superadmin)
+        mock_db = AsyncMock()
+
+        with patch.object(stat_service, "get_kunlik_statistika", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = _make_mock_kunlik()
+            client = client_factory(user_override=lambda: mock_user, db_override=lambda: mock_db)
+            resp = client.get("/api/statistika/kunlik")
+
+        xodimlar = resp.json()["data"]["xodimlar"]
+        assert len(xodimlar) == 2
+        assert xodimlar[0]["xodim_fio"] == "Ali Valiyev"
+        assert xodimlar[0]["jami"] == 8
+
+    def test_sana_berilmasa_bugun(self, client_factory):
+        """Sana berilmasa servisga None uzatiladi (servis bugunni oladi)."""
+        mock_user = _make_user(rol=UserRole.rahbar)
+        mock_db = AsyncMock()
+
+        with patch.object(stat_service, "get_kunlik_statistika", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = _make_mock_kunlik()
+            client = client_factory(user_override=lambda: mock_user, db_override=lambda: mock_db)
+            client.get("/api/statistika/kunlik")
+
+        assert mock_get.call_args.kwargs["sana"] is None
+
+    def test_xodim_faqat_ozini_koradi(self, client_factory):
+        """Xodim roli boshqa xodim ko'rsatkichini so'rasa ham o'ziga cheklanadi."""
+        mock_user = _make_user(user_id=7, rol=UserRole.xodim)
+        mock_db = AsyncMock()
+
+        with patch.object(stat_service, "get_kunlik_statistika", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = _make_mock_kunlik()
+            client = client_factory(user_override=lambda: mock_user, db_override=lambda: mock_db)
+            client.get("/api/statistika/kunlik?xodim_id=99")
+
+        assert mock_get.call_args.kwargs["xodim_id"] == 7
+
+    def test_rahbar_xodim_id_filtri_saqlanadi(self, client_factory):
+        """Rahbar istalgan xodimni filtrlashi mumkin."""
+        mock_user = _make_user(rol=UserRole.rahbar)
+        mock_db = AsyncMock()
+
+        with patch.object(stat_service, "get_kunlik_statistika", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = _make_mock_kunlik()
+            client = client_factory(user_override=lambda: mock_user, db_override=lambda: mock_db)
+            client.get("/api/statistika/kunlik?xodim_id=42")
+
+        assert mock_get.call_args.kwargs["xodim_id"] == 42
+
+    def test_notogri_sana_formati(self, client_factory):
+        """Yaroqsiz sana formatida ok=False qaytadi, 500 emas."""
+        mock_user = _make_user(rol=UserRole.rahbar)
+        mock_db = AsyncMock()
+        client = client_factory(user_override=lambda: mock_user, db_override=lambda: mock_db)
+        resp = client.get("/api/statistika/kunlik?sana=01-08-2026")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is False
+        assert "Sana" in data["xato"]
+
+    def test_requires_auth(self, client_factory):
+        mock_db = AsyncMock()
+        client = client_factory(user_override=None, db_override=lambda: mock_db)
+        resp = client.get("/api/statistika/kunlik")
         assert resp.status_code in [422, 403]

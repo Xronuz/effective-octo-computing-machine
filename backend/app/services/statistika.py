@@ -17,6 +17,7 @@ from app.models import (
     audit as audit_model,
     lokatsiya as lokatsiya_model,
 )
+from app.models.muammo import TekshiruvNatijasi
 from app.schemas.statistika import (
     UmumiyStatistika,
     MuammoTuriStat,
@@ -28,7 +29,10 @@ from app.schemas.statistika import (
     VaqtDavriStat,
     StatistikaResponse,
     XodimStatistika,
+    KunlikStatistika,
+    XodimKunlikStat,
 )
+from app.services.vaqt import bugun_toshkent, kun_boshi_utc, kun_oxiri_utc
 
 logger = logging.getLogger("xavfsiz_xonadon")
 
@@ -43,9 +47,23 @@ async def get_umumiy(db: AsyncSession) -> UmumiyStatistika:
     kocha_soni_res = await db.execute(select(func.count(hudud_model.Kocha.id)))
     kocha_soni = kocha_soni_res.scalar() or 0
 
-    # Barcha muammolar soni
-    muammo_soni_res = await db.execute(select(func.count(muammo_model.Muammo.id)))
-    muammo_soni = muammo_soni_res.scalar() or 0
+    # Tashriflar taqsimoti. `muammolar` jadvali har qanday tashrifni saqlaydi
+    # (muammo topildi / muammo yo'q / kira olmadi), shuning uchun "muammo soni"
+    # faqat haqiqiy muammolar bo'yicha hisoblanadi — aks holda oddiy tekshiruv
+    # va kira olmagan tashriflar ham "muammo" bo'lib ko'rinardi.
+    natija_res = await db.execute(
+        select(
+            muammo_model.Muammo.tekshiruv_natijasi,
+            func.count(muammo_model.Muammo.id),
+        ).group_by(muammo_model.Muammo.tekshiruv_natijasi)
+    )
+    natija_taqsimot = {
+        (row[0].value if row[0] is not None else None): row[1] for row in natija_res.all()
+    }
+    muammo_soni = natija_taqsimot.get(TekshiruvNatijasi.muammo_topildi.value, 0)
+    muammosiz_soni = natija_taqsimot.get(TekshiruvNatijasi.muammo_yoq.value, 0)
+    kira_olmadi_soni = natija_taqsimot.get(TekshiruvNatijasi.kira_olmadi.value, 0)
+    tashrif_soni = sum(natija_taqsimot.values())
 
     # Ochiq muammolar (ochiq + jarayonda)
     ochiq_res = await db.execute(
@@ -72,9 +90,12 @@ async def get_umumiy(db: AsyncSession) -> UmumiyStatistika:
     mfy_res = await db.execute(select(func.count(hudud_model.Mfy.id)))
     mfy_soni = mfy_res.scalar() or 0
 
-    # Kamida 1 marta tekshirilgan xonadonlar
+    # Kamida 1 marta HAQIQATDA tekshirilgan xonadonlar — xodim eshikdan
+    # kira olmagan tashriflar "tekshirilgan" hisoblanmaydi (aks holda qamrov
+    # foizi sun'iy ravishda oshib ketardi).
     tekshirilgan_res = await db.execute(
         select(func.count(func.distinct(muammo_model.Muammo.xonadon_id)))
+        .where(muammo_model.Muammo.tekshiruv_natijasi != TekshiruvNatijasi.kira_olmadi)
     )
     tekshirilgan = tekshirilgan_res.scalar() or 0
 
@@ -84,6 +105,9 @@ async def get_umumiy(db: AsyncSession) -> UmumiyStatistika:
         xonadon_soni=xonadon_soni,
         kocha_soni=kocha_soni,
         muammo_soni=muammo_soni,
+        tashrif_soni=tashrif_soni,
+        muammosiz_soni=muammosiz_soni,
+        kira_olmadi_soni=kira_olmadi_soni,
         ochiq_muammolar=ochiq_muammolar,
         yopilgan_muammolar=yopilgan_muammolar,
         xodim_soni=xodim_soni,
@@ -197,7 +221,8 @@ async def get_mfy_statistika(db: AsyncSession) -> List[MFYStatistika]:
         .subquery()
     )
 
-    # Tekshirilgan xonadonlar MFY bo'yicha (kamida 1 muammosi bor)
+    # Tekshirilgan xonadonlar MFY bo'yicha — kamida 1 marta haqiqatda
+    # tekshirilgan (kira olmagan tashriflar hisobga olinmaydi).
     tekshirilgan_subq = (
         select(
             hudud_model.Kocha.mfy_id,
@@ -205,6 +230,7 @@ async def get_mfy_statistika(db: AsyncSession) -> List[MFYStatistika]:
         )
         .join(hudud_model.Xonadon, hudud_model.Xonadon.kocha_id == hudud_model.Kocha.id)
         .join(muammo_model.Muammo, muammo_model.Muammo.xonadon_id == hudud_model.Xonadon.id)
+        .where(muammo_model.Muammo.tekshiruv_natijasi != TekshiruvNatijasi.kira_olmadi)
         .group_by(hudud_model.Kocha.mfy_id)
         .subquery()
     )
@@ -408,6 +434,98 @@ async def get_xodim_statistika(
     return xodimlar, total
 
 
+async def get_kunlik_statistika(
+    db: AsyncSession,
+    sana: date | None = None,
+    xodim_id: int | None = None,
+) -> KunlikStatistika:
+    """Tanlangan kun (Toshkent) bo'yicha tashrif hisoboti.
+
+    Rahbar/superadmin uchun asosiy savolga javob beradi: "bugun kim nechta
+    xonadon tekshirdi, nechtasida muammo chiqdi, nechtasiga kira olmadi".
+
+    `xodim_id` berilsa faqat o'sha xodim bo'yicha filtrlanadi (mobil
+    ilovadagi kunlik ko'rsatkich uchun ham shu endpoint ishlatiladi).
+    """
+    kun = sana or bugun_toshkent()
+    boshi = kun_boshi_utc(kun)
+    oxiri = kun_oxiri_utc(kun)
+
+    shartlar = [
+        muammo_model.Muammo.sinxron_vaqti >= boshi,
+        muammo_model.Muammo.sinxron_vaqti < oxiri,
+    ]
+    if xodim_id is not None:
+        shartlar.append(muammo_model.Muammo.xodim_id == xodim_id)
+
+    natija = muammo_model.Muammo.tekshiruv_natijasi
+    kira_olmadi_shart = natija == TekshiruvNatijasi.kira_olmadi
+
+    # Ustunlar umumiy va xodim kesimi uchun bir xil — takrorlamaslik uchun
+    # yordamchi ro'yxat sifatida tayyorlanadi.
+    def _sanoqlar():
+        return [
+            func.count(muammo_model.Muammo.id).label("jami"),
+            func.coalesce(
+                func.sum(case((natija == TekshiruvNatijasi.muammo_yoq, 1), else_=0)), 0
+            ).label("muammosiz"),
+            func.coalesce(
+                func.sum(case((natija == TekshiruvNatijasi.muammo_topildi, 1), else_=0)), 0
+            ).label("muammoli"),
+            func.coalesce(
+                func.sum(case((kira_olmadi_shart, 1), else_=0)), 0
+            ).label("kira_olmadi"),
+            func.count(
+                func.distinct(
+                    case((~kira_olmadi_shart, muammo_model.Muammo.xonadon_id), else_=None)
+                )
+            ).label("tekshirilgan_xonadon"),
+        ]
+
+    umumiy_res = await db.execute(select(*_sanoqlar()).where(*shartlar))
+    umumiy = umumiy_res.one()
+
+    # Xodimlar kesimi — faqat o'sha kuni ishlaganlar chiqadi
+    xodim_res = await db.execute(
+        select(
+            user_model.User.id,
+            user_model.User.familiya,
+            user_model.User.ism,
+            user_model.User.sharif,
+            *_sanoqlar(),
+            func.max(muammo_model.Muammo.sinxron_vaqti).label("oxirgi"),
+        )
+        .join(muammo_model.Muammo, muammo_model.Muammo.xodim_id == user_model.User.id)
+        .where(*shartlar)
+        .group_by(user_model.User.id)
+        .order_by(func.count(muammo_model.Muammo.id).desc())
+    )
+
+    xodimlar = [
+        XodimKunlikStat(
+            xodim_id=row.id,
+            xodim_fio=f"{row.familiya} {row.ism} {row.sharif or ''}".strip(),
+            jami=row.jami or 0,
+            muammosiz=row.muammosiz or 0,
+            muammoli=row.muammoli or 0,
+            kira_olmadi=row.kira_olmadi or 0,
+            tekshirilgan_xonadon=row.tekshirilgan_xonadon or 0,
+            oxirgi_faollik=row.oxirgi.isoformat() if row.oxirgi else None,
+        )
+        for row in xodim_res
+    ]
+
+    return KunlikStatistika(
+        sana=kun.isoformat(),
+        jami=umumiy.jami or 0,
+        muammosiz=umumiy.muammosiz or 0,
+        muammoli=umumiy.muammoli or 0,
+        kira_olmadi=umumiy.kira_olmadi or 0,
+        tekshirilgan_xonadon=umumiy.tekshirilgan_xonadon or 0,
+        xodimlar=xodimlar,
+    )
+
+
 async def get_full_statistika(db: AsyncSession) -> StatistikaResponse:
     """Barcha statistikani bir so'rovda yig'ish.
 
@@ -470,7 +588,10 @@ def generate_excel(statistika: StatistikaResponse) -> io.BytesIO:
     umumiy = statistika.umumiy
     fields = [
         ("Jami xonadonlar", umumiy.xonadon_soni),
-        ("Jami muammolar", umumiy.muammo_soni),
+        ("Jami tashriflar", umumiy.tashrif_soni),
+        ("Muammo topilgan", umumiy.muammo_soni),
+        ("Muammosiz tekshiruv", umumiy.muammosiz_soni),
+        ("Kira olmagan", umumiy.kira_olmadi_soni),
         ("Ochiq muammolar", umumiy.ochiq_muammolar),
         ("Yopilgan muammolar", umumiy.yopilgan_muammolar),
         ("Faol xodimlar", umumiy.xodim_soni),
@@ -580,7 +701,10 @@ def generate_pdf(statistika: StatistikaResponse) -> io.BytesIO:
     u = statistika.umumiy
     data = [
         ["Jami xonadonlar", str(u.xonadon_soni)],
-        ["Jami muammolar", str(u.muammo_soni)],
+        ["Jami tashriflar", str(u.tashrif_soni)],
+        ["Muammo topilgan", str(u.muammo_soni)],
+        ["Muammosiz tekshiruv", str(u.muammosiz_soni)],
+        ["Kira olmagan", str(u.kira_olmadi_soni)],
         ["Ochiq muammolar", str(u.ochiq_muammolar)],
         ["Yopilgan muammolar", str(u.yopilgan_muammolar)],
         ["Faol xodimlar", str(u.xodim_soni)],

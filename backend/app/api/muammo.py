@@ -93,15 +93,24 @@ async def list_muammolar(
     shubhali: bool | None = Query(None),
     ornida_bartaraf: bool | None = Query(None),
     tadbirlar_soni_dan: int | None = Query(None, ge=0, description="Taklif etilgan tadbirlar soni shundan katta bo'lganlar"),
-    sana_dan: str | None = Query(None, description="YYYY-MM-DD"),
-    sana_gacha: str | None = Query(None, description="YYYY-MM-DD"),
+    tekshiruv_natijasi: str | None = Query(
+        None,
+        description="muammo_topildi | muammo_yoq | kira_olmadi",
+    ),
+    sana_dan: str | None = Query(None, description="YYYY-MM-DD (Toshkent kuni)"),
+    sana_gacha: str | None = Query(None, description="YYYY-MM-DD (Toshkent kuni)"),
     qidiruv: str | None = Query(None),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Muammolar ro'yxati — filtr va sahifalash bilan."""
+    """Tashriflar ro'yxati — filtr va sahifalash bilan.
+
+    Javobda muammo topilgan, muammo topilmagan va xonadonga kira olmagan
+    tashriflar birga keladi. Faqat haqiqiy muammolar kerak bo'lsa
+    `tekshiruv_natijasi=muammo_topildi` filtrini bering.
+    """
     from datetime import date
     sana_dan_date = date.fromisoformat(sana_dan) if sana_dan else None
     sana_gacha_date = date.fromisoformat(sana_gacha) if sana_gacha else None
@@ -121,6 +130,7 @@ async def list_muammolar(
         shubhali=shubhali,
         ornida_bartaraf=ornida_bartaraf,
         tadbirlar_soni_dan=tadbirlar_soni_dan,
+        tekshiruv_natijasi=tekshiruv_natijasi,
         sana_dan=sana_dan_date,
         sana_gacha=sana_gacha_date,
         qidiruv=qidiruv,

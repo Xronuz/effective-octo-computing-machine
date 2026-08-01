@@ -20,6 +20,7 @@ from app.models.hudud import Xonadon, Kocha, Mfy
 from app.models.user import User, UserRole
 from app.core.exceptions import NotFoundException, ForbiddenException, ValidationException
 from app.services.geo import haversine_m
+from app.services.vaqt import kun_boshi_utc
 from app.services.xonadon import egasi_korish_huquqi
 
 logger = logging.getLogger("xavfsiz_xonadon")
@@ -256,13 +257,22 @@ async def list_muammolar(
     shubhali: bool | None = None,
     ornida_bartaraf: bool | None = None,
     tadbirlar_soni_dan: int | None = None,
+    tekshiruv_natijasi: str | None = None,
     sana_dan: date | None = None,
     sana_gacha: date | None = None,
     qidiruv: str | None = None,
     page: int = 1,
     size: int = 20,
 ) -> tuple[list[Muammo], int]:
-    """Muammolar ro'yxati — filtrlash va sahifalash bilan."""
+    """Muammolar (tashriflar) ro'yxati — filtrlash va sahifalash bilan.
+
+    Diqqat: bu jadval har qanday tashrifni saqlaydi — muammo topilgan,
+    muammo topilmagan va xonadonga kira olmagan holatlar. Faqat haqiqiy
+    muammolarni olish uchun `tekshiruv_natijasi="muammo_topildi"` bering.
+
+    `sana_dan`/`sana_gacha` — Toshkent kunlari bo'yicha yarim ochiq oraliq
+    [sana_dan 00:00, sana_gacha 00:00) (baza UTC saqlaydi, o'girib beriladi).
+    """
     query = select(Muammo).options(
         selectinload(Muammo.fotolar),
         selectinload(Muammo.xonadon).selectinload(Xonadon.kocha).selectinload(Kocha.mfy),
@@ -291,6 +301,15 @@ async def list_muammolar(
             filters.append(Muammo.xavf == XavfDarajasi(xavf))
         except ValueError:
             logger.warning("Noto'g'ri xavf filtri: %s — e'tiborga olinmadi", xavf)
+
+    if tekshiruv_natijasi:
+        try:
+            filters.append(Muammo.tekshiruv_natijasi == TekshiruvNatijasi(tekshiruv_natijasi))
+        except ValueError:
+            logger.warning(
+                "Noto'g'ri tekshiruv_natijasi filtri: %s — e'tiborga olinmadi",
+                tekshiruv_natijasi,
+            )
 
     if xodim_id is not None:
         filters.append(Muammo.xodim_id == xodim_id)
@@ -326,10 +345,12 @@ async def list_muammolar(
         filters.append(Muammo.xonadon_id == xonadon_id)
 
     # Sana oralig'i
+    # Sana chegaralari Toshkent kuni bo'yicha (baza UTC saqlaydi) — aks holda
+    # mahalliy 00:00–05:00 oralig'idagi tashriflar oldingi kunga tushib qolardi.
     if sana_dan:
-        filters.append(Muammo.sinxron_vaqti >= datetime(sana_dan.year, sana_dan.month, sana_dan.day, tzinfo=timezone.utc))
+        filters.append(Muammo.sinxron_vaqti >= kun_boshi_utc(sana_dan))
     if sana_gacha:
-        filters.append(Muammo.sinxron_vaqti < datetime(sana_gacha.year, sana_gacha.month, sana_gacha.day, tzinfo=timezone.utc))
+        filters.append(Muammo.sinxron_vaqti < kun_boshi_utc(sana_gacha))
 
     # Manzil/tavsif bo'yicha qidiruv
     if qidiruv:

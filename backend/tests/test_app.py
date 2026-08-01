@@ -100,7 +100,7 @@ class TestRouteRegistration:
     def test_total_api_routes_count(self, paths):
         """Jami API routelar soni."""
         api_paths = [p for p in paths if p.startswith("/api/")]
-        assert len(api_paths) == 36, f"Expected 36, got {len(api_paths)}: {api_paths}"
+        assert len(api_paths) == 37, f"Expected 37, got {len(api_paths)}: {api_paths}"
 
     def test_route_methods(self, app, paths):
         """Har bir route kamida bitta HTTP metodga ega."""

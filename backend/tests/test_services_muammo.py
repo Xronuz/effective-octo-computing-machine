@@ -604,6 +604,133 @@ class TestListMuammolar:
         assert total == 1
 
 
+# ============ list_muammolar — filtr SQL darajasida ============
+
+def _compiled_sqllar(db) -> list[str]:
+    """db.execute ga uzatilgan barcha so'rovlarni SQL matn ko'rinishida qaytaradi."""
+    sqllar = []
+    for call in db.execute.call_args_list:
+        try:
+            sqllar.append(str(call.args[0].compile(compile_kwargs={"literal_binds": True})))
+        except Exception:
+            sqllar.append(str(call.args[0]))
+    return sqllar
+
+
+def _where_qismlari(db) -> str:
+    """Faqat WHERE bo'limlari — SELECT ustunlar ro'yxati chalkashtirmasligi uchun.
+
+    `tekshiruv_natijasi` ustuni har bir SELECT'da baribir ko'rinadi, shuning
+    uchun filtr borligini tekshirishda WHERE qismini ajratib olish kerak.
+    """
+    qismlar = []
+    for sql in _compiled_sqllar(db):
+        _, _, keyin = sql.partition("WHERE")
+        if keyin:
+            qismlar.append(keyin.split("ORDER BY")[0])
+    return " ".join(qismlar)
+
+
+class TestListMuammolarNatijaFiltri:
+    """`tekshiruv_natijasi` filtri — muammo/tekshiruv/kira olmadi ajratish uchun."""
+
+    @pytest.mark.asyncio
+    async def test_natija_filtri_sqlga_qoshiladi(self):
+        db, result = _make_mock_db()
+        result.scalar = MagicMock(return_value=0)
+        result.all = MagicMock(return_value=[])
+
+        await muammo_service.list_muammolar(db, tekshiruv_natijasi="muammo_topildi")
+
+        where = _where_qismlari(db)
+        assert "tekshiruv_natijasi" in where
+        assert "muammo_topildi" in where
+
+    @pytest.mark.asyncio
+    async def test_kira_olmadi_filtri(self):
+        db, result = _make_mock_db()
+        result.scalar = MagicMock(return_value=0)
+        result.all = MagicMock(return_value=[])
+
+        await muammo_service.list_muammolar(db, tekshiruv_natijasi="kira_olmadi")
+
+        assert "kira_olmadi" in _where_qismlari(db)
+
+    @pytest.mark.asyncio
+    async def test_notogri_natija_qiymati_etiborsiz(self):
+        """Yaroqsiz qiymat xato tashlamaydi, filtr qo'shilmaydi."""
+        db, result = _make_mock_db()
+        result.scalar = MagicMock(return_value=7)
+        result.all = MagicMock(return_value=[])
+
+        items, total = await muammo_service.list_muammolar(db, tekshiruv_natijasi="nomalum")
+
+        assert total == 7
+        assert "tekshiruv_natijasi" not in _where_qismlari(db)
+
+    @pytest.mark.asyncio
+    async def test_natija_berilmasa_filtr_yoq(self):
+        """Filtr berilmasa barcha tashriflar qaytadi (muammo + tekshiruv + kira olmadi)."""
+        db, result = _make_mock_db()
+        result.scalar = MagicMock(return_value=3)
+        result.all = MagicMock(return_value=[])
+
+        await muammo_service.list_muammolar(db)
+
+        assert _where_qismlari(db) == ""
+
+
+class TestListMuammolarSanaToshkent:
+    """Sana filtri Toshkent kuni bo'yicha (UTC+5), UTC yarim tuni emas."""
+
+    @pytest.mark.asyncio
+    async def test_sana_chegarasi_toshkent_ofseti_bilan(self):
+        """Chegara +05:00 ofsetli bo'lishi kerak — UTC yarim tuni emas."""
+        db, result = _make_mock_db()
+        result.scalar = MagicMock(return_value=0)
+        result.all = MagicMock(return_value=[])
+
+        await muammo_service.list_muammolar(db, sana_dan=date(2026, 8, 1))
+
+        where = _where_qismlari(db)
+        assert "2026-08-01 00:00:00+05:00" in where
+        # Eski (xato) mantiq UTC yarim tunidan boshlardi
+        assert "2026-08-01 00:00:00+00:00" not in where
+
+    @pytest.mark.asyncio
+    async def test_chegara_utc_lahzasi_togri(self):
+        """Toshkent 00:00 aslida UTC 19:00 (oldingi kun) lahzasiga teng."""
+        from datetime import datetime, timezone
+
+        db, result = _make_mock_db()
+        result.scalar = MagicMock(return_value=0)
+        result.all = MagicMock(return_value=[])
+
+        await muammo_service.list_muammolar(db, sana_dan=date(2026, 8, 1))
+
+        # Filtrga uzatilgan haqiqiy datetime obyektini tekshiramiz
+        from app.services.vaqt import kun_boshi_utc
+
+        assert kun_boshi_utc(date(2026, 8, 1)).astimezone(timezone.utc) == datetime(
+            2026, 7, 31, 19, 0, tzinfo=timezone.utc
+        )
+
+    @pytest.mark.asyncio
+    async def test_bir_kunlik_oraliq(self):
+        """[kun, ertaga) oralig'i 24 soatni qamraydi."""
+        db, result = _make_mock_db()
+        result.scalar = MagicMock(return_value=0)
+        result.all = MagicMock(return_value=[])
+
+        await muammo_service.list_muammolar(
+            db, sana_dan=date(2026, 8, 1), sana_gacha=date(2026, 8, 2)
+        )
+
+        where = _where_qismlari(db)
+        assert "2026-08-01 00:00:00+05:00" in where
+        assert "2026-08-02 00:00:00+05:00" in where
+
+
 # ============ update_muammo ============
 
 class TestUpdateMuammo:

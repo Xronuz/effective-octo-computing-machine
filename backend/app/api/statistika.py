@@ -2,18 +2,20 @@
 XAVFSIZ XONADON — Statistika API marshrutizatori.
 
 GET /api/statistika              — to'liq statistika
+GET /api/statistika/kunlik       — kunlik tashrif hisoboti (xodimlar kesimi bilan)
 GET /api/statistika/xodimlar     — xodimlar bo'yicha
 GET /api/statistika/excel        — .xlsx fayl
 GET /api/statistika/pdf          — .pdf fayl
 """
 import logging
+from datetime import date
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_db, get_current_user
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.services import statistika as stat_service
 
 logger = logging.getLogger("xavfsiz_xonadon")
@@ -52,6 +54,35 @@ async def get_xodim_statistika(
         }
     except Exception as e:
         logger.error("Xodim statistikasida xatolik: %s", e)
+        return {"ok": False, "data": None, "xato": str(e)}
+
+
+@router.get("/statistika/kunlik")
+async def get_kunlik_statistika(
+    sana: str | None = Query(None, description="YYYY-MM-DD (Toshkent kuni); bo'sh — bugun"),
+    xodim_id: int | None = Query(None, description="Faqat shu xodim bo'yicha"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Kunlik tashrif hisoboti: jami / muammosiz / muammoli / kira olmadi.
+
+    Javobda xodimlar kesimi ham keladi — "bugun kim nechta xonadon tekshirdi".
+    Xodim roli faqat o'z ko'rsatkichlarini ko'radi.
+    """
+    try:
+        sana_date = date.fromisoformat(sana) if sana else None
+    except ValueError:
+        return {"ok": False, "data": None, "xato": "Sana formati noto'g'ri (YYYY-MM-DD kutilgan)"}
+
+    # Xodim boshqa xodimlarning ko'rsatkichlarini ko'ra olmaydi
+    if current_user.rol == UserRole.xodim:
+        xodim_id = current_user.id
+
+    try:
+        data = await stat_service.get_kunlik_statistika(db, sana=sana_date, xodim_id=xodim_id)
+        return {"ok": True, "data": data, "xato": None}
+    except Exception as e:
+        logger.error("Kunlik statistikada xatolik: %s", e)
         return {"ok": False, "data": None, "xato": str(e)}
 
 
