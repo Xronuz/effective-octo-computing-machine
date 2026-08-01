@@ -1,11 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, ClipboardCheck, DoorClosed, Users } from 'lucide-react';
 import { apiGet } from '@/api';
 import { useAlifbo } from '@/alifbo';
 import DateInput from '@/components/DateInput';
 import { soatDaqiqa } from '@/lib/sana';
-import type { KunlikStatistika } from '@/types';
+import type { KunlikStatistika, Paginated, UserBrief } from '@/types';
+
+/** Inspektorlar jadvalini ustun bo'yicha kesish uchun — har biri mos son maydoniga ishora qiladi. */
+const HOLATI_OPTIONS: { key: 'muammosiz' | 'muammoli' | 'kira_olmadi'; label: string }[] = [
+  { key: 'muammosiz', label: 'Muammosiz' },
+  { key: 'muammoli', label: 'Muammoli' },
+  { key: 'kira_olmadi', label: 'Kira olmadi' },
+];
 
 /** Toshkent (UTC+5) bo'yicha bugungi sana — YYYY-MM-DD. */
 function bugunToshkent(): string {
@@ -63,6 +70,9 @@ export default function KunlikTekshiruvPanel() {
   const [sana, setSana] = useState<string>(bugunToshkent());
   const [data, setData] = useState<KunlikStatistika | null>(null);
   const [loading, setLoading] = useState(true);
+  const [holatiFilter, setHolatiFilter] = useState<'' | 'muammosiz' | 'muammoli' | 'kira_olmadi'>('');
+  const [xodimFilter, setXodimFilter] = useState('');
+  const [xodimlar, setXodimlar] = useState<UserBrief[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,7 +93,32 @@ export default function KunlikTekshiruvPanel() {
     };
   }, [sana]);
 
+  // Inspektor filtri uchun xodimlar ro'yxati — yangi qo'shilgan xodim ham shu yerda chiqadi
+  useEffect(() => {
+    let cancelled = false;
+    apiGet<Paginated<UserBrief>>('/users?page=1&size=100')
+      .then((res) => {
+        if (cancelled || !res.ok) return;
+        setXodimlar(res.data.items.filter((u) => u.rol === 'xodim'));
+      })
+      .catch(() => {
+        // Filtr ixtiyoriy — xatolik panelni buzmasin
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const bugunmi = sana === bugunToshkent();
+
+  const korsatilganXodimlar = useMemo(() => {
+    if (!data) return [];
+    return data.xodimlar.filter((x) => {
+      if (xodimFilter && String(x.xodim_id) !== xodimFilter) return false;
+      if (holatiFilter && x[holatiFilter] <= 0) return false;
+      return true;
+    });
+  }, [data, xodimFilter, holatiFilter]);
 
   return (
     <section className="card overflow-hidden" aria-label={tr('Kunlik tekshiruvlar')}>
@@ -96,8 +131,42 @@ export default function KunlikTekshiruvPanel() {
             {tr('Tashriflar natijasi va inspektorlar kesimi')}
           </p>
         </div>
-        <div className="w-[150px]">
-          <DateInput className="input" value={sana} onChange={(iso) => setSana(iso || bugunToshkent())} />
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="font-medium">{tr('Tashriflar holati:')}</span>
+            <select
+              className="select !w-auto !py-1.5 text-sm"
+              value={holatiFilter}
+              onChange={(e) => setHolatiFilter(e.target.value as typeof holatiFilter)}
+            >
+              <option value="">{tr('Barchasi')}</option>
+              {HOLATI_OPTIONS.map((o) => (
+                <option key={o.key} value={o.key}>
+                  {tr(o.label)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="font-medium">{tr('Inspektorlar:')}</span>
+            <select
+              className="select !w-auto !py-1.5 text-sm"
+              value={xodimFilter}
+              onChange={(e) => setXodimFilter(e.target.value)}
+            >
+              <option value="">{tr('Barcha inspektorlar')}</option>
+              {xodimlar.map((x) => (
+                <option key={x.id} value={String(x.id)}>
+                  {tr(x.full_name)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="w-[150px]">
+            <DateInput className="input" value={sana} onChange={(iso) => setSana(iso || bugunToshkent())} />
+          </div>
         </div>
       </div>
 
@@ -157,6 +226,10 @@ export default function KunlikTekshiruvPanel() {
                 ? tr('Bugun hali hech kim tekshiruv qaydnomasini yubormagan')
                 : tr('Bu kuni tekshiruv qayd etilmagan')}
             </div>
+          ) : korsatilganXodimlar.length === 0 ? (
+            <div className="px-6 pb-6 pt-1 text-sm text-slate-400">
+              {tr('Filtrga mos inspektor topilmadi')}
+            </div>
           ) : (
             <div className="max-h-80 overflow-y-auto overflow-x-auto">
               <table className="table">
@@ -171,7 +244,7 @@ export default function KunlikTekshiruvPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.xodimlar.map((x) => (
+                  {korsatilganXodimlar.map((x) => (
                     <tr key={x.xodim_id}>
                       <td className="font-medium text-[#0F2033]">{tr(x.xodim_fio)}</td>
                       <td className="text-center font-semibold tabular-nums">{x.jami}</td>
