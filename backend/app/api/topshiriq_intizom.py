@@ -95,6 +95,10 @@ async def list_topshiriqlar(
     muddat_dan_date = date_type.fromisoformat(muddat_dan) if muddat_dan else None
     muddat_gacha_date = date_type.fromisoformat(muddat_gacha) if muddat_gacha else None
 
+    # Xodim uchun faqat o'zining topshiriqlari (boshqa xodim_id berilsa e'tiborsiz)
+    if current_user.rol == UserRole.xodim:
+        xodim_id = current_user.id
+
     try:
         items, total = await service.list_topshiriqlar(
             db,
@@ -134,12 +138,17 @@ async def get_topshiriq_detail(
     """Topshiriq batafsil ma'lumoti."""
     try:
         topshiriq = await service.get_topshiriq(db, topshiriq_id)
+
+        is_admin = current_user.rol in (UserRole.rahbar, UserRole.superadmin)
+        if not is_admin and topshiriq.xodim_id != current_user.id:
+            raise ForbiddenException("Siz faqat o'zingizga biriktirilgan topshiriqni ko'ra olasiz.")
+
         return {
             "ok": True,
             "data": service._topshiriq_to_response(topshiriq),
             "xato": None,
         }
-    except NotFoundException as e:
+    except (NotFoundException, ForbiddenException) as e:
         return {"ok": False, "data": None, "xato": str(e)}
 
 
@@ -242,6 +251,10 @@ async def list_intizom(
     sana_dan_date = date_type.fromisoformat(sana_dan) if sana_dan else None
     sana_gacha_date = date_type.fromisoformat(sana_gacha) if sana_gacha else None
 
+    # Xodim uchun faqat o'zining intizom yozuvlari (boshqa xodim_id berilsa e'tiborsiz)
+    if current_user.rol == UserRole.xodim:
+        xodim_id = current_user.id
+
     try:
         items, total = await service.list_intizomlar(
             db,
@@ -279,10 +292,15 @@ async def get_intizom_detail(
     """Intizom batafsil ma'lumoti."""
     try:
         intizom = await service.get_intizom(db, intizom_id)
+
+        is_admin = current_user.rol in (UserRole.rahbar, UserRole.superadmin)
+        if not is_admin and intizom.xodim_id != current_user.id:
+            raise ForbiddenException("Siz faqat o'zingizga tegishli intizom yozuvini ko'ra olasiz.")
+
         return {
             "ok": True,
             "data": service._intizom_to_response(intizom),
             "xato": None,
         }
-    except NotFoundException as e:
+    except (NotFoundException, ForbiddenException) as e:
         return {"ok": False, "data": None, "xato": str(e)}

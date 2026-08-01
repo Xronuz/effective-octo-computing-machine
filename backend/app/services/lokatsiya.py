@@ -76,7 +76,7 @@ async def get_aktiv_xodimlar(
     from sqlalchemy import text as sa_text
 
     result = await db.execute(
-        sa_text(f"""
+        sa_text("""
             SELECT DISTINCT ON (ll.xodim_id)
                 ll.xodim_id,
                 TRIM(CONCAT_WS(' ', u.familiya, u.ism, u.sharif)) as xodim_fio,
@@ -87,9 +87,10 @@ async def get_aktiv_xodimlar(
                 ll.qabul_vaqti as ohirgi_vaqt
             FROM lokatsiya_log ll
             JOIN users u ON u.id = ll.xodim_id
-            WHERE ll.qabul_vaqti >= '{cutoff.isoformat()}'
+            WHERE ll.qabul_vaqti >= :cutoff
             ORDER BY ll.xodim_id, ll.qabul_vaqti DESC
-        """)
+        """),
+        {"cutoff": cutoff},
     )
 
     rows = result.fetchall()

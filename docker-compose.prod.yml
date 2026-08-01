@@ -157,7 +157,12 @@ services:
       web-builder:
         condition: service_completed_successfully
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # Butun papka mount qilinadi (bitta faylga bind mount emas) — git
+      # reset/deploy fayl inode'ini almashtirganda ham konteyner har doim
+      # joriy tarkibni ko'radi. Bitta faylga bind mount qilinsa, fayl
+      # almashtirilganda (git checkout/reset) konteyner eski inode'ga
+      # "yopishib qolib" konfiguratsiya jimgina yangilanmay qolar edi.
+      - ./nginx:/etc/nginx/conf.d:ro
       - web_dist_prod:/usr/share/nginx/html:ro
       - uploads_prod:/app/uploads:ro
     healthcheck:
