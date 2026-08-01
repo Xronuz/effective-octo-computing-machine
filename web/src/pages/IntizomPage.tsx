@@ -285,9 +285,9 @@ export default function IntizomPage() {
             </p>
           </div>
         ) : (
-        <div className="overflow-x-auto">
+        <div className="max-h-[60vh] overflow-auto">
           <table className="table">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr>
                 <th>{tr('Muammo')}</th>
                 <th>{tr('Xodim')}</th>
@@ -459,9 +459,9 @@ export default function IntizomPage() {
             <p className="mt-2 text-sm font-medium text-slate-600">{tr('Intizom yozuvlari topilmadi')}</p>
           </div>
         ) : (
-        <div className="overflow-x-auto">
+        <div className="max-h-[60vh] overflow-auto">
           <table className="table">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr>
                 <th>{tr('Sana')}</th>
                 <th>{tr('Xodim')}</th>

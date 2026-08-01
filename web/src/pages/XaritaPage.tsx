@@ -412,7 +412,7 @@ export default function XaritaPage() {
       )}
 
       {/* Filtr chizig'i — sarlavha va statistika shu yerga ixcham ko'chirildi */}
-      <div className="card px-4 py-2.5 mb-2 flex flex-wrap items-center gap-3">
+      <div className="relative z-10 card px-4 py-2.5 mb-2 flex flex-wrap items-center gap-3">
         <span className="text-sm font-semibold text-[var(--text-primary)]">{tr('Jonli xarita')}</span>
         <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
           <span

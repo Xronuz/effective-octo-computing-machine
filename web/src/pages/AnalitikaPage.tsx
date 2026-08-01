@@ -525,9 +525,9 @@ export default function AnalitikaPage() {
             <p className="mt-2 text-sm text-slate-400">{tr("Ma'lumot yo'q")}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-h-[60vh] overflow-auto">
             <table className="table">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-white">
                 <tr>
                   <th>{tr('Xodim')}</th>
                   <th className="text-right">{tr('Jami tashrif')}</th>

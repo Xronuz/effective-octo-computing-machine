@@ -302,9 +302,9 @@ export default function BoshqaruvPage() {
             <p className="mt-1 text-xs text-slate-400">{tr("Filtrlarni o'zgartirib qayta urinib ko'ring")}</p>
           </div>
         ) : (
-        <div className="overflow-x-auto">
+        <div className="max-h-[60vh] overflow-auto">
           <table className="table">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr>
                 <th className="w-10 text-center">#</th>
                 <th className="text-center">{tr('F.I.Sh')}</th>

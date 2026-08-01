@@ -120,21 +120,21 @@ export default function DashboardPage() {
       tint: 'text-[#3D6FB4]',
     },
     {
-      label: 'Tekshirilgan xonadon',
+      label: 'Jami tekshirilgan xonadon',
       value: statistika?.umumiy.tekshirilgan_xonadon ?? 0,
       icon: ClipboardList,
       chip: 'bg-[#2E9E6B]/10 text-[#2E9E6B]',
       tint: 'text-[#2E9E6B]',
     },
     {
-      label: 'Ochiq muammolar',
+      label: 'Jami ochiq muammolar',
       value: statistika?.umumiy.ochiq_muammolar ?? 0,
       icon: AlertTriangle,
       chip: 'bg-[#C9A227]/10 text-[#C9A227]',
       tint: 'text-[#C9A227]',
     },
     {
-      label: "Muddati o'tgan",
+      label: "Jami muddati o'tgan",
       value: muddatiOtgan,
       icon: Clock,
       chip: 'bg-[#C0392B]/10 text-[#C0392B]',
@@ -158,6 +158,9 @@ export default function DashboardPage() {
         <SkeletonCards count={4} />
       ) : (
         <>
+          {/* Kunlik tekshiruvlar — kim nechta xonadon tekshirdi */}
+          <KunlikTekshiruvPanel />
+
           {/* Statistik kartalar */}
           <section
             aria-label={tr('Asosiy statistika')}
@@ -286,9 +289,6 @@ export default function DashboardPage() {
               </div>
             </section>
           </div>
-
-          {/* Kunlik tekshiruvlar — kim nechta xonadon tekshirdi */}
-          <KunlikTekshiruvPanel />
 
           {/* So'nggi faollik — barcha tashriflar (muammoli va muammosiz) */}
           <section className="card overflow-hidden" aria-label={tr("So'nggi faollik")}>

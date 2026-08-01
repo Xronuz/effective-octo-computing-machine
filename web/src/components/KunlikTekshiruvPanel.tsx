@@ -158,9 +158,9 @@ export default function KunlikTekshiruvPanel() {
                 : tr('Bu kuni tekshiruv qayd etilmagan')}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="max-h-80 overflow-y-auto overflow-x-auto">
               <table className="table">
-                <thead>
+                <thead className="sticky top-0 z-10 bg-white">
                   <tr>
                     <th>{tr('Inspektor')}</th>
                     <th className="text-center">{tr('Tashrif')}</th>

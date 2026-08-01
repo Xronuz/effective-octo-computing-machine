@@ -318,9 +318,9 @@ export default function TopshiriqPage() {
             <p className="mt-1 text-xs text-slate-400">{tr('Yuqoridagi forma orqali birinchi topshiriqni yuboring')}</p>
           </div>
         ) : (
-        <div className="overflow-x-auto">
+        <div className="max-h-[60vh] overflow-auto">
           <table className="table">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr>
                 <th className="w-10">#</th>
                 <th>{tr('Sarlavha')}</th>

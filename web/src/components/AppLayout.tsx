@@ -27,9 +27,9 @@ import fvvIcon from '@/styles/fvv-icon.png';
 const ICON_PROPS = { size: 20, strokeWidth: 1.8 } as const;
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/', label: 'Asosiy', icon: LayoutDashboard },
   { to: '/xonadonlar', label: 'Xonadonlar', icon: Home },
-  { to: '/muammolar', label: 'Muammolar', icon: AlertTriangle },
+  { to: '/muammolar', label: 'Tashriflar', icon: AlertTriangle },
   { to: '/hudud', label: 'Hudud', icon: MapPin },
   { to: '/xarita', label: 'Xarita', icon: Map },
 ];
@@ -53,7 +53,7 @@ function pageTitle(pathname: string): string {
   const match = all
     .filter((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)))
     .sort((a, b) => b.to.length - a.to.length)[0];
-  return match?.label ?? 'Dashboard';
+  return match?.label ?? 'Asosiy';
 }
 
 export function AppLayout() {

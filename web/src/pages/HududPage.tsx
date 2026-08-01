@@ -254,7 +254,7 @@ export default function HududPage() {
         ) : (
           <div className="max-h-[60vh] overflow-auto rounded-xl border border-slate-200">
             <table className="table">
-              <thead className="sticky top-0">
+              <thead className="sticky top-0 z-10 bg-white">
                 <tr>
                   <th>#</th>
                   <th>{tr("Ko'cha nomi")}</th>
@@ -373,9 +373,9 @@ export default function HududPage() {
                       <p className="mt-2 text-sm text-slate-400">{tr("Ko'chalar mavjud emas")}</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <div className="max-h-72 overflow-auto rounded-xl border border-slate-200">
                       <table className="table">
-                        <thead>
+                        <thead className="sticky top-0 z-10 bg-white">
                           <tr>
                             <th>#</th>
                             <th>{tr("Ko'cha nomi")}</th>
