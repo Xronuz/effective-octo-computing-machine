@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, ClipboardCheck, DoorClosed, Users } from 'lucide-react';
-import { apiGet } from '@/api';
+import { AlertCircle, CheckCircle2, ClipboardCheck, Download, DoorClosed, Users } from 'lucide-react';
+import { apiGet, getAccessToken } from '@/api';
 import { useAlifbo } from '@/alifbo';
 import DateInput from '@/components/DateInput';
 import { soatDaqiqa } from '@/lib/sana';
@@ -57,6 +57,101 @@ function Tile({
     </Link>
   ) : (
     <div className={cls}>{ichki}</div>
+  );
+}
+
+/** "Hisobotni yuklab olish" — sana oralig'ini tanlab .xlsx hisobot yuklovchi tugma + popover. */
+function HisobotYuklabOlish({ boshlangichSana, xodimId }: { boshlangichSana: string; xodimId: string }) {
+  const { tr } = useAlifbo();
+  const [ochiq, setOchiq] = useState(false);
+  const [dan, setDan] = useState(boshlangichSana);
+  const [gacha, setGacha] = useState(boshlangichSana);
+  const [yuklanmoqda, setYuklanmoqda] = useState(false);
+  const qutiRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!ochiq) return;
+    setDan(boshlangichSana);
+    setGacha(boshlangichSana);
+  }, [ochiq, boshlangichSana]);
+
+  useEffect(() => {
+    if (!ochiq) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (qutiRef.current && !qutiRef.current.contains(e.target as Node)) setOchiq(false);
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [ochiq]);
+
+  const yuklab = async () => {
+    setYuklanmoqda(true);
+    try {
+      const token = getAccessToken();
+      const params = new URLSearchParams({ sana_dan: dan, sana_gacha: gacha });
+      if (xodimId) params.set('xodim_id', xodimId);
+      const res = await fetch(`/api/statistika/kunlik/excel?${params}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('Eksportda xatolik');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tashriflar_${dan}_${gacha}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setOchiq(false);
+    } catch {
+      alert(tr('Hisobotni yuklab olishda xatolik yuz berdi'));
+    } finally {
+      setYuklanmoqda(false);
+    }
+  };
+
+  return (
+    <div ref={qutiRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOchiq((o) => !o)}
+        className="btn-soft gap-2 !py-1.5 text-sm"
+      >
+        <Download className="h-4 w-4" />
+        {tr('Hisobotni yuklab olish')}
+      </button>
+
+      {ochiq && (
+        <div className="absolute right-0 z-20 mt-1 w-72 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-lift">
+          <p className="mb-3 text-xs font-medium text-slate-500">{tr('Hisobot uchun sana oralig\'i')}</p>
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <label className="mb-1 block text-[11px] text-slate-400">{tr('Dan')}</label>
+              <DateInput className="input text-sm" value={dan} onChange={(iso) => setDan(iso || dan)} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <label className="mb-1 block text-[11px] text-slate-400">{tr('Gacha')}</label>
+              <DateInput className="input text-sm" value={gacha} onChange={(iso) => setGacha(iso || gacha)} />
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={yuklab}
+            disabled={yuklanmoqda || gacha < dan}
+            className="btn-primary mt-3 w-full justify-center gap-2 text-sm disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" />
+            {yuklanmoqda ? tr('Yuklanmoqda...') : tr('Yuklab olish (.xlsx)')}
+          </button>
+          {gacha < dan && (
+            <p className="mt-2 text-xs text-[#C0392B]">
+              {tr("'Gacha' sanasi 'dan' sanasidan oldin bo'lishi mumkin emas")}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -167,6 +262,8 @@ export default function KunlikTekshiruvPanel() {
           <div className="w-[150px]">
             <DateInput className="input" value={sana} onChange={(iso) => setSana(iso || bugunToshkent())} />
           </div>
+
+          <HisobotYuklabOlish boshlangichSana={sana} xodimId={xodimFilter} />
         </div>
       </div>
 

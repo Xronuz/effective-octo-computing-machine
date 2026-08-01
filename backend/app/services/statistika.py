@@ -32,7 +32,7 @@ from app.schemas.statistika import (
     KunlikStatistika,
     XodimKunlikStat,
 )
-from app.services.vaqt import bugun_toshkent, kun_boshi_utc, kun_oxiri_utc
+from app.services.vaqt import bugun_toshkent, kun_boshi_utc, kun_oxiri_utc, TOSHKENT_TZ
 
 logger = logging.getLogger("xavfsiz_xonadon")
 
@@ -452,23 +452,37 @@ async def get_xodim_statistika(
     return xodimlar, total
 
 
-async def get_kunlik_statistika(
+def _tashrif_sanoqlar():
+    """`muammolar` jadvalidan tashrif sanoqlari — kunlik va oraliq hisobotlarda bir xil."""
+    natija = muammo_model.Muammo.tekshiruv_natijasi
+    kira_olmadi_shart = natija == TekshiruvNatijasi.kira_olmadi
+    return [
+        func.count(muammo_model.Muammo.id).label("jami"),
+        func.coalesce(
+            func.sum(case((natija == TekshiruvNatijasi.muammo_yoq, 1), else_=0)), 0
+        ).label("muammosiz"),
+        func.coalesce(
+            func.sum(case((natija == TekshiruvNatijasi.muammo_topildi, 1), else_=0)), 0
+        ).label("muammoli"),
+        func.coalesce(
+            func.sum(case((kira_olmadi_shart, 1), else_=0)), 0
+        ).label("kira_olmadi"),
+        func.count(
+            func.distinct(
+                case((~kira_olmadi_shart, muammo_model.Muammo.xonadon_id), else_=None)
+            )
+        ).label("tekshirilgan_xonadon"),
+    ]
+
+
+async def _tashrif_hisobot(
     db: AsyncSession,
-    sana: date | None = None,
+    boshi,
+    oxiri,
+    sana_label: str,
     xodim_id: int | None = None,
 ) -> KunlikStatistika:
-    """Tanlangan kun (Toshkent) bo'yicha tashrif hisoboti.
-
-    Rahbar/superadmin uchun asosiy savolga javob beradi: "bugun kim nechta
-    xonadon tekshirdi, nechtasida muammo chiqdi, nechtasiga kira olmadi".
-
-    `xodim_id` berilsa faqat o'sha xodim bo'yicha filtrlanadi (mobil
-    ilovadagi kunlik ko'rsatkich uchun ham shu endpoint ishlatiladi).
-    """
-    kun = sana or bugun_toshkent()
-    boshi = kun_boshi_utc(kun)
-    oxiri = kun_oxiri_utc(kun)
-
+    """[boshi, oxiri) UTC oralig'idagi tashrif hisoboti — xodimlar kesimi bilan."""
     shartlar = [
         muammo_model.Muammo.sinxron_vaqti >= boshi,
         muammo_model.Muammo.sinxron_vaqti < oxiri,
@@ -476,41 +490,17 @@ async def get_kunlik_statistika(
     if xodim_id is not None:
         shartlar.append(muammo_model.Muammo.xodim_id == xodim_id)
 
-    natija = muammo_model.Muammo.tekshiruv_natijasi
-    kira_olmadi_shart = natija == TekshiruvNatijasi.kira_olmadi
-
-    # Ustunlar umumiy va xodim kesimi uchun bir xil — takrorlamaslik uchun
-    # yordamchi ro'yxat sifatida tayyorlanadi.
-    def _sanoqlar():
-        return [
-            func.count(muammo_model.Muammo.id).label("jami"),
-            func.coalesce(
-                func.sum(case((natija == TekshiruvNatijasi.muammo_yoq, 1), else_=0)), 0
-            ).label("muammosiz"),
-            func.coalesce(
-                func.sum(case((natija == TekshiruvNatijasi.muammo_topildi, 1), else_=0)), 0
-            ).label("muammoli"),
-            func.coalesce(
-                func.sum(case((kira_olmadi_shart, 1), else_=0)), 0
-            ).label("kira_olmadi"),
-            func.count(
-                func.distinct(
-                    case((~kira_olmadi_shart, muammo_model.Muammo.xonadon_id), else_=None)
-                )
-            ).label("tekshirilgan_xonadon"),
-        ]
-
-    umumiy_res = await db.execute(select(*_sanoqlar()).where(*shartlar))
+    umumiy_res = await db.execute(select(*_tashrif_sanoqlar()).where(*shartlar))
     umumiy = umumiy_res.one()
 
-    # Xodimlar kesimi — faqat o'sha kuni ishlaganlar chiqadi
+    # Xodimlar kesimi — faqat shu oraliqda ishlaganlar chiqadi
     xodim_res = await db.execute(
         select(
             user_model.User.id,
             user_model.User.familiya,
             user_model.User.ism,
             user_model.User.sharif,
-            *_sanoqlar(),
+            *_tashrif_sanoqlar(),
             func.max(muammo_model.Muammo.sinxron_vaqti).label("oxirgi"),
         )
         .join(muammo_model.Muammo, muammo_model.Muammo.xodim_id == user_model.User.id)
@@ -534,7 +524,7 @@ async def get_kunlik_statistika(
     ]
 
     return KunlikStatistika(
-        sana=kun.isoformat(),
+        sana=sana_label,
         jami=umumiy.jami or 0,
         muammosiz=umumiy.muammosiz or 0,
         muammoli=umumiy.muammoli or 0,
@@ -542,6 +532,39 @@ async def get_kunlik_statistika(
         tekshirilgan_xonadon=umumiy.tekshirilgan_xonadon or 0,
         xodimlar=xodimlar,
     )
+
+
+async def get_kunlik_statistika(
+    db: AsyncSession,
+    sana: date | None = None,
+    xodim_id: int | None = None,
+) -> KunlikStatistika:
+    """Tanlangan kun (Toshkent) bo'yicha tashrif hisoboti.
+
+    Rahbar/superadmin uchun asosiy savolga javob beradi: "bugun kim nechta
+    xonadon tekshirdi, nechtasida muammo chiqdi, nechtasiga kira olmadi".
+
+    `xodim_id` berilsa faqat o'sha xodim bo'yicha filtrlanadi (mobil
+    ilovadagi kunlik ko'rsatkich uchun ham shu endpoint ishlatiladi).
+    """
+    kun = sana or bugun_toshkent()
+    boshi = kun_boshi_utc(kun)
+    oxiri = kun_oxiri_utc(kun)
+    return await _tashrif_hisobot(db, boshi, oxiri, kun.isoformat(), xodim_id)
+
+
+async def get_tashrif_hisobot_oraliq(
+    db: AsyncSession,
+    sana_dan: date,
+    sana_gacha: date,
+    xodim_id: int | None = None,
+) -> KunlikStatistika:
+    """[sana_dan, sana_gacha] oralig'idagi (ikkalasi ham kiradi, Toshkent kuni)
+    tashrif hisoboti — "Hisobotni yuklab olish" eksporti uchun."""
+    boshi = kun_boshi_utc(sana_dan)
+    oxiri = kun_oxiri_utc(sana_gacha)
+    label = sana_dan.isoformat() if sana_dan == sana_gacha else f"{sana_dan.isoformat()} — {sana_gacha.isoformat()}"
+    return await _tashrif_hisobot(db, boshi, oxiri, label, xodim_id)
 
 
 async def get_full_statistika(db: AsyncSession) -> StatistikaResponse:
@@ -675,6 +698,95 @@ def generate_excel(statistika: StatistikaResponse) -> io.BytesIO:
     # Ustun kengligi
     ws.column_dimensions["A"].width = 25
     ws.column_dimensions["B"].width = 18
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output
+
+
+# ============ Tashriflar hisoboti eksporti ============
+
+def generate_kunlik_excel(data: KunlikStatistika, sana_dan: date, sana_gacha: date) -> io.BytesIO:
+    """"Bugungi tekshiruvlar" panelidagi tanlangan oraliq uchun toza .xlsx hisobot."""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+    except ImportError:
+        raise ImportError("openpyxl o'rnatilmagan: pip install openpyxl")
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Tashriflar hisoboti"
+
+    header_font = Font(bold=True, size=11, color="1F2937")
+    header_fill = PatternFill(start_color="E5E7EB", end_color="E5E7EB", fill_type="solid")
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+    center = Alignment(horizontal="center")
+
+    davr = sana_dan.isoformat() if sana_dan == sana_gacha else f"{sana_dan.isoformat()} — {sana_gacha.isoformat()}"
+
+    row = 1
+    ws.cell(row, 1, "XAVFSIZ XONADON — TASHRIFLAR HISOBOTI").font = Font(bold=True, size=14)
+    row += 1
+    ws.cell(row, 1, f"Davr: {davr}").font = Font(italic=True, color="6B7280")
+    row += 2
+
+    for label, val in [
+        ("Jami tashrif", data.jami),
+        ("Muammosiz", data.muammosiz),
+        ("Muammoli", data.muammoli),
+        ("Kira olmadi", data.kira_olmadi),
+        ("Tekshirilgan xonadon", data.tekshirilgan_xonadon),
+    ]:
+        ws.cell(row, 1, label).font = Font(bold=True)
+        ws.cell(row, 2, val)
+        row += 1
+    row += 1
+
+    headers = ["Inspektor", "Tashrif", "Muammosiz", "Muammoli", "Kira olmadi", "Oxirgi faollik"]
+    header_row = row
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(header_row, col_idx, h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = thin_border
+        cell.alignment = center
+    row += 1
+
+    for x in data.xodimlar:
+        oxirgi = "—"
+        if x.oxirgi_faollik:
+            try:
+                dt = datetime.fromisoformat(x.oxirgi_faollik)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                oxirgi = dt.astimezone(TOSHKENT_TZ).strftime("%Y-%m-%d %H:%M")
+            except ValueError:
+                oxirgi = x.oxirgi_faollik
+
+        values = [x.xodim_fio, x.jami, x.muammosiz, x.muammoli, x.kira_olmadi, oxirgi]
+        for col_idx, val in enumerate(values, 1):
+            cell = ws.cell(row, col_idx, val)
+            cell.border = thin_border
+            if col_idx > 1:
+                cell.alignment = center
+        row += 1
+
+    if not data.xodimlar:
+        ws.cell(row, 1, "Bu oraliqda tekshiruv qayd etilmagan").font = Font(italic=True, color="9CA3AF")
+        row += 1
+
+    ws.freeze_panes = ws.cell(header_row + 1, 1).coordinate
+    ws.auto_filter.ref = f"A{header_row}:{get_column_letter(len(headers))}{max(row - 1, header_row)}"
+
+    widths = [26, 12, 12, 12, 12, 18]
+    for col_idx, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(col_idx)].width = w
 
     output = io.BytesIO()
     wb.save(output)

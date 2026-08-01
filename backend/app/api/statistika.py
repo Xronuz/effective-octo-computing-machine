@@ -106,6 +106,42 @@ async def download_excel(
         return {"ok": False, "data": None, "xato": str(e)}
 
 
+@router.get("/statistika/kunlik/excel")
+async def download_kunlik_excel(
+    sana_dan: str = Query(..., description="YYYY-MM-DD"),
+    sana_gacha: str = Query(..., description="YYYY-MM-DD"),
+    xodim_id: int | None = Query(None, description="Faqat shu xodim bo'yicha"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """"Bugungi tekshiruvlar" panelidagi tanlangan oraliq uchun Excel hisobot."""
+    try:
+        dan = date.fromisoformat(sana_dan)
+        gacha = date.fromisoformat(sana_gacha)
+    except ValueError:
+        return {"ok": False, "data": None, "xato": "Sana formati noto'g'ri (YYYY-MM-DD kutilgan)"}
+
+    if gacha < dan:
+        return {"ok": False, "data": None, "xato": "'Gacha' sanasi 'dan' sanasidan oldin bo'lishi mumkin emas"}
+
+    # Xodim boshqa xodimlarning ko'rsatkichlarini ko'ra olmaydi
+    if current_user.rol == UserRole.xodim:
+        xodim_id = current_user.id
+
+    try:
+        data = await stat_service.get_tashrif_hisobot_oraliq(db, sana_dan=dan, sana_gacha=gacha, xodim_id=xodim_id)
+        excel_bytes = stat_service.generate_kunlik_excel(data, dan, gacha)
+        fayl_nomi = f"tashriflar_{dan.isoformat()}_{gacha.isoformat()}.xlsx"
+        return StreamingResponse(
+            excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={fayl_nomi}"},
+        )
+    except Exception as e:
+        logger.error("Kunlik excel eksportda xatolik: %s", e)
+        return {"ok": False, "data": None, "xato": str(e)}
+
+
 @router.get("/statistika/pdf")
 async def download_pdf(
     current_user: User = Depends(get_current_user),
