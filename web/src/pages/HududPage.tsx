@@ -200,7 +200,7 @@ export default function HududPage() {
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex max-h-[60vh] flex-col gap-2 overflow-auto">
             {filteredMfylar.map(m => (
               <button
                 key={m.id}

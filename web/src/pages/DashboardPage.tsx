@@ -312,7 +312,7 @@ export default function DashboardPage() {
                 <p className="mt-2 text-sm text-slate-400">{tr("Hozircha muammolar qayd etilmagan")}</p>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="max-h-[60vh] divide-y divide-slate-100 overflow-auto">
                 {songgiMuammolar.map((m) => {
                   const Icon = m.turi ? (TURI_ICON[m.turi] ?? AlertCircle) : AlertCircle;
                   return (
