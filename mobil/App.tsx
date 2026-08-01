@@ -27,6 +27,7 @@ import { Colors, Fonts, FontSizes, FontWeights, Shadows, Layout } from './src/th
 import { initDB } from './src/services/db';
 import { setupAutoSync } from './src/services/sync';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import GpsGate from './src/components/GpsGate';
 
 import LoginScreen from './src/screens/LoginScreen';
 import RoyxatScreen from './src/screens/RoyxatScreen';
@@ -263,6 +264,7 @@ export default function App() {
           <NavigationContainer theme={NavTheme}>
             <RootNavigator />
           </NavigationContainer>
+          <GpsGate />
         </View>
       </ErrorBoundary>
     );
