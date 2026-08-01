@@ -246,7 +246,7 @@ export default function KunlikTekshiruvPanel() {
               value={xodimFilter}
               onChange={setXodimFilter}
               barchasiLabel={tr('Barchasi')}
-              className="select !w-auto !py-1.5 text-sm max-w-[220px]"
+              className="select !w-auto !py-1.5 text-sm max-w-[320px]"
             />
           </label>
 
