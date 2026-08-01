@@ -47,6 +47,7 @@ backups/
 # Node (web/)
 web/node_modules/
 web/dist/
+web/tsconfig.tsbuildinfo
 mobil/node_modules/
 mobil/dist/
 mobil/.expo/

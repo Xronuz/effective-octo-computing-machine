@@ -134,7 +134,7 @@ services:
       - web_dist_prod:/app/dist
     command: >
       sh -c "
-        npm install --no-audit --no-fund &&
+        npm ci --no-audit --no-fund &&
         npm run build &&
         echo 'Web build completed'
       "

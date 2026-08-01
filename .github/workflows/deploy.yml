@@ -33,7 +33,13 @@ jobs:
               echo "::warning::/opt/MCHS ichida commit qilinmagan o'zgarishlar topildi — yo'q qilinmaydi, stash'ga olinadi: ${stash_nomi}"
               git stash push --include-untracked -m "${stash_nomi}"
               echo "Tiklash uchun:  cd /opt/MCHS && git stash list && git stash apply stash@{0}"
-              git stash list | head -5
+              # `| head -5` bilan pipefail birga ishlatilsa: stash ro'yxati
+              # 5 tadan ko'p bo'lganda head oldinroq yopiladi, git SIGPIPE
+              # oladi va pipefail buni xatolik deb hisoblab butun qadamni
+              # (demak, keyingi `reset --hard` ham) muvaffaqiyatsiz qiladi.
+              # Bu shunchaki ma'lumot chiqarish, mantiqiy natijaga ta'sir
+              # qilmasligi kerak — shuning uchun "|| true".
+              git stash list | head -5 || true
           fi
 
           git reset --hard origin/main
