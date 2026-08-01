@@ -88,6 +88,22 @@ export default function MaydonScreen() {
     [attentionItems],
   );
 
+  /**
+   * "Kira olmadi" raqami bosilganda — qaytib borish kerak bo'lgan
+   * xonadonlar ro'yxati. Avval inspektor bularni eslab qolishi kerak edi.
+   */
+  const handleKiraOlmadi = useCallback(() => {
+    const royxat = stat.kiraOlmadiRoyxat;
+    if (royxat.length === 0) return;
+    Alert.alert(tr('Kira olinmagan xonadonlar'), tr('Qayta tashrif buyurish kerak'), [
+      ...royxat.slice(0, 8).map((x) => ({
+        text: x.manzil || `${tr('Xonadon')} #${x.xonadon_id}`,
+        onPress: () => navigation.navigate('XonadonDetail', { id: x.xonadon_id }),
+      })),
+      { text: tr('Yopish'), style: 'cancel' as const },
+    ]);
+  }, [stat.kiraOlmadiRoyxat, navigation, tr]);
+
   const handlePressAttention = useCallback(() => {
     if (attentionItems.length === 0) return;
     if (attentionItems.length === 1) {
@@ -135,7 +151,11 @@ export default function MaydonScreen() {
 
             <View style={styles.kunBlok}>
               <HaftaTanlagich selected={tanlanganSana} onSelect={setTanlanganSana} />
-              <KunlikStatistika stat={stat} loading={statLoading} />
+              <KunlikStatistika
+                stat={stat}
+                loading={statLoading}
+                onKiraOlmadiPress={handleKiraOlmadi}
+              />
             </View>
           </>
         )}

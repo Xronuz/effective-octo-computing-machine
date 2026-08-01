@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAlifbo } from '../../contexts/AlifboContext';
 import { Colors, Fonts, FontSizes, FontWeights, Radius, Shadows } from '../../theme';
@@ -12,20 +12,36 @@ function Tile({
   color,
   value,
   label,
+  onPress,
 }: {
   icon: IconName;
   color: string;
   value: number;
   label: string;
+  onPress?: () => void;
 }) {
-  return (
-    <View style={styles.tile}>
+  const ichki = (
+    <>
       <MaterialCommunityIcons name={icon} size={20} color={color} />
       <Text style={[styles.tileValue, { color }]}>{value}</Text>
       <Text style={styles.tileLabel} numberOfLines={2}>
         {label}
       </Text>
-    </View>
+    </>
+  );
+
+  if (!onPress) return <View style={styles.tile}>{ichki}</View>;
+
+  return (
+    <TouchableOpacity
+      style={[styles.tile, styles.tileBosiladi, { borderColor: color }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+    >
+      {ichki}
+    </TouchableOpacity>
   );
 }
 
@@ -36,9 +52,12 @@ function Tile({
 export default function KunlikStatistika({
   stat,
   loading,
+  onKiraOlmadiPress,
 }: {
   stat: KunlikStat;
   loading: boolean;
+  /** "Kira olmadi" raqami bosilganda — qaytib borish kerak bo'lgan xonadonlar. */
+  onKiraOlmadiPress?: () => void;
 }) {
   const { tr } = useAlifbo();
 
@@ -72,6 +91,7 @@ export default function KunlikStatistika({
           color={Colors.warning}
           value={stat.kiraOlmadi}
           label={tr('Kira olmadi')}
+          onPress={stat.kiraOlmadi > 0 ? onKiraOlmadiPress : undefined}
         />
       </View>
 
@@ -120,6 +140,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
     backgroundColor: Colors.surfaceSubtle,
   },
+  tileBosiladi: { borderWidth: 1 },
   tileValue: {
     fontSize: FontSizes.lg,
     fontFamily: Fonts.heading,

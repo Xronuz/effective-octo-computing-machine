@@ -31,6 +31,8 @@ import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { cacheMuammolar, getCacheMuammolar } from '../services/cache';
 import { warmFotoCache, resolveFotoSource } from '../services/fotoCache';
 import { bandlarniParse, bandMatni } from '../constants/yoriqnoma';
+import NatijaBadge from '../components/NatijaBadge';
+import { muammoNatijasi, natijaSarlavhasi } from '../lib/natija';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -147,15 +149,19 @@ export default function XonadonDetailScreen() {
   }
 
   const renderMuammo = (m: MuammoSummary) => {
-    // Checklist oqimida (turi=null) turi/xavf endi ma'nosiz — o'rniga
-    // yo'riqnoma bandlari (yoki "muammo yo'q") ko'rsatiladi.
+    // Natija `tekshiruv_natijasi` bo'yicha aniqlanadi. Avval turi/bandlar
+    // bo'yicha taxmin qilinardi va "kira olmadi" tashriflar "Tekshirildi —
+    // muammo topilmadi" bo'lib ko'rinardi (noto'g'ri ma'lumot).
+    const natija = muammoNatijasi(m);
     const bandlar = bandlarniParse(m.taklif_etilgan_tadbirlar);
     const isChecklistYozuvi = m.turi === null;
-    const sarlavha = m.turi
-      ? m.turi_nomi || m.turi
-      : bandlar.length > 0
-        ? tr("Yo'riqnoma bandlari") + `: ${bandlar.join(', ')}`
-        : tr('Tekshirildi — muammo topilmadi');
+    const sarlavha = tr(
+      natijaSarlavhasi(natija, {
+        turi: m.turi,
+        turiNomi: m.turi_nomi,
+        bandlarCsv: m.taklif_etilgan_tadbirlar,
+      }),
+    );
     const xavfCfg = isChecklistYozuvi ? null : XavfColors[m.xavf];
     const isOpen = m.status !== 'yopilgan';
     const statusCfg = isOpen ? StatusColors.ochiq : StatusColors.yopilgan;
@@ -178,8 +184,20 @@ export default function XonadonDetailScreen() {
           <Text style={styles.muammoTitle} numberOfLines={1}>
             {sarlavha}
           </Text>
+          {/* Natija belgisi — "Ochiq/Yopilgan" statusi kira olmagan tashrif
+              uchun chalg'ituvchi edi ("Yopilgan" deb ko'rinardi). Status
+              faqat haqiqiy muammolarda ma'noli, shuning uchun u yerda
+              qo'shimcha ravishda ko'rsatiladi. */}
+          <NatijaBadge natija={natija} />
+        </View>
+
+        {natija === 'muammo_topildi' ? (
           <View
-            style={[styles.pill, { backgroundColor: statusCfg.bg, borderColor: statusCfg.border }]}
+            style={[
+              styles.pill,
+              styles.statusPill,
+              { backgroundColor: statusCfg.bg, borderColor: statusCfg.border },
+            ]}
           >
             <MaterialCommunityIcons
               name={isOpen ? 'alert-circle' : 'check-circle'}
@@ -190,7 +208,7 @@ export default function XonadonDetailScreen() {
               {isOpen ? tr('Ochiq') : tr('Yopilgan')}
             </Text>
           </View>
-        </View>
+        ) : null}
 
         {isChecklistYozuvi && bandlar.length > 0 ? (
           <View style={styles.bandlarLegend}>
@@ -436,6 +454,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     borderWidth: 1,
   },
+  statusPill: { alignSelf: 'flex-start' },
   pillText: {
     fontSize: FontSizes.xs,
     fontWeight: FontWeights.semibold,

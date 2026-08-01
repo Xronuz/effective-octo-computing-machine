@@ -33,6 +33,11 @@ import {
 } from '../theme';
 import { useAlifbo } from '../contexts/AlifboContext';
 import { bandlarniParse } from '../constants/yoriqnoma';
+import NatijaBadge from '../components/NatijaBadge';
+import { navbatNatijasi, NATIJA_MATNI } from '../lib/natija';
+import api from '../services/api';
+import { getCacheXonadonlar } from '../services/cache';
+import type { ApiResponse, XonadonSummary } from '../types';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -116,18 +121,53 @@ export default function NavbatScreen() {
   const [syncing, setSyncing] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [syncNatija, setSyncNatija] = useState<SyncNatija | null>(null);
+  const [manzillar, setManzillar] = useState<Record<number, string>>({});
+
+  /**
+   * Navbatdagi yozuvlar uchun xonadon manzillarini to'ldiradi: avval lokal
+   * keshdan (oflaynda ham ishlaydi), qolganlari uchun server so'raladi.
+   */
+  const manzillarniYukla = useCallback(async (rows: NavbatYozuvi[]) => {
+    const idlar = [...new Set(rows.map((r) => r.xonadon_id))];
+    if (idlar.length === 0) return;
+
+    const xarita: Record<number, string> = {};
+    try {
+      const keshlangan = (await getCacheXonadonlar()) ?? [];
+      for (const x of keshlangan) {
+        if (x.full_address) xarita[x.id] = x.full_address;
+      }
+    } catch {
+      // kesh yo'q — pastda serverdan urinamiz
+    }
+
+    const yetishmaydi = idlar.filter((id) => !xarita[id]);
+    await Promise.all(
+      yetishmaydi.map(async (id) => {
+        try {
+          const { data } = await api.get<ApiResponse<XonadonSummary>>(`/xonadonlar/${id}`);
+          if (data.ok && data.data?.full_address) xarita[id] = data.data.full_address;
+        } catch {
+          // Oflayn yoki xato — "Xonadon #id" zaxira matni ishlatiladi
+        }
+      }),
+    );
+
+    setManzillar((oldingi) => ({ ...oldingi, ...xarita }));
+  }, []);
 
   const loadNavbat = useCallback(async () => {
     try {
       const rows = await getNavbatYozuvlari();
       setItems(rows);
+      manzillarniYukla(rows);
     } catch {
       // DB hali tayyor bo'lmasa — bo'sh ro'yxat
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [manzillarniYukla]);
 
   useFocusEffect(
     useCallback(() => {
@@ -191,14 +231,18 @@ export default function NavbatScreen() {
     const cfg = STATUS_CFG(tr)[item.status] || STATUS_CFG(tr).kutilmoqda;
     const busy = retryingId === item.client_uuid;
     const yuborilgan = item.status === 'yuborilgan';
-    // Checklist oqimida (turi=null) — bandlar soniga qarab sarlavha, aks holda eski turi nomi
+    // Natija `kira_olmadi` bayrog'i bo'yicha aniqlanadi — avval bandlar
+    // bo'yicha taxmin qilinardi va kira olmagan tashrif "Tekshirildi —
+    // muammo yo'q" bo'lib ko'rinardi (noto'g'ri ma'lumot).
+    const natija = navbatNatijasi(item);
+    const muammoli = natija === 'muammo_topildi';
     const bandlar = bandlarniParse(item.taklif_etilgan_tadbirlar);
-    const turiNomi = item.turi
-      ? TURI_LABELS(tr)[item.turi] || item.turi
-      : bandlar.length > 0
-        ? tr(`Yo'riqnoma: ${bandlar.length} band`)
-        : tr("Tekshirildi — muammo yo'q");
-    const xavfCfg = item.turi ? XavfColors[item.xavf] : null;
+    const turiNomi = !muammoli
+      ? tr(NATIJA_MATNI[natija].toliq)
+      : item.turi
+        ? TURI_LABELS(tr)[item.turi] || item.turi
+        : tr(`Yo'riqnoma: ${bandlar.length} band`);
+    const xavfCfg = muammoli && item.turi ? XavfColors[item.xavf] : null;
 
     return (
       <View style={[styles.card, yuborilgan && styles.cardYuborilgan]}>
@@ -231,9 +275,15 @@ export default function NavbatScreen() {
               </View>
             ) : null}
           </View>
-          <Text style={styles.cardSubtitle}>
-            {tr('Xonadon')} #{item.xonadon_id}
+          {/* Manzil keshdan olinadi — avval faqat "Xonadon #47" ko'rinardi
+              va inspektor navbatdagi yozuv qaysi uy ekanini bilolmasdi. */}
+          <Text style={styles.cardSubtitle} numberOfLines={2}>
+            {manzillar[item.xonadon_id] || `${tr('Xonadon')} #${item.xonadon_id}`}
           </Text>
+
+          <View style={styles.natijaQatori}>
+            <NatijaBadge natija={natija} />
+          </View>
 
           {item.tavsif ? (
             <Text style={styles.tavsif} numberOfLines={2}>
@@ -418,6 +468,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.body,
     color: Colors.textPrimary,
   },
+  natijaQatori: { flexDirection: 'row', marginTop: Spacing.xs },
   cardSubtitle: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textMuted },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   xavfBadge: {
