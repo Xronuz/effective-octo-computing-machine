@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, ClipboardCheck, Download, DoorClosed, Users 
 import { apiGet, getAccessToken } from '@/api';
 import { useAlifbo } from '@/alifbo';
 import DateInput from '@/components/DateInput';
+import StatusSelect from '@/components/StatusSelect';
 import { soatDaqiqa } from '@/lib/sana';
 import type { KunlikStatistika, Paginated, UserBrief } from '@/types';
 
@@ -116,10 +117,10 @@ function HisobotYuklabOlish({ boshlangichSana, xodimId }: { boshlangichSana: str
       <button
         type="button"
         onClick={() => setOchiq((o) => !o)}
-        className="btn-soft gap-2 !py-1.5 text-sm"
+        className="btn gap-2 !py-1.5 bg-navy-900 text-sm text-white hover:bg-navy-800"
       >
         <Download className="h-4 w-4" />
-        {tr('Hisobotni yuklab olish')}
+        {tr('Hisobotni yuklash')}
       </button>
 
       {ochiq && (
@@ -228,35 +229,25 @@ export default function KunlikTekshiruvPanel() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-gray-600">
-            <span className="font-medium">{tr('Tashriflar holati:')}</span>
-            <select
-              className="select !w-auto !py-1.5 text-sm"
+            <span className="font-medium">{tr('Tashrif holati:')}</span>
+            <StatusSelect
+              options={HOLATI_OPTIONS.map((o) => ({ value: o.key, label: tr(o.label) }))}
               value={holatiFilter}
-              onChange={(e) => setHolatiFilter(e.target.value as typeof holatiFilter)}
-            >
-              <option value="">{tr('Barchasi')}</option>
-              {HOLATI_OPTIONS.map((o) => (
-                <option key={o.key} value={o.key}>
-                  {tr(o.label)}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setHolatiFilter(v as typeof holatiFilter)}
+              barchasiLabel={tr('Barchasi')}
+              className="select !w-auto !py-1.5 text-sm max-w-[150px]"
+            />
           </label>
 
           <label className="flex items-center gap-2 text-sm text-gray-600">
-            <span className="font-medium">{tr('Inspektorlar:')}</span>
-            <select
-              className="select !w-auto !py-1.5 text-sm"
+            <span className="font-medium">{tr('Inspektor:')}</span>
+            <StatusSelect
+              options={xodimlar.map((x) => ({ value: String(x.id), label: tr(x.full_name) }))}
               value={xodimFilter}
-              onChange={(e) => setXodimFilter(e.target.value)}
-            >
-              <option value="">{tr('Barcha inspektorlar')}</option>
-              {xodimlar.map((x) => (
-                <option key={x.id} value={String(x.id)}>
-                  {tr(x.full_name)}
-                </option>
-              ))}
-            </select>
+              onChange={setXodimFilter}
+              barchasiLabel={tr('Barchasi')}
+              className="select !w-auto !py-1.5 text-sm max-w-[170px]"
+            />
           </label>
 
           <div className="w-[150px]">

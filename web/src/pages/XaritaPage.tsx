@@ -14,7 +14,7 @@ import { MfyQatlami } from '@/components/xarita/MfyQatlami';
 import { MuammoQatlami } from '@/components/xarita/MuammoQatlami';
 import { XodimQatlami } from '@/components/xarita/XodimQatlami';
 import MfySelect from '@/components/MfySelect';
-import StatusSelect from '@/components/xarita/StatusSelect';
+import StatusSelect from '@/components/StatusSelect';
 import {
   STATUS_RANGLARI,
   STATUS_NOMLARI,
