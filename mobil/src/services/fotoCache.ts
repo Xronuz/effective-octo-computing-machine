@@ -26,8 +26,13 @@ function localFile(faylYoli: string): FileSystem.File {
   return new FileSystem.File(fotoDir, fotoFileName(faylYoli));
 }
 
-async function ensureDir(): Promise<void> {
-  await fotoDir.create({ intermediates: true });
+function ensureDir(): void {
+  // `idempotent: true` bo'lmasa, papka allaqachon mavjud bo'lganda `.create()`
+  // xato tashlaydi — bu esa har bir foto yuklashda "Unable to create...
+  // it already exists" xatosiga olib kelardi.
+  if (!fotoDir.exists) {
+    fotoDir.create({ intermediates: true, idempotent: true });
+  }
 }
 
 /**
@@ -36,7 +41,7 @@ async function ensureDir(): Promise<void> {
  */
 export async function downloadFoto(_muammoId: number, foto: FotoResponse): Promise<string | null> {
   try {
-    await ensureDir();
+    ensureDir();
     const file = fotoFile(foto);
     const info = await file.info();
     if (!info.exists) {
