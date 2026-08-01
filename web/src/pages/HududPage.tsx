@@ -165,7 +165,7 @@ export default function HududPage() {
   return (
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[2fr_1fr]">
       {/* MFY ro'yxati + qidiruv */}
-      <div className="card p-6">
+      <div className="card p-6 xl:flex xl:h-[calc(100vh-160px)] xl:flex-col">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-[#0F2033]">
             {tr("Mahalla fuqarolar yig'inlari")}{' '}
@@ -200,7 +200,7 @@ export default function HududPage() {
             </p>
           </div>
         ) : (
-          <div className="flex max-h-[60vh] flex-col gap-2 overflow-auto">
+          <div className="flex max-h-[60vh] flex-col gap-2 overflow-auto xl:max-h-none xl:min-h-0 xl:flex-1">
             {filteredMfylar.map(m => (
               <button
                 key={m.id}
@@ -229,7 +229,7 @@ export default function HududPage() {
       </div>
 
       {/* Barcha ko'chalar */}
-      <div className="card space-y-4 p-6 xl:sticky xl:top-24">
+      <div className="card space-y-4 p-6 xl:sticky xl:top-24 xl:flex xl:h-[calc(100vh-160px)] xl:flex-col">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-[#0F2033]">
             {tr("Barcha ko'chalar")}{' '}
@@ -252,7 +252,7 @@ export default function HududPage() {
             <p className="mt-2 text-sm text-slate-400">{tr("Ko'chalar topilmadi")}</p>
           </div>
         ) : (
-          <div className="max-h-[60vh] overflow-auto rounded-xl border border-slate-200">
+          <div className="max-h-[60vh] overflow-auto rounded-xl border border-slate-200 xl:max-h-none xl:min-h-0 xl:flex-1">
             <table className="table">
               <thead className="sticky top-0 z-10 bg-white">
                 <tr>

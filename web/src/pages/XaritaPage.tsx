@@ -14,6 +14,7 @@ import { MfyQatlami } from '@/components/xarita/MfyQatlami';
 import { MuammoQatlami } from '@/components/xarita/MuammoQatlami';
 import { XodimQatlami } from '@/components/xarita/XodimQatlami';
 import MfySelect from '@/components/MfySelect';
+import StatusSelect from '@/components/xarita/StatusSelect';
 import {
   STATUS_RANGLARI,
   STATUS_NOMLARI,
@@ -434,19 +435,14 @@ export default function XaritaPage() {
 
         <span className="w-px h-5 bg-[var(--border)] hidden sm:block" aria-hidden />
         <label className="flex items-center gap-2 text-sm text-gray-600">
-          <span className="font-medium">{tr('Status:')}</span>
-          <select
+          <span className="font-medium">{tr('Holati:')}</span>
+          <StatusSelect
+            options={Object.entries(STATUS_NOMLARI).map(([value, nomi]) => ({ value, label: nomi }))}
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="select !w-auto !py-1.5 text-sm"
-          >
-            <option value="">{tr('Barchasi')}</option>
-            {Object.entries(STATUS_NOMLARI).map(([value, nomi]) => (
-              <option key={value} value={value}>
-                {nomi}
-              </option>
-            ))}
-          </select>
+            onChange={setStatusFilter}
+            barchasiLabel={tr('Barchasi')}
+            className="select !w-auto !py-1.5 text-sm max-w-[200px]"
+          />
         </label>
 
         <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -456,7 +452,7 @@ export default function XaritaPage() {
             value={selectedMfyId !== null ? String(selectedMfyId) : ''}
             onChange={handleMfyTanlash}
             barchasiLabel={tr('Tanlang…')}
-            className="select !w-auto !py-1.5 text-sm max-w-[260px]"
+            className="select !w-auto !py-1.5 text-sm max-w-[380px]"
           />
         </label>
 
