@@ -23,3 +23,11 @@ export function faqatSana(iso: string | null | undefined): string {
 export function ddMmYyyy(sana: Date = new Date()): string {
   return format(sana, 'dd/MM/yyyy');
 }
+
+/** "14:35" — faqat soat:daqiqa (bir kun ichidagi faollik uchun). */
+export function soatDaqiqa(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return format(d, 'HH:mm');
+}

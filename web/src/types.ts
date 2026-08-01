@@ -242,13 +242,43 @@ export interface AktivXodim {
 export interface UmumiyStatistika {
   xonadon_soni: number;
   kocha_soni: number;
+  /** Faqat HAQIQIY muammolar (tekshiruv_natijasi = muammo_topildi). */
   muammo_soni: number;
+  /** Barcha tashriflar (muammoli + muammosiz + kira olmadi). */
+  tashrif_soni: number;
+  muammosiz_soni: number;
+  kira_olmadi_soni: number;
   ochiq_muammolar: number;
   yopilgan_muammolar: number;
   xodim_soni: number;
   mfy_soni: number;
+  /** Kira olmagan tashriflar bu songa kirmaydi. */
   tekshirilgan_xonadon: number;
   foiz: number;
+}
+
+/** Tashrif natijasi — backend `tekshiruv_natijasi` enum'i. */
+export type TekshiruvNatijasi = 'muammo_topildi' | 'muammo_yoq' | 'kira_olmadi';
+
+export interface XodimKunlikStat {
+  xodim_id: number;
+  xodim_fio: string;
+  jami: number;
+  muammosiz: number;
+  muammoli: number;
+  kira_olmadi: number;
+  tekshirilgan_xonadon: number;
+  oxirgi_faollik: string | null;
+}
+
+export interface KunlikStatistika {
+  sana: string;
+  jami: number;
+  muammosiz: number;
+  muammoli: number;
+  kira_olmadi: number;
+  tekshirilgan_xonadon: number;
+  xodimlar: XodimKunlikStat[];
 }
 
 export interface MuammoTuriStat {

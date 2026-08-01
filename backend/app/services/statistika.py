@@ -377,7 +377,12 @@ async def get_xodim_statistika(
     page: int = 1,
     size: int = 20,
 ) -> tuple[List[XodimStatistika], int]:
-    """Xodimlar bo'yicha statistika (sahifalangan)."""
+    """Xodimlar bo'yicha statistika (sahifalangan, butun davr bo'yicha).
+
+    `jami_muammo` — faqat muammo topilgan tashriflar; `jami_tekshirish` —
+    barcha tashriflar. Avval ikkalasi ham bir xil (barcha tashrif) qiymatni
+    qaytarardi va oddiy tekshiruvlar "muammo" bo'lib ko'rinardi.
+    """
     # Jami xodimlar soni
     total_res = await db.execute(
         select(func.count(user_model.User.id))
@@ -385,14 +390,27 @@ async def get_xodim_statistika(
     )
     total = total_res.scalar() or 0
 
-    # Xodimlar ro'yxati + muammo sonlari
+    # Xodimlar ro'yxati + tashrif/muammo sonlari
     result = await db.execute(
         select(
             user_model.User.id,
             user_model.User.familiya,
             user_model.User.ism,
             user_model.User.sharif,
-            func.count(muammo_model.Muammo.id).label("jami_muammo"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (
+                            muammo_model.Muammo.tekshiruv_natijasi
+                            == TekshiruvNatijasi.muammo_topildi,
+                            1,
+                        ),
+                        else_=0,
+                    )
+                ),
+                0,
+            ).label("jami_muammo"),
+            func.count(muammo_model.Muammo.id).label("jami_tashrif"),
             func.sum(
                 case(
                     (muammo_model.Muammo.status.in_(["ochiq", "jarayonda"]), 1),
@@ -426,7 +444,7 @@ async def get_xodim_statistika(
                 jami_muammo=row.jami_muammo or 0,
                 ochiq_muammo=row.ochiq_muammo or 0,
                 yopilgan_muammo=row.yopilgan_muammo or 0,
-                jami_tekshirish=row.jami_muammo or 0,
+                jami_tekshirish=row.jami_tashrif or 0,
                 oxirgi_faollik=oxirgi,
             )
         )

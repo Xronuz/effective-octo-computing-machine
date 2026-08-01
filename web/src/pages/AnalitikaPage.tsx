@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { sanaVaqt } from '@/lib/sana';
 import { useAlifbo } from '@/alifbo';
+import KunlikTekshiruvPanel from '@/components/KunlikTekshiruvPanel';
 import type { StatistikaResponse, XodimStatistika, MfyBrief } from '@/types';
 import {
   BarChart,
@@ -90,12 +91,14 @@ export default function AnalitikaPage() {
     try {
       const [statRes, xodimRes, mfyRes] = await Promise.all([
         apiGet<StatistikaResponse>('/statistika'),
-        apiGet<XodimStatistika[]>('/statistika/xodimlar'),
+        apiGet<XodimStatistika[] | { items: XodimStatistika[] }>('/statistika/xodimlar'),
         apiGet<MfyBrief[] | { items: MfyBrief[] }>('/mfylar'),
       ]);
       setData(statRes.data);
-      const xodimData = Array.isArray(xodimRes.data) ? xodimRes.data : [];
-      setXodimlar(xodimData);
+      // Backend sahifalangan obyekt qaytaradi ({items, total, ...}), massiv emas —
+      // avval faqat massiv holati tekshirilib, jadval doim bo'sh qolardi.
+      const xodimData = xodimRes.data;
+      setXodimlar(Array.isArray(xodimData) ? xodimData : (xodimData?.items ?? []));
       const mfyData = mfyRes.data;
       setMfyMarkazlar(Array.isArray(mfyData) ? mfyData : mfyData.items ?? []);
     } catch (err) {
@@ -505,10 +508,16 @@ export default function AnalitikaPage() {
         )}
       </section>
 
-      {/* Xodimlar statistikasi */}
+      {/* Kunlik kesim — sana tanlab, kim nechta tekshirganini ko'rish */}
+      <KunlikTekshiruvPanel />
+
+      {/* Xodimlar statistikasi — butun davr bo'yicha */}
       <section className="card overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-4">
           <h2 className="text-base font-semibold text-[#0F2033]">{tr('Xodimlar faoliyati')}</h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {tr('Butun davr bo‘yicha jami — kunlik kesim yuqorida')}
+          </p>
         </div>
         {xodimlar.length === 0 ? (
           <div className="empty-state">
@@ -521,10 +530,10 @@ export default function AnalitikaPage() {
               <thead>
                 <tr>
                   <th>{tr('Xodim')}</th>
-                  <th className="text-right">{tr('Jami muammo')}</th>
+                  <th className="text-right">{tr('Jami tashrif')}</th>
+                  <th className="text-right">{tr('Muammo topilgan')}</th>
                   <th className="text-right">{tr('Ochiq')}</th>
                   <th className="text-right">{tr('Yopilgan')}</th>
-                  <th className="text-right">{tr('Tekshirish')}</th>
                   <th className="text-right">{tr('Oxirgi faollik')}</th>
                 </tr>
               </thead>
@@ -532,10 +541,10 @@ export default function AnalitikaPage() {
                 {xodimlar.map((x) => (
                   <tr key={x.xodim_id}>
                     <td className="font-medium text-[#0F2033]">{tr(x.xodim_fio)}</td>
+                    <td className="text-right font-semibold tabular-nums">{x.jami_tekshirish}</td>
                     <td className="text-right tabular-nums">{x.jami_muammo}</td>
                     <td className="text-right text-[#D9A441] tabular-nums">{x.ochiq_muammo}</td>
                     <td className="text-right text-[#2E9E6B] tabular-nums">{x.yopilgan_muammo}</td>
-                    <td className="text-right tabular-nums">{x.jami_tekshirish}</td>
                     <td className="text-right text-xs text-slate-400 whitespace-nowrap">
                       {sanaVaqt(x.oxirgi_faollik)}
                     </td>

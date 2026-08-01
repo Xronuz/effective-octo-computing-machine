@@ -4,28 +4,47 @@ import { ChevronLeft, ChevronRight, ClipboardList, FilterX } from 'lucide-react'
 import { apiGet } from '@/api';
 import { SkeletonTable } from '@/components/Skeleton';
 import DateInput from '@/components/DateInput';
+import NatijaBadge from '@/components/NatijaBadge';
 import { ddMmYyyy } from '@/lib/sana';
 import { useAlifbo } from '@/alifbo';
 import { krilldanLotinga } from '@/lib/alifbo';
-import type { Paginated, MuammoBrief } from '@/types';
+import type { Paginated, MuammoBrief, UserBrief } from '@/types';
 
 const STATUS_OPTIONS = ['ochiq', 'jarayonda', 'yopilgan', 'muddati_otgan'] as const;
 const STATUS_LABELS: Record<string, string> = {
   ochiq: 'Ochiq', jarayonda: 'Jarayonda', yopilgan: 'Yopilgan', muddati_otgan: 'Muddati oʼtgan',
 };
 
+/** Natija bo'yicha tezkor tablar — sahifa mazmunini bir tegishda ajratadi. */
+const TABLAR: { key: string; label: string }[] = [
+  { key: '', label: 'Barcha tashriflar' },
+  { key: 'muammo_topildi', label: 'Muammolar' },
+  { key: 'muammo_yoq', label: 'Muammosiz' },
+  { key: 'kira_olmadi', label: 'Kira olmadi' },
+];
+
+/** ISO sanaga 1 kun qo'shadi (mahalliy vaqt zonasidan mustaqil). */
+function ertangiKun(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const keyingi = new Date(Date.UTC(y, m - 1, d + 1));
+  return keyingi.toISOString().slice(0, 10);
+}
+
 export default function MuammolarPage() {
   const { tr } = useAlifbo();
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<Paginated<MuammoBrief> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [xodimlar, setXodimlar] = useState<UserBrief[]>([]);
 
   const page = Number(searchParams.get('page') || '1');
   const size = Number(searchParams.get('size') || '20');
   const holat = searchParams.get('holat') || '';
   const sana = searchParams.get('sana') || '';
+  const natija = searchParams.get('natija') || '';
   const tadbirlarSoni = searchParams.get('tadbirlar_soni') || '';
-  const hudud_id = searchParams.get('hudud_id') || '';
+  const mfyId = searchParams.get('mfy_id') || '';
+  const xodimId = searchParams.get('xodim_id') || '';
   const qidiruv = searchParams.get('qidiruv') || '';
 
   const updateFilter = (key: string, value: string) => {
@@ -40,25 +59,63 @@ export default function MuammolarPage() {
     const params = new URLSearchParams({ page: String(page), size: String(size) });
     if (holat) params.set('status', holat);
     if (sana) {
+      // Backend sana chegaralarini Toshkent kuni bo'yicha hisoblaydi
       params.set('sana_dan', sana);
-      const ertasi = new Date(`${sana}T00:00:00`);
-      ertasi.setDate(ertasi.getDate() + 1);
-      params.set('sana_gacha', ertasi.toISOString().slice(0, 10));
+      params.set('sana_gacha', ertangiKun(sana));
     }
+    if (natija) params.set('tekshiruv_natijasi', natija);
     if (tadbirlarSoni) params.set('tadbirlar_soni_dan', tadbirlarSoni);
-    if (hudud_id) params.set('hudud_id', hudud_id);
+    // Diqqat: backend parametri `mfy_id` (avval `hudud_id` yuborilardi va
+    // e'tiborsiz qolardi — filtr umuman ishlamasdi).
+    if (mfyId) params.set('mfy_id', mfyId);
+    if (xodimId) params.set('xodim_id', xodimId);
     if (qidiruv) params.set('qidiruv', krilldanLotinga(qidiruv));
     const res = await apiGet<Paginated<MuammoBrief>>(`/muammolar?${params}`);
     if (res.ok) setData(res.data);
     setLoading(false);
-  }, [page, size, holat, sana, tadbirlarSoni, hudud_id, qidiruv]);
+  }, [page, size, holat, sana, natija, tadbirlarSoni, mfyId, xodimId, qidiruv]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Inspektor filtri uchun xodimlar ro'yxati (bir marta yuklanadi)
+  useEffect(() => {
+    let cancelled = false;
+    apiGet<Paginated<UserBrief>>('/users?page=1&size=100')
+      .then(res => {
+        if (cancelled || !res.ok) return;
+        setXodimlar(res.data.items.filter(u => u.rol === 'xodim'));
+      })
+      .catch(() => { /* filtr ixtiyoriy — xatolik sahifani buzmasin */ });
+    return () => { cancelled = true; };
+  }, []);
+
   const totalPages = data?.pages || 0;
+
+  const faolTab = TABLAR.find((t) => t.key === natija) ?? TABLAR[0];
 
   return (
     <div className="space-y-6">
+      {/* Natija tablari */}
+      <div className="flex flex-wrap gap-2">
+        {TABLAR.map((t) => {
+          const faol = t.key === natija;
+          return (
+            <button
+              key={t.key || 'barchasi'}
+              onClick={() => updateFilter('natija', t.key)}
+              aria-pressed={faol}
+              className={
+                faol
+                  ? 'rounded-full bg-[#0F2033] px-4 py-2 text-sm font-medium text-white'
+                  : 'rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-50'
+              }
+            >
+              {tr(t.label)}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Filters */}
       <div className="card flex flex-wrap items-end gap-3 p-4">
         <div className="min-w-[140px]">
@@ -75,6 +132,15 @@ export default function MuammolarPage() {
             value={sana}
             onChange={iso => updateFilter('sana', iso)}
           />
+        </div>
+        <div className="min-w-[170px]">
+          <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Inspektor')}</label>
+          <select className="select" value={xodimId} onChange={e => updateFilter('xodim_id', e.target.value)}>
+            <option value="">{tr('Barcha inspektorlar')}</option>
+            {xodimlar.map(x => (
+              <option key={x.id} value={String(x.id)}>{tr(x.full_name)}</option>
+            ))}
+          </select>
         </div>
         <div className="min-w-[150px]">
           <label className="mb-1 block text-xs font-medium text-slate-500">{tr("Yong'inga qarshi tadbirlar soni")}</label>
@@ -100,9 +166,13 @@ export default function MuammolarPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          {/* Sarlavha faol filtrga mos bo'lishi shart — avval sana filtri
+              qo'llanmagan bo'lsa ham "Bugungi..." deb yozilardi. */}
           <h2 className="text-base font-semibold text-[#0F2033]">
-            {tr('Bugungi muammolar ro\'yxati')}{' '}
-            <span className="font-normal text-slate-400">({ddMmYyyy()})</span>
+            {tr(faolTab.label)}{' '}
+            <span className="font-normal text-slate-400">
+              ({sana ? ddMmYyyy(new Date(`${sana}T00:00:00`)) : tr('barcha sanalar')})
+            </span>
           </h2>
           {data && (
             <span className="text-sm text-slate-500">
@@ -115,7 +185,7 @@ export default function MuammolarPage() {
         ) : !data || data.items.length === 0 ? (
           <div className="empty-state">
             <ClipboardList className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-sm font-medium text-slate-600">{tr('Muammolar topilmadi')}</p>
+            <p className="mt-2 text-sm font-medium text-slate-600">{tr('Yozuv topilmadi')}</p>
             <p className="mt-1 text-xs text-slate-400">{tr("Filtrlarni o'zgartirib qayta urinib ko'ring")}</p>
           </div>
         ) : (
@@ -124,6 +194,7 @@ export default function MuammolarPage() {
               <thead>
                 <tr>
                   <th className="text-center">#</th>
+                  <th className="text-center">{tr('Natija')}</th>
                   <th className="text-center">{tr('MFY')}</th>
                   <th className="text-center">{tr("Ko'cha")}</th>
                   <th className="text-center">{tr('Uy raqam')}</th>
@@ -139,6 +210,9 @@ export default function MuammolarPage() {
                 {data.items.map((m, i) => (
                   <tr key={m.id}>
                     <td className="text-center text-slate-400 tabular-nums">{(page-1)*size + i + 1}</td>
+                    <td className="text-center whitespace-nowrap">
+                      <NatijaBadge natija={m.tekshiruv_natijasi} qisqa />
+                    </td>
                     <td className="text-center font-medium text-[#0F2033]">{m.mfy_nomi ? tr(m.mfy_nomi) : '—'}</td>
                     <td className="text-center text-slate-600">{m.kocha_nomi ? tr(m.kocha_nomi) : '—'}</td>
                     <td className="text-center text-slate-600">{m.uy_raqami || '—'}</td>

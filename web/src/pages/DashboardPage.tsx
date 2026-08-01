@@ -11,7 +11,6 @@ import {
   Inbox,
   Map,
   Siren,
-  Users,
   Zap,
 } from 'lucide-react';
 import {
@@ -27,31 +26,16 @@ import {
 import { apiGet } from '@/api';
 import { useAlifbo } from '@/alifbo';
 import { SkeletonCards } from '@/components/Skeleton';
+import KunlikTekshiruvPanel from '@/components/KunlikTekshiruvPanel';
+import NatijaBadge from '@/components/NatijaBadge';
 import { sanaVaqt } from '@/lib/sana';
 import type {
   MuammoBrief,
-  MuammoStatus,
   MuammoTuri,
   Paginated,
   StatistikaResponse,
   XonadonBrief,
 } from '@/types';
-
-const STATUS_LABEL: Record<string, string> = {
-  ochiq: 'Ochiq',
-  jarayonda: 'Jarayonda',
-  yopilgan: 'Yopilgan',
-  muddati_otgan: "Muddati o'tgan",
-  qayta_ochilgan: 'Qayta ochilgan',
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  ochiq: 'badge-blue',
-  jarayonda: 'badge-yellow',
-  yopilgan: 'badge-green',
-  muddati_otgan: 'badge-red',
-  qayta_ochilgan: 'badge-blue',
-};
 
 const TURI_LABEL: Record<MuammoTuri, string> = {
   gaz: 'Gaz',
@@ -136,6 +120,13 @@ export default function DashboardPage() {
       tint: 'text-[#3D6FB4]',
     },
     {
+      label: 'Tekshirilgan xonadon',
+      value: statistika?.umumiy.tekshirilgan_xonadon ?? 0,
+      icon: ClipboardList,
+      chip: 'bg-[#2E9E6B]/10 text-[#2E9E6B]',
+      tint: 'text-[#2E9E6B]',
+    },
+    {
       label: 'Ochiq muammolar',
       value: statistika?.umumiy.ochiq_muammolar ?? 0,
       icon: AlertTriangle,
@@ -149,13 +140,8 @@ export default function DashboardPage() {
       chip: 'bg-[#C0392B]/10 text-[#C0392B]',
       tint: 'text-[#C0392B]',
     },
-    {
-      label: 'Xodimlar',
-      value: statistika?.umumiy.xodim_soni ?? 0,
-      icon: Users,
-      chip: 'bg-[#2E9E6B]/10 text-[#2E9E6B]',
-      tint: 'text-[#2E9E6B]',
-    },
+    // "Xodimlar" kartasi olib tashlandi — inspektorlar kesimi endi kunlik
+    // tekshiruvlar panelida (kim nechta tekshirdi) boyroq ko'rsatiladi.
   ];
 
   return (
@@ -301,15 +287,23 @@ export default function DashboardPage() {
             </section>
           </div>
 
-          {/* So'nggi faollik */}
+          {/* Kunlik tekshiruvlar — kim nechta xonadon tekshirdi */}
+          <KunlikTekshiruvPanel />
+
+          {/* So'nggi faollik — barcha tashriflar (muammoli va muammosiz) */}
           <section className="card overflow-hidden" aria-label={tr("So'nggi faollik")}>
             <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-4">
-              <h2 className="text-base font-semibold text-[#0F2033]">{tr("So'nggi faollik")}</h2>
+              <div>
+                <h2 className="text-base font-semibold text-[#0F2033]">{tr("So'nggi faollik")}</h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {tr("Oxirgi tashriflar — muammoli va muammosiz")}
+                </p>
+              </div>
               <Link
                 to="/muammolar"
                 className="text-sm font-medium text-[#3D6FB4] hover:underline"
               >
-                {tr("Barchasini ko'rish")}
+                {tr("Barcha tashriflar")}
               </Link>
             </div>
             {songgiMuammolar.length === 0 ? (
@@ -339,9 +333,7 @@ export default function DashboardPage() {
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
-                          <span className={STATUS_BADGE[m.status as MuammoStatus] || 'badge-gray'}>
-                            {tr(STATUS_LABEL[m.status] || m.status)}
-                          </span>
+                          <NatijaBadge natija={m.tekshiruv_natijasi} qisqa />
                           <span className="text-xs text-slate-400">
                             {qanchaVaqtOldin(m.sinxron_vaqti)}
                           </span>
