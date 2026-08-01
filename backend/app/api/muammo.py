@@ -68,6 +68,7 @@ async def create_muammo(
         taklif_etilgan_tadbirlar=body.taklif_etilgan_tadbirlar,
         yoriqnomadan_otkanlar_soni=body.yoriqnomadan_otkanlar_soni,
         kira_olmadi=body.kira_olmadi,
+        majburiy=body.majburiy,
     )
 
     data = muammo_service._muammo_to_response(muammo, current_user)

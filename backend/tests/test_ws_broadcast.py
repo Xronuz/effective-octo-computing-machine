@@ -32,7 +32,7 @@ def _make_mock_db():
     xonadon.kocha.mfy.id = 1
 
     # 1-chaqiriq: xonadon, 2-chaqiriq: client_uuid tekshiruvi (None)
-    result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+    result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
     db.execute = AsyncMock(return_value=result)
     db.add = MagicMock()
     db.flush = AsyncMock()

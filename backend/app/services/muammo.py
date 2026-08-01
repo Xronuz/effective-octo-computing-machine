@@ -3,7 +3,7 @@ XAVFSIZ XONADON — Muammo xizmati.
 Biznes-logika: yaratish, ro'yxat, yangilash, yopish, fotolar.
 """
 import logging
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from math import ceil
 from typing import Optional
 from uuid import UUID
@@ -18,15 +18,48 @@ from app.models.muammo import (
 )
 from app.models.hudud import Xonadon, Kocha, Mfy
 from app.models.user import User, UserRole
-from app.core.exceptions import NotFoundException, ForbiddenException, ValidationException
+from app.core.exceptions import (
+    NotFoundException, ForbiddenException, ValidationException, ConflictException,
+)
 from app.services.geo import haversine_m
-from app.services.vaqt import kun_boshi_utc
+from app.services.vaqt import TOSHKENT_TZ, bugun_toshkent, kun_boshi_utc
 from app.services.xonadon import egasi_korish_huquqi
 
 logger = logging.getLogger("xavfsiz_xonadon")
 
 # EXIF GPS va muammo koordinatasi orasidagi ruxsat etilgan maksimal masofa (metr)
 EXIF_MAX_MASOFA_M = 200.0
+
+
+async def bugungi_tekshiruv(
+    db: AsyncSession,
+    *,
+    xonadon_id: int,
+    xodim_id: int,
+    kun: date | None = None,
+) -> Muammo | None:
+    """Shu xodim shu xonadonni berilgan kunda TEKSHIRGAN bo'lsa, o'sha yozuv.
+
+    `kira_olmadi` tashriflar hisobga olinmaydi — ular tekshiruv emas, balki
+    qayta urinish (uyda hech kim bo'lmagan), shuning uchun kun davomida
+    cheklanmaydi.
+
+    Kun chegaralari Toshkent vaqti bo'yicha (baza UTC saqlaydi).
+    """
+    kun = kun or bugun_toshkent()
+    natija = await db.execute(
+        select(Muammo)
+        .where(
+            Muammo.xonadon_id == xonadon_id,
+            Muammo.xodim_id == xodim_id,
+            Muammo.tekshiruv_natijasi != TekshiruvNatijasi.kira_olmadi,
+            Muammo.sinxron_vaqti >= kun_boshi_utc(kun),
+            Muammo.sinxron_vaqti < kun_boshi_utc(kun + timedelta(days=1)),
+        )
+        .order_by(Muammo.sinxron_vaqti.desc())
+        .limit(1)
+    )
+    return natija.scalar_one_or_none()
 
 
 async def create_muammo(
@@ -50,6 +83,7 @@ async def create_muammo(
     taklif_etilgan_tadbirlar: str | None = None,
     yoriqnomadan_otkanlar_soni: int | None = None,
     kira_olmadi: bool = False,
+    majburiy: bool = False,
 ) -> tuple[Muammo, bool]:
     """Yangi muammo yoki tekshiruv qayd etish.
 
@@ -63,6 +97,15 @@ async def create_muammo(
     belgilanadi — chunki xonadon haqiqatda TEKSHIRILMAGAN va "bugun
     tekshirilganlar" hisobiga kirmasligi kerak (xonadon.py service'da
     filtrlanadi), qayta tashrif uchun navbatda qoladi.
+
+    KUNLIK TAKRORLANISH QOIDASI (yumshoq): bir xonadon bir kunda bir marta
+    tekshiriladi. Shu kuni allaqachon haqiqiy tekshiruv (muammo_topildi yoki
+    muammo_yoq) qayd etilgan bo'lsa, yangi tekshiruv 409 bilan rad etiladi.
+    `majburiy=True` berilsa o'tkaziladi, lekin yozuv `shubhali` deb
+    belgilanadi — dala sharoitida istisno bo'ladi (masalan birinchi yozuv
+    xato kiritilgan), ammo bu rahbar nazoratidan chetda qolmasligi kerak.
+    `kira_olmadi` tashriflar bu qoidaga tushmaydi — ular tekshiruv emas,
+    qayta urinish, shuning uchun kun davomida cheklanmaydi.
 
     Qaytaradi: (muammo, dublikat) — dublikat=True bo'lsa, client_uuid bazada
     mavjud bo'lgani uchun mavjud muammo qaytarilgan (idempotent qayta yuborish).
@@ -120,6 +163,31 @@ async def create_muammo(
         tekshiruv_natijasi = TekshiruvNatijasi.muammo_topildi
     else:
         tekshiruv_natijasi = TekshiruvNatijasi.muammo_yoq
+
+    # Kunlik takrorlanish qoidasi — `kira_olmadi` bundan mustasno
+    if not kira_olmadi:
+        oldingi = await bugungi_tekshiruv(db, xonadon_id=xonadon_id, xodim_id=xodim.id)
+        if oldingi is not None:
+            if not majburiy:
+                vaqt = (
+                    oldingi.sinxron_vaqti.astimezone(TOSHKENT_TZ).strftime("%H:%M")
+                    if oldingi.sinxron_vaqti
+                    else "?"
+                )
+                raise ConflictException(
+                    f"Bu xonadon bugun allaqachon tekshirilgan ({vaqt}). "
+                    f"Baribir yozish kerak bo'lsa, takroriy tekshiruvni tasdiqlang."
+                )
+            # Majburiy takror — rahbar nazorati uchun belgilab qo'yamiz
+            shubhali = True
+            if shubhali_sabab is None:
+                shubhali_sabab = "kunlik_takror"
+            logger.warning(
+                "Majburiy takroriy tekshiruv: xonadon_id=%s, xodim=%s, oldingi_muammo_id=%s",
+                xonadon_id,
+                xodim.guvohnoma_raqami,
+                oldingi.id,
+            )
 
     if muammo_topildi:
         # ornida_bartaraf validatsiyasi — faqat haqiqiy muammo uchun

@@ -12,7 +12,7 @@ from app.models.muammo import (
 )
 from app.models.hudud import Xonadon
 from app.models.user import User, UserRole
-from app.core.exceptions import NotFoundException, ValidationException
+from app.core.exceptions import NotFoundException, ValidationException, ConflictException
 from app.services import muammo as muammo_service
 
 
@@ -119,7 +119,7 @@ class TestCreateMuammo:
         client_uuid = str(uuid4())
 
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])  # xonadon topildi, client_uuid yo'q
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])  # xonadon topildi, client_uuid yo'q
 
         m, dublikat = await muammo_service.create_muammo(
             db, xodim,
@@ -192,7 +192,7 @@ class TestCreateMuammo:
         """mock_gps=True bo'lsa shubhali=True."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         m, _ = await muammo_service.create_muammo(
             db, _make_xodim(),
@@ -214,7 +214,7 @@ class TestCreateMuammo:
         """GPS aniqlik > 100m bo'lsa shubhali=True."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         m, _ = await muammo_service.create_muammo(
             db, _make_xodim(),
@@ -237,7 +237,7 @@ class TestCreateMuammo:
         muddat/ornida_bartaraf talab qilinmaydi, status darhol yopilgan bo'ladi."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         m, dublikat = await muammo_service.create_muammo(
             db, _make_xodim(),
@@ -269,7 +269,7 @@ class TestCreateMuammo:
         status darhol yopilgan, tekshiruv_natijasi='kira_olmadi' bo'ladi."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         m, dublikat = await muammo_service.create_muammo(
             db, _make_xodim(),
@@ -299,7 +299,7 @@ class TestCreateMuammo:
         qoladi va 'muammo_topildi' hisoblanmaydi."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         m, _ = await muammo_service.create_muammo(
             db, _make_xodim(),
@@ -327,7 +327,7 @@ class TestCreateMuammo:
         ornida_bartaraf=False + muddat=None bo'lsa hali ham ValidationException."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         with pytest.raises(ValidationException, match="muddat"):
             await muammo_service.create_muammo(
@@ -350,7 +350,7 @@ class TestCreateMuammo:
         """turi=None + tanlangan bandlar + muddat — muvaffaqiyatli, ochiq holatda saqlanadi."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         m, dublikat = await muammo_service.create_muammo(
             db, _make_xodim(),
@@ -379,7 +379,7 @@ class TestCreateMuammo:
         """turi=None + bandlar + ornida_bartaraf=True lekin has_keyin_foto=False — xato."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         with pytest.raises(ValidationException, match="foto"):
             await muammo_service.create_muammo(
@@ -404,7 +404,7 @@ class TestCreateMuammo:
         """Muammo topilmagan tashrif — Telegram va WebSocket bildirishnomalari yuborilmaydi."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         with patch("app.services.telegram_xabar.yangi_muammo_xabar", new_callable=AsyncMock) as mock_tg, \
              patch("app.ws.manager.broadcast_xavfsiz", new_callable=AsyncMock) as mock_ws:
@@ -429,7 +429,7 @@ class TestCreateMuammo:
         """Haqiqiy muammo (checklist bandlari bilan) — WebSocket bildirishnomasi yuboriladi."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         with patch("app.ws.manager.broadcast_xavfsiz", new_callable=AsyncMock) as mock_ws:
             await muammo_service.create_muammo(
@@ -455,7 +455,7 @@ class TestCreateMuammo:
         """GPS aniqlik yaxshi, mock_gps=False → shubhali=False."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
-        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
 
         m, _ = await muammo_service.create_muammo(
             db, _make_xodim(),
@@ -471,6 +471,125 @@ class TestCreateMuammo:
             muddat=date(2026, 8, 1),
         )
         assert m.shubhali is False
+
+
+# ============ Kunlik takrorlanish qoidasi ============
+
+class TestKunlikTakror:
+    """Bir xonadon bir kunda bir marta tekshiriladi (yumshoq qoida).
+
+    `kira_olmadi` bundan mustasno — u tekshiruv emas, qayta urinish.
+    """
+
+    @pytest.mark.asyncio
+    async def test_takroriy_tekshiruv_409_beradi(self):
+        """Bugun allaqachon tekshirilgan xonadonga yangi tekshiruv rad etiladi."""
+        xonadon = _make_xonadon()
+        oldingi = _make_muammo(id=55)
+        oldingi.sinxron_vaqti = datetime.now(timezone.utc)
+
+        db, result = _make_mock_db()
+        # xonadon topildi, client_uuid dublikat yo'q, BUGUNGI TEKSHIRUV BOR
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, oldingi])
+
+        with pytest.raises(ConflictException) as xato:
+            await muammo_service.create_muammo(
+                db, _make_xodim(),
+                xonadon_id=1,
+                turi=None,
+                tavsif=None,
+                xavf="orta",
+                lat=40.1, lng=71.4,
+                gps_aniqlik=5.0,
+                mock_gps=False,
+                client_uuid=str(uuid4()),
+                qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+                yoriqnomadan_otkanlar_soni=0,
+            )
+
+        assert "bugun allaqachon tekshirilgan" in str(xato.value.xato).lower()
+        db.add.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_majburiy_bilan_otadi_va_shubhali_boladi(self):
+        """`majburiy=True` — yozuv o'tadi, lekin rahbar nazorati uchun belgilanadi."""
+        xonadon = _make_xonadon()
+        oldingi = _make_muammo(id=55)
+        oldingi.sinxron_vaqti = datetime.now(timezone.utc)
+
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, oldingi])
+
+        m, dublikat = await muammo_service.create_muammo(
+            db, _make_xodim(),
+            xonadon_id=1,
+            turi=None,
+            tavsif=None,
+            xavf="orta",
+            lat=40.1, lng=71.4,
+            gps_aniqlik=5.0,
+            mock_gps=False,
+            client_uuid=str(uuid4()),
+            qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+            yoriqnomadan_otkanlar_soni=0,
+            majburiy=True,
+        )
+
+        assert dublikat is False
+        assert m.shubhali is True
+        db.add.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_kira_olmadi_qoidaga_tushmaydi(self):
+        """Kira olmagan tashrif cheklanmaydi — bugungi tekshiruv so'ralmaydi ham."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        # Faqat 2 ta qiymat: uchinchi so'rov (bugungi tekshiruv) bo'lmasligi kerak
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None])
+
+        m, _ = await muammo_service.create_muammo(
+            db, _make_xodim(),
+            xonadon_id=1,
+            turi=None,
+            tavsif="Eshik ochilmadi",
+            xavf="orta",
+            lat=40.1, lng=71.4,
+            gps_aniqlik=5.0,
+            mock_gps=False,
+            client_uuid=str(uuid4()),
+            qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+            yoriqnomadan_otkanlar_soni=0,
+            kira_olmadi=True,
+        )
+
+        assert m.tekshiruv_natijasi == TekshiruvNatijasi.kira_olmadi
+        assert m.shubhali is False
+
+    @pytest.mark.asyncio
+    async def test_bugungi_tekshiruv_kira_olmadini_hisoblamaydi(self):
+        """bugungi_tekshiruv() so'rovi `kira_olmadi` yozuvlarni chetlab o'tadi."""
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(return_value=None)
+
+        await muammo_service.bugungi_tekshiruv(db, xonadon_id=1, xodim_id=2)
+
+        where = _where_qismlari(db)
+        assert "kira_olmadi" in where
+        assert "tekshiruv_natijasi" in where
+
+    @pytest.mark.asyncio
+    async def test_bugungi_tekshiruv_toshkent_kuni_boyicha(self):
+        """Kun chegarasi Toshkent vaqti bo'yicha (+05:00), UTC yarim tuni emas."""
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(return_value=None)
+
+        await muammo_service.bugungi_tekshiruv(
+            db, xonadon_id=1, xodim_id=2, kun=date(2026, 8, 1)
+        )
+
+        where = _where_qismlari(db)
+        assert "2026-08-01 00:00:00+05:00" in where
+        assert "2026-08-02 00:00:00+05:00" in where
 
 
 # ============ get_muammo ============

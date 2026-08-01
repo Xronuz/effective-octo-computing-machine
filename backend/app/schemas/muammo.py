@@ -43,6 +43,13 @@ class MuammoCreate(BaseModel):
         default=False,
         description="Xodim xonadonga kira olmadi (uyda hech kim yo'q/eshik ochilmadi) — checklist o'tkazilmagan.",
     )
+    majburiy: bool = Field(
+        default=False,
+        description=(
+            "Xonadon bugun allaqachon tekshirilgan bo'lsa ham yozishni tasdiqlash. "
+            "Bunday yozuv `shubhali` deb belgilanadi (rahbar nazorati uchun)."
+        ),
+    )
 
     @field_validator("turi")
     @classmethod
