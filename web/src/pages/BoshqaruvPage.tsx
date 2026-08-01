@@ -241,7 +241,7 @@ export default function BoshqaruvPage() {
     <div className="space-y-6">
       {/* Filters */}
       <div className="card p-4">
-        <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-3">
+        <div className="flex flex-wrap items-center gap-4">
           {/* Rol filter */}
           <div>
             <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -279,7 +279,7 @@ export default function BoshqaruvPage() {
           </div>
 
           {/* Qidiruv */}
-          <div>
+          <div className="min-w-[220px] flex-1">
             <label className="flex items-center gap-2 text-sm text-gray-600">
               <span className="whitespace-nowrap font-medium">{tr('Qidiruv')}:</span>
               <input

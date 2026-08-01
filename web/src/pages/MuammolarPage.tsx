@@ -157,7 +157,7 @@ export default function MuammolarPage() {
         </div>
         <div>
           <label className="flex items-center gap-2 text-sm text-gray-600">
-            <span className="whitespace-nowrap font-medium">{tr("Yong'inga qarshi tadbirlar soni")}:</span>
+            <span className="whitespace-nowrap font-medium">{tr('YQ tadbirlar soni')}:</span>
             <input
               type="number"
               min={0}
@@ -168,13 +168,13 @@ export default function MuammolarPage() {
             />
           </label>
         </div>
-        <div className="min-w-[180px] flex-1">
+        <div className="min-w-[140px] flex-1">
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <span className="whitespace-nowrap font-medium">{tr('Qidiruv')}:</span>
             <input className="input" value={qidiruv} onChange={e => updateFilter('qidiruv', e.target.value)} placeholder={tr('Tavsif yoki manzil...')} />
           </label>
         </div>
-        <button onClick={() => setSearchParams({})} className="btn-soft gap-2 py-2.5 text-sm">
+        <button onClick={() => setSearchParams({})} className="btn-soft shrink-0 gap-2 py-2.5 text-sm">
           <FilterX className="h-4 w-4" />
           {tr('Tozalash')}
         </button>
