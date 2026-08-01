@@ -248,7 +248,7 @@ export default function KunlikTekshiruvPanel() {
               barchasiLabel={tr('Barchasi')}
               searchable
               qidiruvPlaceholder={tr('Inspektor F.I.Sh...')}
-              className="select sm:!w-[420px] !py-1.5 text-sm"
+              className="select sm:!w-[260px] !py-1.5 text-sm"
             />
           </label>
 
