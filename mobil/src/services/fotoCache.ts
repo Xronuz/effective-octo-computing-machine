@@ -15,7 +15,11 @@ function fotoFileName(faylYoli: string): string {
 
 function remoteFotoUrl(faylYoli: string): string {
   if (faylYoli.startsWith('http')) return faylYoli;
-  return `${ENV.API_URL.replace(/\/$/, '')}/${faylYoli.replace(/^\//, '')}`;
+  // Statik fayllar (/uploads) server root'da xizmat qiladi, "/api" ostida
+  // emas (backend/app/main.py: app.mount("/uploads", ...)) — ENV.API_URL
+  // esa ".../api" bilan tugaydi, shuning uchun uni olib tashlash kerak.
+  const origin = ENV.API_URL.replace(/\/$/, '').replace(/\/api$/, '');
+  return `${origin}/${faylYoli.replace(/^\//, '')}`;
 }
 
 function fotoFile(foto: FotoResponse): FileSystem.File {
