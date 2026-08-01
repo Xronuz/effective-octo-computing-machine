@@ -246,13 +246,16 @@ export default function KunlikTekshiruvPanel() {
               value={xodimFilter}
               onChange={setXodimFilter}
               barchasiLabel={tr('Barchasi')}
-              className="select !w-auto !py-1.5 text-sm max-w-[170px]"
+              className="select !w-auto !py-1.5 text-sm max-w-[220px]"
             />
           </label>
 
-          <div className="w-[150px]">
-            <DateInput className="input" value={sana} onChange={(iso) => setSana(iso || bugunToshkent())} />
-          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="font-medium">{tr('Sana:')}</span>
+            <div className="w-[150px]">
+              <DateInput className="input !py-1.5 text-sm" value={sana} onChange={(iso) => setSana(iso || bugunToshkent())} />
+            </div>
+          </label>
 
           <HisobotYuklabOlish boshlangichSana={sana} xodimId={xodimFilter} />
         </div>
