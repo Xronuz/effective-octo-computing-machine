@@ -73,7 +73,7 @@ export default function MfySelect({ mfylar, value, onChange, barchasiLabel, clas
       </button>
 
       {ochiq && (
-        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lift">
+        <div className="absolute z-[1200] mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lift">
           <div className="relative border-b border-slate-100 p-2">
             <Search className="pointer-events-none absolute left-4.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
