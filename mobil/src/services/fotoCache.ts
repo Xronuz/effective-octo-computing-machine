@@ -44,9 +44,9 @@ function ensureDir(): void {
  * @returns lokal fayl yo'li yoki null (xatolikda).
  */
 export async function downloadFoto(_muammoId: number, foto: FotoResponse): Promise<string | null> {
+  const file = fotoFile(foto);
   try {
     ensureDir();
-    const file = fotoFile(foto);
     const info = await file.info();
     if (!info.exists) {
       await FileSystem.File.downloadFileAsync(remoteFotoUrl(foto.fayl_yoli), file, {
@@ -55,6 +55,15 @@ export async function downloadFoto(_muammoId: number, foto: FotoResponse): Promi
     }
     return file.uri;
   } catch (err) {
+    // Android'da yuklash muvaffaqiyatsiz bo'lsa ham chala fayl qolib ketishi
+    // mumkin (masalan 404 javob tanasi yozilib qolganda) — shu fayl
+    // "mavjud" deb hisoblanib, keyingi urinishlar butunlay o'tkazib
+    // yuborilmasligi uchun tozalab qo'yamiz.
+    try {
+      if (file.exists) file.delete();
+    } catch {
+      // e'tiborsiz — keyingi urinishda qayta tozalanadi
+    }
     console.warn('Foto yuklashda xatolik:', foto.fayl_yoli, err);
     return null;
   }

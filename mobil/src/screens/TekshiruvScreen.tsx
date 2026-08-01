@@ -241,9 +241,19 @@ export default function TekshiruvScreen() {
   useEffect(() => {
     // `isInternetReachable`ga tayanmaymiz — u ba'zi tarmoqlarda internet
     // ishlayotgan bo'lsa ham noto'g'ri "false" bo'lib qolishi mumkin
-    // (services/sync.ts dagi izohga qarang).
+    // (services/sync.ts dagi izohga qarang). `isConnected`ning o'zi ham
+    // ba'zan bir lahzalik noto'g'ri "false" berishi kuzatildi — shuning
+    // uchun "oflayn" belgisini darhol emas, bir necha soniya shu holat
+    // davom etsagina qo'yamiz (debounce), aks holda foydalanuvchi haqiqiy
+    // internet bo'lsa ham qo'rqinchli banner ko'rib chalg'iydi.
+    let oflaynTaymer: ReturnType<typeof setTimeout> | null = null;
     const unsubNet = NetInfo.addEventListener((state) => {
-      setIsOffline(state.isConnected !== true);
+      if (oflaynTaymer) clearTimeout(oflaynTaymer);
+      if (state.isConnected === true) {
+        setIsOffline(false);
+      } else {
+        oflaynTaymer = setTimeout(() => setIsOffline(true), 2500);
+      }
     });
     setSyncCallback((s) => {
       setPendingCount(s.pendingCount);
@@ -252,6 +262,7 @@ export default function TekshiruvScreen() {
       .then(setPendingCount)
       .catch(() => {});
     return () => {
+      if (oflaynTaymer) clearTimeout(oflaynTaymer);
       unsubNet();
       setSyncCallback(() => {});
     };

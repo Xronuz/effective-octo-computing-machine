@@ -12,6 +12,11 @@ import { startTracking, stopTracking } from '../services/location';
 import { registerForPushNotifications } from '../services/push';
 import type { UserBrief, LoginResponse, ApiResponse } from '../types';
 
+// Bo'sh maydonlarni "-" bilan almashtirmaymiz — "-" ham "rost" qiymat
+// hisoblanib, `user.lavozim || user.rol || "Xodim"` kabi fallback
+// zanjirlarini buzadi (keyingi variantga o'tilmay qoladi). Bo'sh
+// qiymat uchun "-" ko'rsatish faqat UI qatlamida (SettingsScreen)
+// bajarilishi kerak.
 function normalizeUser(u: UserBrief): UserBrief {
   const familiya = u.familiya?.trim() || '';
   const ism = u.ism?.trim() || '';
@@ -21,9 +26,9 @@ function normalizeUser(u: UserBrief): UserBrief {
     familiya,
     ism,
     full_name: fullName,
-    guvohnoma_raqami: u.guvohnoma_raqami?.trim() || '-',
-    lavozim: u.lavozim?.trim() || '-',
-    telefon: u.telefon?.trim() || '-',
+    guvohnoma_raqami: u.guvohnoma_raqami?.trim() || '',
+    lavozim: u.lavozim?.trim() || '',
+    telefon: u.telefon?.trim() || '',
   };
 }
 

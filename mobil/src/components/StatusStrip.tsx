@@ -23,9 +23,17 @@ export default function StatusStrip() {
   useEffect(() => {
     // `isInternetReachable`ga tayanmaymiz — ba'zi tarmoqlarda internet
     // ishlayotgan bo'lsa ham noto'g'ri "false" bo'lib qolishi mumkin
-    // (services/sync.ts dagi izohga qarang).
+    // (services/sync.ts dagi izohga qarang). `isConnected`ning o'zi ham
+    // bir lahzalik noto'g'ri "false" berishi mumkin — shuning uchun holat
+    // bir necha soniya davom etsagina "oflayn" deb belgilanadi (debounce).
+    let oflaynTaymer: ReturnType<typeof setTimeout> | null = null;
     const unsubscribe = NetInfo.addEventListener((state) => {
-      setIsOffline(state.isConnected !== true);
+      if (oflaynTaymer) clearTimeout(oflaynTaymer);
+      if (state.isConnected === true) {
+        setIsOffline(false);
+      } else {
+        oflaynTaymer = setTimeout(() => setIsOffline(true), 2500);
+      }
     });
 
     const refreshCount = async () => {
@@ -39,6 +47,7 @@ export default function StatusStrip() {
     const interval = setInterval(refreshCount, 5000);
 
     return () => {
+      if (oflaynTaymer) clearTimeout(oflaynTaymer);
       unsubscribe();
       clearInterval(interval);
     };

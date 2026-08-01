@@ -157,17 +157,12 @@ let syncing = false;
 export async function syncNow(): Promise<{ yuborildi: number; xato: number }> {
   if (syncing) return { yuborildi: 0, xato: 0 };
 
-  // Faqat `isConnected`ga tayanamiz — `isInternetReachable` NetInfo'ning
-  // ichki (odatda Google) ulanish-tekshiruv URL'iga bog'liq va u ba'zi
-  // tarmoq/hotspot'larda bloklanib, internet aslida ishlayotgan bo'lsa ham
-  // noto'g'ri "false" qaytarib, sinxronlashni butunlay to'xtatib qo'yardi.
-  // Haqiqiy tarmoq xatosi bo'lsa, so'rovning o'zi xato beradi va pastdagi
-  // backoff logikasi ishlaydi.
-  const net = await NetInfo.fetch();
-  if (net.isConnected !== true) {
-    return { yuborildi: 0, xato: 0 };
-  }
-
+  // NetInfo holatiga UMUMAN tayanmaymiz — ba'zi qurilma/tarmoqlarda
+  // (shu jumladan `isConnected`ning o'zi ham) internet aslida ishlayotgan
+  // bo'lsa ham noto'g'ri "false" qaytarishi kuzatildi, bu esa sinxronlashni
+  // butunlay to'xtatib qo'yardi (navbat cheksiz o'sib borardi). Endi doim
+  // urinamiz — haqiqiy tarmoq xatosi bo'lsa, so'rovning o'zi xato beradi va
+  // pastdagi backoff logikasi ishlaydi.
   syncing = true;
   await notifyStatus(true);
 
@@ -231,12 +226,13 @@ export function setupAutoSync(): void {
   if (autoSyncStarted) return;
   autoSyncStarted = true;
 
-  // Tarmoq qaytganda darhol sinxronlash (muammolar + to'plangan GPS nuqtalar)
-  NetInfo.addEventListener((state) => {
-    if (state.isConnected === true) {
-      syncNow();
-      flushPendingLocations().catch(() => {});
-    }
+  // Tarmoq holati o'zgarganda darhol urinib ko'ramiz (muammolar + to'plangan
+  // GPS nuqtalar) — `isConnected` qiymatiga shart qo'ymaymiz, chunki u ham
+  // ba'zan ishonchsiz (yuqoridagi izohga qarang). Haqiqatda oflayn bo'lsa,
+  // so'rovning o'zi xato beradi.
+  NetInfo.addEventListener(() => {
+    syncNow();
+    flushPendingLocations().catch(() => {});
   });
 
   // 30 soniyalik davriy sinxronlash
