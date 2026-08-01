@@ -42,6 +42,9 @@ class AktivXodimResponse(BaseModel):
     aniqlik: float | None = None
     batareya: int | None = None
     ohirgi_vaqt: datetime | str
+    # Xarita markerida avatar ko'rsatish uchun — web tomoni buni kutardi,
+    # lekin javobda umuman qaytmasdi (marker doim bosh harflar bilan chizilardi)
+    profil_foto_url: str | None = None
 
 
 class LokatsiyaBatchKiruvchi(BaseModel):

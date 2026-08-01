@@ -186,6 +186,11 @@ export async function startTracking(): Promise<boolean> {
       console.warn('Lokatsiya (foreground) ruxsati berilmadi');
       return false;
     }
+
+    // Foreground kuzatuv har doim yoqiladi — background ishlamasa ham
+    // (Expo Go/Android) hech bo'lmasa ilova ochiq paytdagi nuqtalar yoziladi.
+    await startForegroundTracking();
+
     const background = await Location.requestBackgroundPermissionsAsync();
     if (background.status !== 'granted') {
       console.warn('Lokatsiya (background) ruxsati berilmadi');
@@ -227,6 +232,84 @@ export async function stopTracking(): Promise<void> {
   } catch (err) {
     console.warn("Lokatsiya kuzatuvini to'xtatishda xato:", err);
   }
+  await stopForegroundTracking();
+}
+
+// ── Foreground kuzatuv ──────────────────────────────────
+//
+// Background kuzatuv (startLocationUpdatesAsync) Expo Go'da ANDROIDDA
+// UMUMAN ishlamaydi — expo-location o'zi ogohlantiradi: "On Android, it is
+// not available at all". Natijada dev-build'siz sinovda birorta ham GPS
+// nuqta yozilmasdi va xaritadagi "faol xodimlar" doim bo'sh qolardi.
+//
+// Shu sabab ilova OCHIQ bo'lganda ishlaydigan zaxira kuzatuv qo'shildi:
+// u Expo Go'da ham, dev-build'da ham ishlaydi. Background kuzatuv mavjud
+// bo'lsa, u baribir ustunlik qiladi (bu faqat qo'shimcha qatlam).
+
+let foregroundSub: Location.LocationSubscription | null = null;
+
+/** Foreground kuzatuv hozir faolmi. */
+export function isForegroundTracking(): boolean {
+  return foregroundSub !== null;
+}
+
+/**
+ * Ilova ochiq bo'lganda GPS kuzatuvni boshlash.
+ * Faqat foreground ruxsati kerak — background ruxsatisiz ham ishlaydi.
+ */
+export async function startForegroundTracking(): Promise<boolean> {
+  if (foregroundSub) return true;
+  if (!isWorkHours()) return false;
+
+  try {
+    const ruxsat = await Location.requestForegroundPermissionsAsync();
+    if (ruxsat.status !== 'granted') return false;
+
+    foregroundSub = await Location.watchPositionAsync(
+      {
+        accuracy: Location.Accuracy.Balanced,
+        timeInterval: 60_000,
+        distanceInterval: 30,
+      },
+      async (loc) => {
+        if (!isWorkHours()) {
+          await stopForegroundTracking();
+          return;
+        }
+        const battery = await getBatteryPercent();
+        await appendPending([
+          {
+            lat: loc.coords.latitude,
+            lng: loc.coords.longitude,
+            aniqlik: loc.coords.accuracy ?? null,
+            tezlik: loc.coords.speed != null && loc.coords.speed >= 0 ? loc.coords.speed : null,
+            batareya: battery,
+            mock_gps: loc.mocked ?? false,
+            qurilma_vaqti: new Date(loc.timestamp).toISOString(),
+          },
+        ]);
+        const count = await getPendingLocationCount();
+        if (count >= FLUSH_THRESHOLD) await flushPendingLocations();
+      },
+    );
+    return true;
+  } catch (err) {
+    console.warn('Foreground lokatsiya kuzatuvini boshlashda xato:', err);
+    foregroundSub = null;
+    return false;
+  }
+}
+
+/** Foreground kuzatuvni to'xtatish. */
+export async function stopForegroundTracking(): Promise<void> {
+  try {
+    foregroundSub?.remove();
+  } catch {
+    // subscription allaqachon yopilgan
+  }
+  foregroundSub = null;
+  // Ilova yopilishidan oldin to'plangan nuqtalarni yuborishga urinamiz
+  await flushPendingLocations().catch(() => {});
 }
 
 /** Hali backendga yuborilmagan nuqtalar soni (UI indikator uchun). */

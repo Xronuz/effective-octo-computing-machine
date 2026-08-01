@@ -84,6 +84,7 @@ async def get_aktiv_xodimlar(
                 ll.lng,
                 ll.aniqlik,
                 ll.batareya,
+                u.profil_foto_url,
                 ll.qabul_vaqti as ohirgi_vaqt
             FROM lokatsiya_log ll
             JOIN users u ON u.id = ll.xodim_id
@@ -102,6 +103,7 @@ async def get_aktiv_xodimlar(
             lng=r.lng,
             aniqlik=r.aniqlik,
             batareya=r.batareya,
+            profil_foto_url=r.profil_foto_url,
             ohirgi_vaqt=r.ohirgi_vaqt.isoformat() if r.ohirgi_vaqt else "",
         )
         for r in rows

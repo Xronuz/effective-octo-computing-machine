@@ -59,6 +59,7 @@ def _make_row(**overrides):
         lng=69.240562,
         aniqlik=10.0,
         batareya=80,
+        profil_foto_url=None,
         ohirgi_vaqt=datetime(2026, 7, 16, 10, 30, 0, tzinfo=timezone.utc),
     )
     defaults.update(overrides)

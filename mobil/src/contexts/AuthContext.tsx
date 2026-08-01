@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 import api, { setLogoutHandler } from '../services/api';
 import {
   getAccessToken,
@@ -113,6 +114,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       stopTracking().catch(() => {});
     });
   }, []);
+
+  // Kuzatuvni ilova har faollashganda qayta urinamiz. Avval u faqat login
+  // paytida bir marta ishga tushirilardi: agar xodim ish vaqtidan oldin
+  // (masalan 08:30 da) kirgan bo'lsa, `isWorkHours()` false qaytarib,
+  // o'sha kuni GPS umuman yozilmasdi.
+  useEffect(() => {
+    if (user?.rol !== 'xodim') return;
+
+    const urin = () => {
+      startTracking().catch(() => {});
+    };
+    urin();
+
+    const sub = AppState.addEventListener('change', (holat) => {
+      if (holat === 'active') urin();
+    });
+    // Ish vaqti boshlanishini kutish uchun davriy urinish (ilova ochiq bo'lsa)
+    const interval = setInterval(urin, 5 * 60_000);
+
+    return () => {
+      sub.remove();
+      clearInterval(interval);
+    };
+  }, [user?.rol]);
 
   const login = async (gr: string, parol: string): Promise<string | null> => {
     try {
