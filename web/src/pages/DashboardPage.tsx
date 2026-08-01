@@ -158,9 +158,6 @@ export default function DashboardPage() {
         <SkeletonCards count={4} />
       ) : (
         <>
-          {/* Kunlik tekshiruvlar — kim nechta xonadon tekshirdi */}
-          <KunlikTekshiruvPanel />
-
           {/* Statistik kartalar */}
           <section
             aria-label={tr('Asosiy statistika')}
@@ -190,6 +187,9 @@ export default function DashboardPage() {
               </div>
             ))}
           </section>
+
+          {/* Kunlik tekshiruvlar — kim nechta xonadon tekshirdi */}
+          <KunlikTekshiruvPanel />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Oylik dinamika */}

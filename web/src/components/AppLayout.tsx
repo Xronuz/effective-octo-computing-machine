@@ -1,7 +1,7 @@
 // XAVFSIZ XONADON — App shell layout
 // Floating navy pill sidebar (yig'iq/kengayuvchan) + yuqori header panel.
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -56,12 +56,34 @@ function pageTitle(pathname: string): string {
   return match?.label ?? 'Asosiy';
 }
 
+/** Bundan tor ekranlarda (noutbuk/proyektor, 1024-1440px) sidebar avtomatik
+ *  yig'iladi — jadval ustunlari sig'ishi uchun kontentga ko'proq joy beradi. */
+const SIDEBAR_AUTOYIGISH_KENGLIK = 1440;
+
 export function AppLayout() {
   const { user, logout, isRahbar } = useAuth();
   const { krill, setKrill, tr } = useAlifbo();
   const navigate = useNavigate();
   const location = useLocation();
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(
+    () => typeof window === 'undefined' || window.innerWidth >= SIDEBAR_AUTOYIGISH_KENGLIK,
+  );
+  // Foydalanuvchi qo'lda tugma bosgach, keyingi resize'lar uni avtomatik qayta ochib/yopib qo'ymasligi kerak
+  const qoldaOzgartirildi = useRef(false);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (qoldaOzgartirildi.current) return;
+      setExpanded(window.innerWidth >= SIDEBAR_AUTOYIGISH_KENGLIK);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const toggleExpanded = () => {
+    qoldaOzgartirildi.current = true;
+    setExpanded((v) => !v);
+  };
 
   const handleLogout = () => {
     logout();
@@ -172,7 +194,7 @@ export function AppLayout() {
         <div className="space-y-1 px-3 pb-5 pt-2">
           <button
             type="button"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={toggleExpanded}
             aria-label={expanded ? "Yig'ish" : 'Kengaytirish'}
             className={`flex w-full items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium text-white/60 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white ${
               expanded ? '' : 'justify-center px-0'
@@ -321,7 +343,7 @@ export function AppLayout() {
         </header>
 
         {/* Sahifa kontenti */}
-        <main className="mx-auto max-w-[1440px] p-6 pb-24 lg:pb-6">
+        <main className="mx-auto max-w-[1440px] p-4 pb-24 2xl:p-6 lg:pb-6">
           <Outlet />
         </main>
       </div>

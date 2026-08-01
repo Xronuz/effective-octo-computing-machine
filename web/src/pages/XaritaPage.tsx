@@ -452,7 +452,7 @@ export default function XaritaPage() {
             value={selectedMfyId !== null ? String(selectedMfyId) : ''}
             onChange={handleMfyTanlash}
             barchasiLabel={tr('Tanlang…')}
-            className="select !w-auto !py-1.5 text-sm max-w-[380px]"
+            className="select !w-auto !py-1.5 text-sm max-w-[480px]"
           />
         </label>
 

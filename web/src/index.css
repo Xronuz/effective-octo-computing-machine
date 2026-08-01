@@ -225,6 +225,20 @@
   .table tbody tr:last-child td {
     border-bottom: none;
   }
+  /* Noutbuk/proyektor ekranlarida (<=1440px) ustunlar sig'ishi uchun
+     jadval zichroq — gorizontal scrollbar chiqishi kamayadi. */
+  @media (max-width: 1440px) {
+    .table :where(thead th),
+    .table :where(tbody td) {
+      padding-left: 0.625rem;
+      padding-right: 0.625rem;
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    .table :where(tbody td) {
+      font-size: 0.8125rem;
+    }
+  }
 
   /* ── Bo'sh holat ──────────────────────────────────────── */
   .empty-state {
