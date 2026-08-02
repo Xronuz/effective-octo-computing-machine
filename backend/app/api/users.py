@@ -8,10 +8,11 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select, func, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_db, get_current_user, require_role
-from app.core.exceptions import NotFoundException, RoyxatException
+from app.core.exceptions import NotFoundException, RoyxatException, ConflictException
 from app.models.user import User, UserRole, UserStatus, XodimMfy
 from app.models.hudud import Mfy
 from app.schemas.auth import UserResponse, MfyBiriktirishRequest, UserUpdateRequest
@@ -283,6 +284,54 @@ async def bloklash(
     }
 
 
+# ============ PATCH /api/users/{id}/faollashtirish ============
+
+@router.patch("/{user_id}/faollashtirish")
+async def faollashtirish(
+    user_id: int,
+    request: Request,
+    current_user: User = Depends(require_role("rahbar", "superadmin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Bloklangan foydalanuvchini qayta faollashtirish.
+    holat: bloklangan → faol.
+    """
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise NotFoundException("Foydalanuvchi", user_id)
+
+    if user.holat != UserStatus.bloklangan:
+        raise RoyxatException(
+            f"Bu foydalanuvchini faollashtirib bo'lmaydi. Hozirgi holati: {user.holat.value}"
+        )
+
+    user.holat = UserStatus.faol
+    await db.flush()
+
+    ip, user_agent = _ip_ua(request)
+    await audit_yozish(
+        db,
+        user_id=current_user.id,
+        amal="user.faollashtirish",
+        obyekt_turi="users",
+        obyekt_id=user.id,
+        eski_qiymat={"holat": UserStatus.bloklangan.value},
+        yangi_qiymat={"holat": UserStatus.faol.value},
+        ip=ip,
+        user_agent=user_agent,
+    )
+
+    logger.info(f"Faollashtirildi: user_id={user.id} → {current_user.guvohnoma_raqami} tomonidan")
+
+    return {
+        "ok": True,
+        "data": {"xabar": f"{user.full_name} qayta faollashtirildi."},
+        "xato": None,
+    }
+
+
 # ============ POST /api/users/{id}/mfy ============
 
 @router.post("/{user_id}/mfy")
@@ -415,5 +464,65 @@ async def mfy_ajratish(
     return {
         "ok": True,
         "data": {"xabar": "MFY biriktirish bekor qilindi."},
+        "xato": None,
+    }
+
+
+# ============ DELETE /api/users/{id} ============
+
+@router.delete("/{user_id}")
+async def foydalanuvchi_ochirish(
+    user_id: int,
+    request: Request,
+    current_user: User = Depends(require_role("rahbar", "superadmin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Foydalanuvchini butunlay o'chirish.
+    Agar unga bog'liq tarixiy ma'lumotlar (tashriflar, topshiriqlar,
+    intizom, audit) bo'lsa — o'chirib bo'lmaydi, buning o'rniga
+    bloklash tavsiya etiladi.
+    """
+    if current_user.id == user_id:
+        raise RoyxatException("O'zingizni o'chira olmaysiz.")
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise NotFoundException("Foydalanuvchi", user_id)
+
+    if user.rol == UserRole.superadmin and current_user.rol != UserRole.superadmin:
+        raise RoyxatException("Superadmin faqat boshqa superadmin tomonidan o'chirilishi mumkin.")
+
+    full_name = user.full_name
+    guvohnoma = user.guvohnoma_raqami
+
+    await db.delete(user)
+    try:
+        await db.flush()
+    except IntegrityError:
+        raise ConflictException(
+            f"{full_name} ni o'chirib bo'lmaydi — unga bog'liq tarixiy ma'lumotlar "
+            f"(tashriflar, topshiriqlar yoki intizom yozuvlari) mavjud. "
+            f"Buning o'rniga bloklashdan foydalaning."
+        )
+
+    ip, user_agent = _ip_ua(request)
+    await audit_yozish(
+        db,
+        user_id=current_user.id,
+        amal="user.ochirish",
+        obyekt_turi="users",
+        obyekt_id=user_id,
+        eski_qiymat={"guvohnoma_raqami": guvohnoma, "full_name": full_name},
+        ip=ip,
+        user_agent=user_agent,
+    )
+
+    logger.info(f"O'chirildi: user_id={user_id} ({guvohnoma}) → {current_user.guvohnoma_raqami} tomonidan")
+
+    return {
+        "ok": True,
+        "data": {"xabar": f"{full_name} o'chirildi."},
         "xato": None,
     }

@@ -1,8 +1,8 @@
 // XAVFSIZ XONADON — Foydalanuvchilar boshqaruvi (rahbar / superadmin)
 
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Users, X, Check, Ban, MapPin, Pencil } from 'lucide-react';
-import { apiGet, apiPatch, apiPost } from '@/api';
+import { ChevronLeft, ChevronRight, Users, X, Pencil, Trash2 } from 'lucide-react';
+import { apiGet, apiPatch, apiPost, apiDelete } from '@/api';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
 import { krilldanLotinga, mfyNomiTozala } from '@/lib/alifbo';
@@ -316,6 +316,27 @@ export default function BoshqaruvPage() {
     }
   };
 
+  const faollashtirish = async (id: number) => {
+    const res = await apiPatch(`/users/${id}/faollashtirish`);
+    if (res.ok) {
+      fetchUsers();
+    } else {
+      alert(res.xato || tr('Faollashtirishda xatolik'));
+    }
+  };
+
+  const ochirish = async (u: Foydalanuvchi) => {
+    if (!window.confirm(tr(`${u.full_name} butunlay o'chirilsinmi? Bu amalni orqaga qaytarib bo'lmaydi.`))) {
+      return;
+    }
+    const res = await apiDelete(`/users/${u.id}`);
+    if (res.ok) {
+      fetchUsers();
+    } else {
+      alert(res.xato || tr("O'chirishda xatolik"));
+    }
+  };
+
   // ── pagination helpers ───────────────────────────────────────────
   const pageNumbers = () => {
     const pages: (number | '...')[] = [];
@@ -421,7 +442,7 @@ export default function BoshqaruvPage() {
                 <th className="text-center">{tr('Holat')}</th>
                 <th className="text-center">{tr('Telefon')}</th>
                 <th className="text-center">{tr('MFY lar')}</th>
-                <th className="w-28 text-center">{tr('Amallar')}</th>
+                <th className="min-w-[210px] text-center">{tr('Amallar')}</th>
               </tr>
             </thead>
             <tbody>
@@ -458,40 +479,42 @@ export default function BoshqaruvPage() {
                         : '—'}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      {/* Tasdiqlash — only for kutilmoqda */}
+                  <td className="text-center">
+                    <div className="flex flex-wrap items-center justify-center gap-1.5">
+                      {/* Tasdiqlash — faqat kutilmoqda */}
                       {u.holat === 'kutilmoqda' && (
                         <button
                           onClick={() => tasdiqlash(u.id)}
-                          title={tr('Tasdiqlash')}
-                          aria-label={tr('Tasdiqlash')}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg text-green-600 transition-colors hover:bg-green-50"
+                          className="btn-primary px-3 py-1.5 text-xs"
                         >
-                          <Check className="h-4 w-4" />
+                          {tr('Tasdiqlash')}
                         </button>
                       )}
 
-                      {/* Bloklash — only for faol */}
+                      {/* Bloklash — faol bo'lsa; Faollashtirish — bloklangan bo'lsa (toggle) */}
                       {u.holat === 'faol' && (
                         <button
                           onClick={() => bloklash(u.id)}
-                          title={tr('Bloklash')}
-                          aria-label={tr('Bloklash')}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50"
+                          className="btn-danger px-3 py-1.5 text-xs"
                         >
-                          <Ban className="h-4 w-4" />
+                          {tr('Bloklash')}
+                        </button>
+                      )}
+                      {u.holat === 'bloklangan' && (
+                        <button
+                          onClick={() => faollashtirish(u.id)}
+                          className="btn-primary px-3 py-1.5 text-xs"
+                        >
+                          {tr('Faollashtirish')}
                         </button>
                       )}
 
                       {/* MFY biriktirish */}
                       <button
                         onClick={() => setMfyUser(u)}
-                        title={tr('MFY biriktirish')}
-                        aria-label={tr('MFY biriktirish')}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
+                        className="btn-soft px-3 py-1.5 text-xs"
                       >
-                        <MapPin className="h-4 w-4" />
+                        {tr('MFY biriktirish')}
                       </button>
 
                       {/* Tahrirlash */}
@@ -499,9 +522,19 @@ export default function BoshqaruvPage() {
                         onClick={() => setTahrirUser(u)}
                         title={tr('Tahrirlash')}
                         aria-label={tr('Tahrirlash')}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
+                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
                       >
                         <Pencil className="h-4 w-4" />
+                      </button>
+
+                      {/* O'chirish */}
+                      <button
+                        onClick={() => ochirish(u)}
+                        title={tr("O'chirish")}
+                        aria-label={tr("O'chirish")}
+                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
