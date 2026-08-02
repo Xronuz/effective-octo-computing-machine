@@ -250,7 +250,7 @@ function TahrirlashModal({ user, onClose, onSaved }: TahrirlashModalProps) {
 // ── asosiy sahifa ────────────────────────────────────────────────────
 
 export default function BoshqaruvPage() {
-  const { isSuperadmin } = useAuth();
+  const { isSuperadmin, user: currentUser } = useAuth();
   const { tr } = useAlifbo();
 
   // Filters
@@ -437,16 +437,18 @@ export default function BoshqaruvPage() {
               <tr>
                 <th className="w-10 text-center">#</th>
                 <th className="sticky left-0 z-20 bg-white text-left">{tr('F.I.Sh')}</th>
-                <th className="text-center">{tr('Guvohnoma')}</th>
+                <th className="hidden text-center lg:table-cell">{tr('Guvohnoma')}</th>
                 <th className="text-center">{tr('Rol')}</th>
                 <th className="text-center">{tr('Holat')}</th>
-                <th className="text-center">{tr('Telefon')}</th>
-                <th className="text-center">{tr('MFY lar')}</th>
+                <th className="hidden text-center xl:table-cell">{tr('Telefon')}</th>
+                <th className="hidden text-center xl:table-cell">{tr('MFY lar')}</th>
                 <th className="min-w-[210px] text-center">{tr('Amallar')}</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u, idx) => (
+              {users.map((u, idx) => {
+                const isSelf = u.id === currentUser?.id;
+                return (
                 <tr key={u.id}>
                   <td className="whitespace-nowrap text-center text-slate-400 tabular-nums">
                     {(page - 1) * 20 + idx + 1}
@@ -454,7 +456,7 @@ export default function BoshqaruvPage() {
                   <td className="sticky left-0 z-[5] whitespace-nowrap bg-[var(--bg-surface)] text-left font-medium text-[#0F2033]">
                     {tr(u.full_name)}
                   </td>
-                  <td className="whitespace-nowrap text-center text-slate-500">
+                  <td className="hidden whitespace-nowrap text-center text-slate-500 lg:table-cell">
                     {u.guvohnoma_raqami}
                   </td>
                   <td className="whitespace-nowrap text-center">
@@ -467,10 +469,10 @@ export default function BoshqaruvPage() {
                       {tr(holatLabels[u.holat] || u.holat)}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap text-center text-slate-500">
+                  <td className="hidden whitespace-nowrap text-center text-slate-500 xl:table-cell">
                     {u.telefon || '—'}
                   </td>
-                  <td className="max-w-[200px] text-center text-slate-500">
+                  <td className="hidden max-w-[200px] text-center text-slate-500 xl:table-cell">
                     <span className="block truncate">
                       {u.mfy_biriktirishlar?.length
                         ? u.mfy_biriktirishlar
@@ -491,8 +493,9 @@ export default function BoshqaruvPage() {
                         </button>
                       )}
 
-                      {/* Bloklash — faol bo'lsa; Faollashtirish — bloklangan bo'lsa (toggle) */}
-                      {u.holat === 'faol' && (
+                      {/* Bloklash — faol bo'lsa; Faollashtirish — bloklangan bo'lsa (toggle).
+                          O'zini bloklay olmasligi uchun — o'z qatorida ko'rsatilmaydi. */}
+                      {!isSelf && u.holat === 'faol' && (
                         <button
                           onClick={() => bloklash(u.id)}
                           className="btn-danger px-3 py-1.5 text-xs"
@@ -500,7 +503,7 @@ export default function BoshqaruvPage() {
                           {tr('Bloklash')}
                         </button>
                       )}
-                      {u.holat === 'bloklangan' && (
+                      {!isSelf && u.holat === 'bloklangan' && (
                         <button
                           onClick={() => faollashtirish(u.id)}
                           className="btn-primary px-3 py-1.5 text-xs"
@@ -527,19 +530,22 @@ export default function BoshqaruvPage() {
                         <Pencil className="h-4 w-4" />
                       </button>
 
-                      {/* O'chirish */}
-                      <button
-                        onClick={() => ochirish(u)}
-                        title={tr("O'chirish")}
-                        aria-label={tr("O'chirish")}
-                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {/* O'chirish — o'zini o'chira olmasligi uchun o'z qatorida ko'rsatilmaydi */}
+                      {!isSelf && (
+                        <button
+                          onClick={() => ochirish(u)}
+                          title={tr("O'chirish")}
+                          aria-label={tr("O'chirish")}
+                          className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

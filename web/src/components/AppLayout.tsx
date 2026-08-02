@@ -105,6 +105,7 @@ export function AppLayout() {
   };
 
   const handleLogout = () => {
+    if (!window.confirm(tr('Rostdan ham tizimdan chiqmoqchimisiz?'))) return;
     logout();
     navigate('/kirish');
   };
