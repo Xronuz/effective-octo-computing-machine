@@ -958,6 +958,29 @@ class TestYopMuammoEndpoint:
             resp = client.post("/api/muammolar/999/yop", json={"ornida_bartaraf": True})
             assert resp.status_code == 404
 
+    def test_yop_allaqachon_yopilgan_rad_etiladi(self, client_factory):
+        """Allaqachon yopilgan muammoni qayta yopishga urinish — 422, cheksiz qayta yopishning oldi olinadi."""
+        mock_user = _make_user(rol=UserRole.rahbar)
+        mock_db = AsyncMock()
+
+        mock_muammo = MagicMock()
+        mock_muammo.xodim_id = 1
+        mock_muammo.status = MuammoStatus.yopilgan
+
+        with patch.object(muammo_service, "get_muammo", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_muammo
+
+            client = client_factory(
+                user_override=lambda: mock_user,
+                db_override=lambda: mock_db,
+            )
+
+            resp = client.post("/api/muammolar/1/yop", json={"ornida_bartaraf": True})
+            assert resp.status_code == 422
+            assert resp.json()["ok"] is False
+            # DB'ga hech narsa yozilmasligi kerak — status tekshiruvi flush'dan oldin bo'ladi
+            mock_db.flush.assert_not_called()
+
 
 # ============ POST /api/muammolar/{muammo_id}/fotolar ============
 

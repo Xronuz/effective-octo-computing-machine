@@ -377,7 +377,7 @@ async def mfy_biriktirish(
     # faqat bitta inspektorga tegishli bo'lishi kerak (aks holda ikkalasi
     # ham "mening xonadonlarim"da bir xil uylarni ko'radi).
     result = await db.execute(
-        select(XodimMfy, User.full_name)
+        select(XodimMfy, User)
         .join(User, User.id == XodimMfy.xodim_id)
         .where(
             XodimMfy.mfy_id.in_(body.mfy_ids),
@@ -385,7 +385,11 @@ async def mfy_biriktirish(
             XodimMfy.faol.is_(True),
         )
     )
-    boshqalarga_biriktirilgan = {row[0].mfy_id: (row[0], row[1]) for row in result.all()}
+    # `User.full_name` DB ustuni emas, Python property — SELECT ichida
+    # ishlatib bo'lmaydi, shuning uchun butun User obyekti tanlab olinadi.
+    boshqalarga_biriktirilgan = {
+        row[0].mfy_id: (row[0], row[1].full_name) for row in result.all()
+    }
 
     if boshqalarga_biriktirilgan and not body.majburiy:
         ziddiyat = [
