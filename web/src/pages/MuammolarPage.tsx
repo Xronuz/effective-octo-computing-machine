@@ -236,13 +236,13 @@ export default function MuammolarPage() {
                   <th className="text-center">#</th>
                   <th className="text-center">{tr('Natija')}</th>
                   <th className="text-center">{tr('MFY')}</th>
-                  <th className="text-center">{tr("Ko'cha")}</th>
-                  <th className="text-center">{tr('Uy raqam')}</th>
-                  <th className="text-center">{tr('Xonadon egasi')}</th>
-                  <th className="text-center">{tr('Telefon raqam')}</th>
-                  <th className="text-center">{tr("Taklif etilgan yong'inga qarshi tadbirlar")}</th>
-                  <th className="text-center">{tr("Yo'riqnomadan o'tkanlar soni")}</th>
-                  <th className="text-center">{tr('Inspector')}</th>
+                  <th className="hidden text-center md:table-cell">{tr("Ko'cha")}</th>
+                  <th className="hidden text-center lg:table-cell">{tr('Uy raqam')}</th>
+                  <th className="hidden text-center xl:table-cell">{tr('Xonadon egasi')}</th>
+                  <th className="hidden text-center xl:table-cell">{tr('Telefon raqam')}</th>
+                  <th className="hidden text-center 2xl:table-cell">{tr("Taklif etilgan yong'inga qarshi tadbirlar")}</th>
+                  <th className="hidden text-center 2xl:table-cell">{tr("Yo'riqnomadan o'tkanlar soni")}</th>
+                  <th className="hidden text-center lg:table-cell">{tr('Inspector')}</th>
                   <th className="text-center">{tr('Amallar')}</th>
                 </tr>
               </thead>
@@ -264,15 +264,15 @@ export default function MuammolarPage() {
                       </div>
                     </td>
                     <td className="text-center font-medium text-[#0F2033]">{m.mfy_nomi ? tr(m.mfy_nomi) : '—'}</td>
-                    <td className="text-center text-slate-600">{m.kocha_nomi ? tr(m.kocha_nomi) : '—'}</td>
-                    <td className="text-center text-slate-600">{m.uy_raqami || '—'}</td>
-                    <td className="text-center text-slate-600">{m.egasi_fio ? tr(m.egasi_fio) : '—'}</td>
-                    <td className="text-center text-slate-600">{m.egasi_tel || '—'}</td>
-                    <td className="max-w-[260px] text-center text-xs text-slate-500">
+                    <td className="hidden text-center text-slate-600 md:table-cell">{m.kocha_nomi ? tr(m.kocha_nomi) : '—'}</td>
+                    <td className="hidden text-center text-slate-600 lg:table-cell">{m.uy_raqami || '—'}</td>
+                    <td className="hidden text-center text-slate-600 xl:table-cell">{m.egasi_fio ? tr(m.egasi_fio) : '—'}</td>
+                    <td className="hidden text-center text-slate-600 xl:table-cell">{m.egasi_tel || '—'}</td>
+                    <td className="hidden max-w-[260px] text-center text-xs text-slate-500 2xl:table-cell">
                       <span className="line-clamp-2">{m.taklif_etilgan_tadbirlar ? tr(m.taklif_etilgan_tadbirlar) : '—'}</span>
                     </td>
-                    <td className="text-center tabular-nums">{m.yoriqnomadan_otkanlar_soni ?? '—'}</td>
-                    <td className="text-center text-slate-600">{m.xodim_fio ? tr(m.xodim_fio) : '—'}</td>
+                    <td className="hidden text-center tabular-nums 2xl:table-cell">{m.yoriqnomadan_otkanlar_soni ?? '—'}</td>
+                    <td className="hidden text-center text-slate-600 lg:table-cell">{m.xodim_fio ? tr(m.xodim_fio) : '—'}</td>
                     <td className="text-center">
                       <Link to={`/muammolar/${m.id}`} className="btn-soft px-2 py-1 text-xs">{tr('Batafsil')}</Link>
                     </td>

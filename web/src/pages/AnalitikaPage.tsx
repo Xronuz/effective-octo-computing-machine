@@ -387,21 +387,21 @@ export default function AnalitikaPage() {
               <thead className="sticky top-0 z-10 bg-white">
                 <tr>
                   <th>{tr('MFY')}</th>
-                  <th className="text-center">{tr('Xonadon')}</th>
-                  <th className="text-center">{tr('Tekshirilgan')}</th>
+                  <th className="hidden text-center lg:table-cell">{tr('Xonadon')}</th>
+                  <th className="hidden text-center lg:table-cell">{tr('Tekshirilgan')}</th>
                   <th className="text-center">{tr('Ochiq muammo')}</th>
-                  <th className="text-center">{tr('Yopilgan')}</th>
+                  <th className="hidden text-center lg:table-cell">{tr('Yopilgan')}</th>
                   <th className="text-center">{tr('Foiz')}</th>
                 </tr>
               </thead>
               <tbody>
                 {mfylar.map((m) => (
                   <tr key={m.mfy_id}>
-                    <td className="font-medium text-[#0F2033]">{tr(m.mfy_nomi)}</td>
-                    <td className="text-center tabular-nums">{m.xonadon_soni}</td>
-                    <td className="text-center tabular-nums">{m.tekshirilgan}</td>
+                    <td className="max-w-[200px] truncate font-medium text-[#0F2033]">{tr(m.mfy_nomi)}</td>
+                    <td className="hidden text-center tabular-nums lg:table-cell">{m.xonadon_soni}</td>
+                    <td className="hidden text-center tabular-nums lg:table-cell">{m.tekshirilgan}</td>
                     <td className="text-center font-medium text-[#D9A441] tabular-nums">{m.ochiq_muammo}</td>
-                    <td className="text-center text-[#2E9E6B] tabular-nums">{m.yopilgan_muammo}</td>
+                    <td className="hidden text-center text-[#2E9E6B] tabular-nums lg:table-cell">{m.yopilgan_muammo}</td>
                     <td className="text-center">
                       <span
                         className={
@@ -531,10 +531,10 @@ export default function AnalitikaPage() {
                 <tr>
                   <th>{tr('Xodim')}</th>
                   <th className="text-right">{tr('Jami tashrif')}</th>
-                  <th className="text-right">{tr('Muammo topilgan')}</th>
+                  <th className="hidden text-right lg:table-cell">{tr('Muammo topilgan')}</th>
                   <th className="text-right">{tr('Ochiq')}</th>
-                  <th className="text-right">{tr('Yopilgan')}</th>
-                  <th className="text-right">{tr('Oxirgi faollik')}</th>
+                  <th className="hidden text-right lg:table-cell">{tr('Yopilgan')}</th>
+                  <th className="hidden text-right xl:table-cell">{tr('Oxirgi faollik')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -542,10 +542,10 @@ export default function AnalitikaPage() {
                   <tr key={x.xodim_id}>
                     <td className="font-medium text-[#0F2033]">{tr(x.xodim_fio)}</td>
                     <td className="text-right font-semibold tabular-nums">{x.jami_tekshirish}</td>
-                    <td className="text-right tabular-nums">{x.jami_muammo}</td>
+                    <td className="hidden text-right tabular-nums lg:table-cell">{x.jami_muammo}</td>
                     <td className="text-right text-[#D9A441] tabular-nums">{x.ochiq_muammo}</td>
-                    <td className="text-right text-[#2E9E6B] tabular-nums">{x.yopilgan_muammo}</td>
-                    <td className="text-right text-xs text-slate-400 whitespace-nowrap">
+                    <td className="hidden text-right text-[#2E9E6B] tabular-nums lg:table-cell">{x.yopilgan_muammo}</td>
+                    <td className="hidden text-right text-xs text-slate-400 whitespace-nowrap xl:table-cell">
                       {sanaVaqt(x.oxirgi_faollik)}
                     </td>
                   </tr>

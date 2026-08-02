@@ -320,10 +320,10 @@ export default function TopshiriqPage() {
               <tr>
                 <th className="w-10">#</th>
                 <th>{tr('Sarlavha')}</th>
-                <th>{tr('Xodim')}</th>
-                <th>{tr('MFY')}</th>
-                <th>{tr("Ko'cha")}</th>
-                <th>{tr('Muddat')}</th>
+                <th className="hidden lg:table-cell">{tr('Xodim')}</th>
+                <th className="hidden xl:table-cell">{tr('MFY')}</th>
+                <th className="hidden xl:table-cell">{tr("Ko'cha")}</th>
+                <th className="hidden lg:table-cell">{tr('Muddat')}</th>
                 <th>{tr('Holat')}</th>
               </tr>
             </thead>
@@ -341,16 +341,16 @@ export default function TopshiriqPage() {
                       </span>
                     )}
                   </td>
-                  <td className="whitespace-nowrap text-slate-500">
+                  <td className="hidden whitespace-nowrap text-slate-500 lg:table-cell">
                     {t.xodim_fio ? tr(t.xodim_fio) : `#${t.xodim_id}`}
                   </td>
-                  <td className="whitespace-nowrap text-slate-500">
+                  <td className="hidden whitespace-nowrap text-slate-500 xl:table-cell">
                     {t.mfy_nomi ? tr(t.mfy_nomi) : '—'}
                   </td>
-                  <td className="whitespace-nowrap text-slate-500">
+                  <td className="hidden whitespace-nowrap text-slate-500 xl:table-cell">
                     {t.kocha_nomi ? tr(t.kocha_nomi) : '—'}
                   </td>
-                  <td className="whitespace-nowrap text-slate-500">
+                  <td className="hidden whitespace-nowrap text-slate-500 lg:table-cell">
                     {sanaFormat(t.muddat)}
                   </td>
                   <td className="whitespace-nowrap">
