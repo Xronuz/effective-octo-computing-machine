@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import PullToRefresh from '../components/PullToRefresh';
 import api from '../services/api';
@@ -234,6 +235,21 @@ function ToliqXonadonlarKatalogi() {
     }, 400);
     return () => clearTimeout(timer);
   }, [search, fetchData]);
+
+  // Ekran qayta fokusga kelganda (masalan XonadonDetail'da muammoni yopib
+  // orqaga qaytilganda) "ochiq muammolar" belgisi eskirib qolmasligi uchun
+  // ro'yxatni qayta yuklaymiz.
+  const birinchiFokusRef = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (birinchiFokusRef.current) {
+        birinchiFokusRef.current = false;
+        return;
+      }
+      setPage(1);
+      fetchData(1, search);
+    }, [fetchData, search]),
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
