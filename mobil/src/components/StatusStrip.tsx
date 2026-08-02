@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import NetInfo from '@react-native-community/netinfo';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAlifbo } from '../contexts/AlifboContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { getKutilmaganSoni } from '../services/db';
 import { setSyncCallback, syncNow } from '../services/sync';
-import { Colors, Fonts, FontSizes, FontWeights } from '../theme';
+import { Fonts, FontSizes, FontWeights } from '../theme';
+import type { ColorPalette } from '../theme/colors';
 
 type StripState = 'offline' | 'yuborilmoqda' | 'pending' | 'synced';
 
@@ -18,6 +20,8 @@ type StripState = 'offline' | 'yuborilmoqda' | 'pending' | 'synced';
 export default function StatusStrip() {
   const navigation = useNavigation();
   const { tr } = useAlifbo();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [isOffline, setIsOffline] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -79,21 +83,21 @@ export default function StatusStrip() {
 
   const config: Record<StripState, { color: string; label: string }> = {
     synced: {
-      color: Colors.success,
+      color: colors.success,
       label: lastSync
         ? tr('Hammasi yuborilgan · {vaqt}').replace('{vaqt}', lastSync)
         : tr('Hammasi yuborilgan'),
     },
     yuborilmoqda: {
-      color: Colors.info,
+      color: colors.info,
       label: nQator('{n} ta tekshiruv yuborilmoqda...'),
     },
     pending: {
-      color: Colors.warning,
+      color: colors.warning,
       label: nQator('{n} ta tekshiruv yuborilishi kutilmoqda'),
     },
     offline: {
-      color: Colors.textMuted,
+      color: colors.textMuted,
       label:
         pendingCount > 0
           ? nQator("Internet yo'q · {n} ta tekshiruv saqlangan")
@@ -117,28 +121,30 @@ export default function StatusStrip() {
     >
       <View style={[styles.dot, { backgroundColor: c.color }]} />
       <Text style={[styles.label, { color: c.color }]}>{c.label}</Text>
-      <MaterialCommunityIcons name="chevron-right" size={16} color={Colors.textMuted} />
+      <MaterialCommunityIcons name="chevron-right" size={16} color={colors.textMuted} />
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
-  strip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 44,
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  label: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    fontWeight: FontWeights.medium,
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    strip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: 44,
+      paddingHorizontal: 16,
+      gap: 8,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    label: {
+      flex: 1,
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      fontWeight: FontWeights.medium,
+    },
+  });
+}

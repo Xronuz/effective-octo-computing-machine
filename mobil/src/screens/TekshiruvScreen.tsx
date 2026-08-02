@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -21,10 +21,12 @@ import SectionLabel from '../components/SectionLabel';
 import Button from '../components/Button';
 import PhotoPreview from '../components/PhotoPreview';
 import KameraModal, { useKameraRuxsati } from '../components/KameraModal';
-import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
+import { Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
 import type { ApiResponse, Xonadon } from '../types';
 import { YORIQNOMA_BANDLARI } from '../constants/yoriqnoma';
 import { useAlifbo } from '../contexts/AlifboContext';
+import { useTheme } from '../contexts/ThemeContext';
+import type { ColorPalette } from '../theme/colors';
 import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import * as Location from 'expo-location';
 
@@ -83,6 +85,8 @@ export default function TekshiruvScreen() {
   const route = useAppRoute<'Tekshiruv'>();
   const navigation = useAppNavigation();
   const { tr } = useAlifbo();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   // `majburiy` — oldingi ekranda "Baribir qayta tekshirish" tasdiqlangan
   const { xonadonId, majburiy = false } = route.params;
@@ -375,12 +379,12 @@ export default function TekshiruvScreen() {
   };
 
   const gpsStatusColor = locError
-    ? Colors.danger
+    ? colors.danger
     : gpsLocked
-      ? Colors.success
+      ? colors.success
       : gpsTimedOut
-        ? Colors.warning
-        : Colors.primary;
+        ? colors.warning
+        : colors.primary;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -390,17 +394,17 @@ export default function TekshiruvScreen() {
         <SectionLabel title={tr('Xonadon')} />
         {xonadonYuklanmoqda ? (
           <View style={styles.xonadonHeader}>
-            <ActivityIndicator size="small" color={Colors.primary} />
+            <ActivityIndicator size="small" color={colors.primary} />
           </View>
         ) : xonadonXato ? (
           <View style={styles.xonadonHeader}>
-            <MaterialCommunityIcons name="alert-circle" size={22} color={Colors.danger} />
+            <MaterialCommunityIcons name="alert-circle" size={22} color={colors.danger} />
             <Text style={[styles.xonadonAddress, { marginLeft: Spacing.sm }]}>{xonadonXato}</Text>
           </View>
         ) : (
           <View style={styles.xonadonHeader}>
             <View style={styles.xonadonIcon}>
-              <MaterialCommunityIcons name="home-map-marker" size={26} color={Colors.primary} />
+              <MaterialCommunityIcons name="home-map-marker" size={26} color={colors.primary} />
             </View>
             <View style={styles.xonadonInfo}>
               <Text style={styles.xonadonAddress} numberOfLines={2}>
@@ -428,7 +432,7 @@ export default function TekshiruvScreen() {
             <MaterialCommunityIcons
               name="check-circle-outline"
               size={24}
-              color={natija === 'yoq' ? Colors.textInverse : Colors.success}
+              color={natija === 'yoq' ? colors.textInverse : colors.success}
             />
             <Text
               style={[styles.muammoBormiText, natija === 'yoq' && styles.muammoBormiTextActive]}
@@ -446,7 +450,7 @@ export default function TekshiruvScreen() {
             <MaterialCommunityIcons
               name="alert-circle-outline"
               size={24}
-              color={natija === 'ha' ? Colors.textInverse : Colors.danger}
+              color={natija === 'ha' ? colors.textInverse : colors.danger}
             />
             <Text style={[styles.muammoBormiText, natija === 'ha' && styles.muammoBormiTextActive]}>
               {tr('Ha')}
@@ -465,7 +469,7 @@ export default function TekshiruvScreen() {
             <MaterialCommunityIcons
               name="door-closed-lock"
               size={22}
-              color={natija === 'kira_olmadi' ? Colors.textInverse : Colors.warning}
+              color={natija === 'kira_olmadi' ? colors.textInverse : colors.warning}
             />
             <Text
               style={[
@@ -501,7 +505,7 @@ export default function TekshiruvScreen() {
                     <MaterialCommunityIcons
                       name={active ? 'checkbox-marked' : 'checkbox-blank-outline'}
                       size={22}
-                      color={active ? Colors.primary : Colors.textMuted}
+                      color={active ? colors.primary : colors.textMuted}
                       style={styles.checklistIcon}
                     />
                     <Text style={styles.checklistNum}>{b.id}.</Text>
@@ -521,7 +525,7 @@ export default function TekshiruvScreen() {
                 value={tavsif}
                 onChangeText={setTavsif}
                 placeholder={tr("Qo'shimcha izoh...")}
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={colors.textMuted}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
@@ -551,8 +555,8 @@ export default function TekshiruvScreen() {
                     setMuddatQoliplangan('');
                   }
                 }}
-                trackColor={{ false: Colors.border, true: Colors.primaryLight }}
-                thumbColor={Colors.textInverse}
+                trackColor={{ false: colors.border, true: colors.primaryLight }}
+                thumbColor={colors.textInverse}
               />
             </View>
 
@@ -600,7 +604,7 @@ export default function TekshiruvScreen() {
                     <MaterialCommunityIcons
                       name="calendar-clock"
                       size={22}
-                      color={Colors.textMuted}
+                      color={colors.textMuted}
                       style={styles.inputIcon}
                     />
                     <TextInput
@@ -608,7 +612,7 @@ export default function TekshiruvScreen() {
                       value={muddatQoliplangan}
                       onChangeText={(v) => setMuddatQoliplangan(muddatTerishniFormatlash(v))}
                       placeholder="DD/MM/YYYY"
-                      placeholderTextColor={Colors.textMuted}
+                      placeholderTextColor={colors.textMuted}
                       keyboardType="number-pad"
                       maxLength={10}
                       autoCapitalize="none"
@@ -641,7 +645,7 @@ export default function TekshiruvScreen() {
                 value={tavsif}
                 onChangeText={setTavsif}
                 placeholder={tr("Qo'shimcha izoh...")}
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={colors.textMuted}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
@@ -657,7 +661,7 @@ export default function TekshiruvScreen() {
         {natija === 'kira_olmadi' && (
           <>
             <View style={styles.kiraOlmadiNote}>
-              <MaterialCommunityIcons name="information-outline" size={18} color={Colors.warning} />
+              <MaterialCommunityIcons name="information-outline" size={18} color={colors.warning} />
               <Text style={styles.kiraOlmadiNoteText}>
                 {tr(
                   "Bu xonadon bugun 'tekshirilgan' deb hisoblanmaydi — qayta tashrif uchun navbatda qoladi.",
@@ -673,7 +677,7 @@ export default function TekshiruvScreen() {
                 value={tavsif}
                 onChangeText={setTavsif}
                 placeholder={tr("Masalan: eshik ochilmadi, uyda hech kim yo'q edi...")}
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={colors.textMuted}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
@@ -694,7 +698,7 @@ export default function TekshiruvScreen() {
               <MaterialCommunityIcons
                 name="crosshairs-off"
                 size={22}
-                color={Colors.danger}
+                color={colors.danger}
                 style={{ marginRight: 10 }}
               />
               <Text style={styles.gpsError}>{locError}</Text>
@@ -717,14 +721,14 @@ export default function TekshiruvScreen() {
                     {gpsLocked ? tr('qulflangan') : tr('aniqlanmoqda...')}
                   </Text>
                 </View>
-                {!gpsLocked && <ActivityIndicator size="small" color={Colors.primary} />}
+                {!gpsLocked && <ActivityIndicator size="small" color={colors.primary} />}
               </View>
               {mockGps && (
                 <View style={[styles.gpsContent, { marginTop: Spacing.sm }]}>
                   <MaterialCommunityIcons
                     name="alert"
                     size={16}
-                    color={Colors.danger}
+                    color={colors.danger}
                     style={{ marginRight: 8 }}
                   />
                   <Text style={styles.gpsError}>{tr('Soxta (mock) GPS aniqlandi')}</Text>
@@ -749,7 +753,7 @@ export default function TekshiruvScreen() {
             </View>
           ) : (
             <View style={styles.gpsContent}>
-              <ActivityIndicator size="small" color={Colors.primary} style={{ marginRight: 10 }} />
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 10 }} />
               <Text style={styles.gpsAccuracy}>{tr('GPS aniqlanmoqda...')}</Text>
             </View>
           )}
@@ -784,6 +788,8 @@ export default function TekshiruvScreen() {
 
 // ── Oddiy +/- soni tanlovchi (klaviatura kerak emas) ──
 function Stepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const { colors } = useTheme();
+  const stepperStyles = useMemo(() => createStepperStyles(colors), [colors]);
   return (
     <View style={stepperStyles.row}>
       <TouchableOpacity
@@ -793,7 +799,7 @@ function Stepper({ value, onChange }: { value: number; onChange: (v: number) => 
         accessibilityRole="button"
         accessibilityLabel="Kamaytirish"
       >
-        <MaterialCommunityIcons name="minus" size={22} color={Colors.primary} />
+        <MaterialCommunityIcons name="minus" size={22} color={colors.primary} />
       </TouchableOpacity>
       <Text style={stepperStyles.value}>{value}</Text>
       <TouchableOpacity
@@ -803,269 +809,273 @@ function Stepper({ value, onChange }: { value: number; onChange: (v: number) => 
         accessibilityRole="button"
         accessibilityLabel="Ko'paytirish"
       >
-        <MaterialCommunityIcons name="plus" size={22} color={Colors.primary} />
+        <MaterialCommunityIcons name="plus" size={22} color={colors.primary} />
       </TouchableOpacity>
     </View>
   );
 }
 
-const stepperStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  btn: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  value: {
-    minWidth: 40,
-    textAlign: 'center',
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-});
+function createStepperStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    btn: {
+      width: 48,
+      height: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    value: {
+      minWidth: 40,
+      textAlign: 'center',
+      fontSize: FontSizes.lg,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+  });
+}
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: Spacing.base, paddingBottom: Spacing['3xl'] },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surface,
-  },
-  textareaWrapper: { alignItems: 'flex-start' },
-  inputIcon: { marginLeft: Spacing.md },
-  input: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-  },
-  textArea: { height: 90 },
-  // ── Xonadon ──
-  xonadonHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.md,
-    ...Shadows.sm,
-  },
-  xonadonIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.primarySurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.sm,
-  },
-  xonadonInfo: { flex: 1 },
-  xonadonAddress: {
-    fontSize: FontSizes.base,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-  },
-  xonadonMfy: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xxs,
-  },
-  // ── Muammo bormi? ──
-  muammoBormiRow: { flexDirection: 'row', gap: Spacing.sm },
-  muammoBormiBtn: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 64,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: 4,
-    borderRadius: Radius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    gap: 4,
-  },
-  muammoBormiBtnActiveYoq: { backgroundColor: Colors.success, borderColor: Colors.success },
-  muammoBormiBtnActiveHa: { backgroundColor: Colors.danger, borderColor: Colors.danger },
-  muammoBormiBtnActiveKira: { backgroundColor: Colors.warning, borderColor: Colors.warning },
-  muammoBormiText: {
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  muammoBormiTextSmall: { fontSize: FontSizes.sm },
-  muammoBormiTextActive: { color: Colors.textInverse },
-  kiraOlmadiNote: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
-    backgroundColor: Colors.accentSurface,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  kiraOlmadiNoteText: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-  },
-  // ── Checklist ──
-  checklist: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
-  },
-  checklistRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  checklistRowActive: { backgroundColor: Colors.primarySurface },
-  checklistIcon: { marginTop: 1, marginRight: Spacing.sm },
-  checklistNum: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    fontWeight: FontWeights.semibold,
-    color: Colors.textMuted,
-    marginRight: Spacing.xs,
-  },
-  checklistText: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  checklistTextActive: { color: Colors.textPrimary, fontWeight: FontWeights.medium },
-  // ── O'rnida bartaraf ──
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.base,
-    marginTop: Spacing['2xl'],
-  },
-  toggleTitle: {
-    fontSize: FontSizes.base,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-  toggleHint: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
-  },
-  // ── Muddat presetlari ──
-  muddatChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  muddatChip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    minHeight: 44,
-    justifyContent: 'center',
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  muddatChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  muddatChipText: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.medium,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-  },
-  muddatChipTextActive: { color: Colors.textInverse },
-  // ── GPS ──
-  gpsBox: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderLeftWidth: 4,
-    padding: Spacing.md,
-    alignItems: 'center',
-  },
-  gpsContent: { flexDirection: 'row', alignItems: 'center' },
-  gpsText: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.mono || Fonts.body,
-    fontWeight: FontWeights.semibold,
-  },
-  gpsAccuracy: {
-    fontSize: FontSizes.xs,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xxs,
-  },
-  gpsError: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.danger },
-  gpsTimeoutBox: {
-    marginTop: Spacing.sm,
-    backgroundColor: Colors.accentSurface,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-  },
-  gpsTimeoutText: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
-  },
-  gpsTimeoutBtn: {
-    backgroundColor: Colors.accent,
-    borderRadius: Radius.md,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  gpsTimeoutBtnText: {
-    color: Colors.primaryDark,
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-  },
-  // ── Sticky submit ──
-  submitBar: {
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.md,
-  },
-  // ── Kamera ──
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    content: { paddingHorizontal: Spacing.base, paddingBottom: Spacing['3xl'] },
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: Radius.md,
+      backgroundColor: colors.surface,
+    },
+    textareaWrapper: { alignItems: 'flex-start' },
+    inputIcon: { marginLeft: Spacing.md },
+    input: {
+      flex: 1,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.md,
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+    },
+    textArea: { height: 90 },
+    // ── Xonadon ──
+    xonadonHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: Spacing.md,
+      ...Shadows.sm,
+    },
+    xonadonIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: Radius.md,
+      backgroundColor: colors.primarySurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: Spacing.sm,
+    },
+    xonadonInfo: { flex: 1 },
+    xonadonAddress: {
+      fontSize: FontSizes.base,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+    },
+    xonadonMfy: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      marginTop: Spacing.xxs,
+    },
+    // ── Muammo bormi? ──
+    muammoBormiRow: { flexDirection: 'row', gap: Spacing.sm },
+    muammoBormiBtn: {
+      flex: 1,
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 64,
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: 4,
+      borderRadius: Radius.lg,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      gap: 4,
+    },
+    muammoBormiBtnActiveYoq: { backgroundColor: colors.success, borderColor: colors.success },
+    muammoBormiBtnActiveHa: { backgroundColor: colors.danger, borderColor: colors.danger },
+    muammoBormiBtnActiveKira: { backgroundColor: colors.warning, borderColor: colors.warning },
+    muammoBormiText: {
+      fontSize: FontSizes.md,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    muammoBormiTextSmall: { fontSize: FontSizes.sm },
+    muammoBormiTextActive: { color: colors.textInverse },
+    kiraOlmadiNote: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: Spacing.sm,
+      backgroundColor: colors.accentSurface,
+      borderRadius: Radius.md,
+      padding: Spacing.md,
+      marginBottom: Spacing.md,
+    },
+    kiraOlmadiNoteText: {
+      flex: 1,
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    // ── Checklist ──
+    checklist: {
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    checklistRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderLight,
+    },
+    checklistRowActive: { backgroundColor: colors.primarySurface },
+    checklistIcon: { marginTop: 1, marginRight: Spacing.sm },
+    checklistNum: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      fontWeight: FontWeights.semibold,
+      color: colors.textMuted,
+      marginRight: Spacing.xs,
+    },
+    checklistText: {
+      flex: 1,
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    checklistTextActive: { color: colors.textPrimary, fontWeight: FontWeights.medium },
+    // ── O'rnida bartaraf ──
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: Spacing.base,
+      marginTop: Spacing['2xl'],
+    },
+    toggleTitle: {
+      fontSize: FontSizes.base,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+    toggleHint: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      marginTop: Spacing.xxs,
+    },
+    // ── Muddat presetlari ──
+    muddatChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+    muddatChip: {
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      minHeight: 44,
+      justifyContent: 'center',
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    muddatChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    muddatChipText: {
+      fontSize: FontSizes.sm,
+      fontWeight: FontWeights.medium,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+    },
+    muddatChipTextActive: { color: colors.textInverse },
+    // ── GPS ──
+    gpsBox: {
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderLeftWidth: 4,
+      padding: Spacing.md,
+      alignItems: 'center',
+    },
+    gpsContent: { flexDirection: 'row', alignItems: 'center' },
+    gpsText: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.mono || Fonts.body,
+      fontWeight: FontWeights.semibold,
+    },
+    gpsAccuracy: {
+      fontSize: FontSizes.xs,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      marginTop: Spacing.xxs,
+    },
+    gpsError: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: colors.danger },
+    gpsTimeoutBox: {
+      marginTop: Spacing.sm,
+      backgroundColor: colors.accentSurface,
+      borderRadius: Radius.md,
+      padding: Spacing.md,
+    },
+    gpsTimeoutText: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+      marginBottom: Spacing.sm,
+    },
+    gpsTimeoutBtn: {
+      backgroundColor: colors.accent,
+      borderRadius: Radius.md,
+      minHeight: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    gpsTimeoutBtnText: {
+      color: colors.primaryDark,
+      fontSize: FontSizes.sm,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+    },
+    // ── Sticky submit ──
+    submitBar: {
+      backgroundColor: colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingHorizontal: Spacing.base,
+      paddingTop: Spacing.md,
+    },
+    // ── Kamera ──
+  });
+}

@@ -12,6 +12,10 @@ export interface MaydonData {
   /** Kritik ochiq muammolar soni; null — serverdan aniqlanmadi */
   kritikCount: number | null;
   pendingCount: number;
+  /** Topshiriqlar so'nggi urinishda yuklanmadimi — true bo'lsa yuqoridagi
+   *  nextTask/activeCount/overdueCount eski (stale) qiymatlar, "0 ta ish"
+   *  degani emas. */
+  tasksXato: boolean;
 }
 
 const INITIAL: MaydonData = {
@@ -20,6 +24,7 @@ const INITIAL: MaydonData = {
   overdueCount: 0,
   kritikCount: null,
   pendingCount: 0,
+  tasksXato: false,
 };
 
 function isOverdue(t: Topshiriq): boolean {
@@ -55,13 +60,16 @@ export function useMaydonData(): {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [tasks, pendingCount, kritikTotal] = await Promise.all([
+      const [tasksNatija, pendingCount, kritikTotal] = await Promise.all([
         user?.id
           ? api
               .get<ApiResponse<Paginated<Topshiriq>>>(`/topshiriqlar?xodim_id=${user.id}&size=50`)
-              .then((res) => (res.data.ok ? (res.data.data?.items ?? []) : []))
-              .catch(() => [] as Topshiriq[])
-          : ([] as Topshiriq[]),
+              .then((res) => ({
+                ok: true as const,
+                items: res.data.ok ? (res.data.data?.items ?? []) : [],
+              }))
+              .catch(() => ({ ok: false as const, items: [] as Topshiriq[] }))
+          : Promise.resolve({ ok: true as const, items: [] as Topshiriq[] }),
         getKutilmaganSoni().catch(() => 0),
         api
           .get<ApiResponse<Paginated<unknown>>>('/muammolar?status=ochiq&xavf=kritik&size=1')
@@ -69,13 +77,23 @@ export function useMaydonData(): {
           .catch(() => null),
       ]);
 
-      const active = tasks.filter((t) => t.status !== 'bajarildi');
-      setData({
-        nextTask: pickNext(tasks),
-        activeCount: active.length,
-        overdueCount: active.filter(isOverdue).length,
-        kritikCount: typeof kritikTotal === 'number' ? kritikTotal : null,
-        pendingCount,
+      const kritikCount = typeof kritikTotal === 'number' ? kritikTotal : null;
+
+      // Topshiriqlar yuklanmasa eski (stale) qiymatlarni saqlab qolamiz —
+      // aks holda tarmoq xatosi "bugun ish yo'q" deb noto'g'ri ko'rsatilardi.
+      setData((oldingi) => {
+        if (!tasksNatija.ok) {
+          return { ...oldingi, pendingCount, kritikCount, tasksXato: true };
+        }
+        const active = tasksNatija.items.filter((t) => t.status !== 'bajarildi');
+        return {
+          nextTask: pickNext(tasksNatija.items),
+          activeCount: active.length,
+          overdueCount: active.filter(isOverdue).length,
+          kritikCount,
+          pendingCount,
+          tasksXato: false,
+        };
       });
     } finally {
       setLoading(false);

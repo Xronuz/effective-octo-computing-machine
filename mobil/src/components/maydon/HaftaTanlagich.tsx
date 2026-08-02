@@ -2,8 +2,10 @@ import React, { useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAlifbo } from '../../contexts/AlifboContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { bugunIso, isoSana, kunOldin } from '../../lib/sana';
-import { Colors, Fonts, FontSizes, FontWeights, Radius } from '../../theme';
+import { Fonts, FontSizes, FontWeights, Radius } from '../../theme';
+import type { ColorPalette } from '../../theme/colors';
 
 const KUNLAR_SONI = 21;
 const ITEM_WIDTH = 56;
@@ -45,6 +47,8 @@ interface Props {
  */
 export default function HaftaTanlagich({ selected, onSelect }: Props) {
   const { tr } = useAlifbo();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const kunlar = useMemo(() => oxirgiKunlar(KUNLAR_SONI), []);
   const listRef = useRef<FlatList<KunItem>>(null);
 
@@ -79,7 +83,7 @@ export default function HaftaTanlagich({ selected, onSelect }: Props) {
           >
             {active ? (
               <LinearGradient
-                colors={[Colors.info, Colors.primary]}
+                colors={[colors.info, colors.primary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
                 style={[styles.item, styles.itemActiveGlow]}
@@ -100,46 +104,48 @@ export default function HaftaTanlagich({ selected, onSelect }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  list: { paddingHorizontal: 4, gap: ITEM_GAP },
-  itemWrap: { width: ITEM_WIDTH },
-  item: {
-    width: ITEM_WIDTH,
-    height: 68,
-    borderRadius: Radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  itemBugun: {
-    borderColor: Colors.info,
-    borderWidth: 1.5,
-  },
-  itemActiveGlow: {
-    borderWidth: 0,
-    shadowColor: Colors.info,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  haftaKuni: {
-    fontSize: FontSizes.xs,
-    fontFamily: Fonts.body,
-    fontWeight: FontWeights.semibold,
-    color: Colors.textMuted,
-    letterSpacing: 0.4,
-  },
-  kun: {
-    fontSize: FontSizes.md,
-    fontFamily: Fonts.heading,
-    fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-  },
-  textActive: {
-    color: Colors.textInverse,
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    list: { paddingHorizontal: 4, gap: ITEM_GAP },
+    itemWrap: { width: ITEM_WIDTH },
+    item: {
+      width: ITEM_WIDTH,
+      height: 68,
+      borderRadius: Radius.lg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    itemBugun: {
+      borderColor: colors.info,
+      borderWidth: 1.5,
+    },
+    itemActiveGlow: {
+      borderWidth: 0,
+      shadowColor: colors.info,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.45,
+      shadowRadius: 10,
+      elevation: 8,
+    },
+    haftaKuni: {
+      fontSize: FontSizes.xs,
+      fontFamily: Fonts.body,
+      fontWeight: FontWeights.semibold,
+      color: colors.textMuted,
+      letterSpacing: 0.4,
+    },
+    kun: {
+      fontSize: FontSizes.md,
+      fontFamily: Fonts.heading,
+      fontWeight: FontWeights.bold,
+      color: colors.textPrimary,
+    },
+    textActive: {
+      color: colors.textInverse,
+    },
+  });
+}

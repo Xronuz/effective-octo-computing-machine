@@ -16,18 +16,11 @@ import PullToRefresh from '../components/PullToRefresh';
 import Button from '../components/Button';
 import SectionLabel from '../components/SectionLabel';
 import api from '../services/api';
-import {
-  Colors,
-  Fonts,
-  FontSizes,
-  FontWeights,
-  Spacing,
-  Radius,
-  XavfColors,
-  StatusColors,
-} from '../theme';
+import { Fonts, FontSizes, FontWeights, Spacing, Radius, XavfColors, StatusColors } from '../theme';
+import type { ColorPalette } from '../theme/colors';
 import type { ApiResponse, Paginated, Xonadon, MuammoSummary } from '../types';
 import { useAlifbo } from '../contexts/AlifboContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { cacheMuammolar, getCacheMuammolar } from '../services/cache';
 import { warmFotoCache, resolveFotoSource } from '../services/fotoCache';
@@ -57,6 +50,8 @@ export default function XonadonDetailScreen() {
   const navigation = useAppNavigation();
   const { tr } = useAlifbo();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { id } = route.params;
   const [xonadon, setXonadon] = useState<Xonadon | null>(null);
   const [muammolar, setMuammolar] = useState<MuammoSummary[]>([]);
@@ -115,7 +110,7 @@ export default function XonadonDetailScreen() {
   if (loading && !xonadon) {
     return (
       <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>{tr('Yuklanmoqda...')}</Text>
       </SafeAreaView>
     );
@@ -237,7 +232,7 @@ export default function XonadonDetailScreen() {
             <MaterialCommunityIcons
               name="account-group-outline"
               size={14}
-              color={Colors.textMuted}
+              color={colors.textMuted}
             />
             <Text style={styles.metaText}>
               {tr('Ogohlantirilgan')}: {m.yoriqnomadan_otkanlar_soni}
@@ -261,7 +256,7 @@ export default function XonadonDetailScreen() {
               <MaterialCommunityIcons
                 name={overdue ? 'calendar-alert' : 'calendar-clock'}
                 size={14}
-                color={overdue ? Colors.danger : Colors.textMuted}
+                color={overdue ? colors.danger : colors.textMuted}
               />
               <Text style={[styles.metaText, overdue && styles.metaTextOverdue]}>
                 {deadlineText}
@@ -304,7 +299,7 @@ export default function XonadonDetailScreen() {
         <View style={styles.infoList}>
           {infoRows.map((row, i) => (
             <View key={row.key} style={[styles.infoRow, i > 0 && styles.infoRowBorder]}>
-              <MaterialCommunityIcons name={row.icon} size={20} color={Colors.textMuted} />
+              <MaterialCommunityIcons name={row.icon} size={20} color={colors.textMuted} />
               <Text style={styles.infoLabel}>{row.label}</Text>
               {row.tel ? (
                 <TouchableOpacity
@@ -410,159 +405,161 @@ function FotoImage({ muammoId, faylYoli, style }: FotoImageProps) {
   return <Image source={{ uri }} style={style} />;
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-  },
-  loadingText: {
-    marginTop: Spacing.md,
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-  },
-  content: { padding: Spacing.base },
-  headerBox: { marginBottom: Spacing.xs },
-  headerTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-  headerSub: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
-  },
-  infoList: {
-    marginTop: Spacing.md,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 48,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-  },
-  infoRowBorder: { borderTopWidth: 1, borderTopColor: Colors.borderLight },
-  infoLabel: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-  },
-  infoValue: {
-    flex: 1,
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    fontWeight: FontWeights.semibold,
-    color: Colors.textPrimary,
-    textAlign: 'right',
-  },
-  infoLink: { color: Colors.textLink },
-  emptyText: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    paddingVertical: Spacing.sm,
-  },
-  muammoList: { gap: Spacing.sm },
-  muammoRow: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    padding: Spacing.md,
-  },
-  muammoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xs,
-  },
-  muammoTitle: {
-    flex: 1,
-    fontSize: FontSizes.base,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xxs,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.xxs,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-  },
-  statusPill: { alignSelf: 'flex-start' },
-  pillText: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-  },
-  muammoText: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: Spacing.sm,
-  },
-  bandlarLegend: {
-    marginBottom: Spacing.sm,
-    gap: Spacing.xxs,
-  },
-  bandlarLegendText: {
-    fontSize: FontSizes.xs,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    lineHeight: 17,
-  },
-  muammoMetaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  xavfBadge: {
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.xxs,
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-  },
-  xavfText: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-    textTransform: 'capitalize',
-  },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xxs },
-  metaText: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textMuted },
-  metaTextOverdue: { color: Colors.danger, fontWeight: FontWeights.semibold },
-  fotoScroll: { marginTop: Spacing.md },
-  fotoThumb: {
-    width: 88,
-    height: 88,
-    borderRadius: Radius.md,
-    marginRight: Spacing.sm,
-    backgroundColor: Colors.surfaceSubtle,
-  },
-  bottomBar: {
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.sm,
-  },
-  amalIzoh: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing.sm,
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    center: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+    },
+    loadingText: {
+      marginTop: Spacing.md,
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+    },
+    content: { padding: Spacing.base },
+    headerBox: { marginBottom: Spacing.xs },
+    headerTitle: {
+      fontSize: FontSizes.lg,
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+    headerSub: {
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      marginTop: Spacing.xxs,
+    },
+    infoList: {
+      marginTop: Spacing.md,
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: 48,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      gap: Spacing.sm,
+    },
+    infoRowBorder: { borderTopWidth: 1, borderTopColor: colors.borderLight },
+    infoLabel: {
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+    },
+    infoValue: {
+      flex: 1,
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      fontWeight: FontWeights.semibold,
+      color: colors.textPrimary,
+      textAlign: 'right',
+    },
+    infoLink: { color: colors.textLink },
+    emptyText: {
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      paddingVertical: Spacing.sm,
+    },
+    muammoList: { gap: Spacing.sm },
+    muammoRow: {
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      padding: Spacing.md,
+    },
+    muammoHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      marginBottom: Spacing.xs,
+    },
+    muammoTitle: {
+      flex: 1,
+      fontSize: FontSizes.base,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+    },
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xxs,
+      paddingHorizontal: Spacing.xs,
+      paddingVertical: Spacing.xxs,
+      borderRadius: Radius.full,
+      borderWidth: 1,
+    },
+    statusPill: { alignSelf: 'flex-start' },
+    pillText: {
+      fontSize: FontSizes.xs,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+    },
+    muammoText: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      marginBottom: Spacing.sm,
+    },
+    bandlarLegend: {
+      marginBottom: Spacing.sm,
+      gap: Spacing.xxs,
+    },
+    bandlarLegendText: {
+      fontSize: FontSizes.xs,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      lineHeight: 17,
+    },
+    muammoMetaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+    xavfBadge: {
+      paddingHorizontal: Spacing.xs,
+      paddingVertical: Spacing.xxs,
+      borderRadius: Radius.sm,
+      borderWidth: 1,
+    },
+    xavfText: {
+      fontSize: FontSizes.xs,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+      textTransform: 'capitalize',
+    },
+    metaItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xxs },
+    metaText: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: colors.textMuted },
+    metaTextOverdue: { color: colors.danger, fontWeight: FontWeights.semibold },
+    fotoScroll: { marginTop: Spacing.md },
+    fotoThumb: {
+      width: 88,
+      height: 88,
+      borderRadius: Radius.md,
+      marginRight: Spacing.sm,
+      backgroundColor: colors.surfaceSubtle,
+    },
+    bottomBar: {
+      backgroundColor: colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+      paddingHorizontal: Spacing.base,
+      paddingTop: Spacing.sm,
+    },
+    amalIzoh: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: Spacing.sm,
+    },
+  });
+}

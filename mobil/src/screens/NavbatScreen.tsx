@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,6 @@ import { syncNow } from '../services/sync';
 import PullToRefresh from '../components/PullToRefresh';
 import Button from '../components/Button';
 import {
-  Colors,
   Fonts,
   FontSizes,
   FontWeights,
@@ -31,7 +30,9 @@ import {
   XavfColors,
   StatusColors,
 } from '../theme';
+import type { ColorPalette } from '../theme/colors';
 import { useAlifbo } from '../contexts/AlifboContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { bandlarniParse } from '../constants/yoriqnoma';
 import NatijaBadge from '../components/NatijaBadge';
 import { navbatNatijasi, NATIJA_MATNI } from '../lib/natija';
@@ -43,6 +44,7 @@ type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 const STATUS_CFG = (
   tr: (s: string) => string,
+  colors: ColorPalette,
 ): Record<
   NavbatYozuvi['status'],
   { label: string; color: string; bg: string; border: string; icon: IconName }
@@ -56,15 +58,15 @@ const STATUS_CFG = (
   },
   yuborilgan: {
     label: tr('Yuborilgan'),
-    color: Colors.success,
-    bg: Colors.successSurface,
+    color: colors.success,
+    bg: colors.successSurface,
     border: '#A8D9BF',
     icon: 'check-circle',
   },
   xato: {
     label: tr('Xato'),
-    color: Colors.danger,
-    bg: Colors.dangerSurface,
+    color: colors.danger,
+    bg: colors.dangerSurface,
     border: '#E8B3B3',
     icon: 'close-circle',
   },
@@ -101,11 +103,11 @@ const TURI_LABELS = (tr: (s: string) => string): Record<string, string> => ({
 
 type SyncNatija = { matn: string; holat: 'success' | 'warning' | 'danger' };
 
-const NATIJA_COLORS: Record<SyncNatija['holat'], string> = {
-  success: Colors.success,
-  warning: Colors.warning,
-  danger: Colors.danger,
-};
+const NATIJA_COLORS = (colors: ColorPalette): Record<SyncNatija['holat'], string> => ({
+  success: colors.success,
+  warning: colors.warning,
+  danger: colors.danger,
+});
 
 const NATIJA_ICONS: Record<SyncNatija['holat'], IconName> = {
   success: 'check-circle-outline',
@@ -115,6 +117,8 @@ const NATIJA_ICONS: Record<SyncNatija['holat'], IconName> = {
 
 export default function NavbatScreen() {
   const { tr } = useAlifbo();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [items, setItems] = useState<NavbatYozuvi[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -228,7 +232,7 @@ export default function NavbatScreen() {
   };
 
   const renderItem = ({ item }: { item: NavbatYozuvi }) => {
-    const cfg = STATUS_CFG(tr)[item.status] || STATUS_CFG(tr).kutilmoqda;
+    const cfg = STATUS_CFG(tr, colors)[item.status] || STATUS_CFG(tr, colors).kutilmoqda;
     const busy = retryingId === item.client_uuid;
     const yuborilgan = item.status === 'yuborilgan';
     // Natija `kira_olmadi` bayrog'i bo'yicha aniqlanadi — avval bandlar
@@ -292,7 +296,7 @@ export default function NavbatScreen() {
           ) : null}
 
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="camera-outline" size={15} color={Colors.textMuted} />
+            <MaterialCommunityIcons name="camera-outline" size={15} color={colors.textMuted} />
             <Text style={styles.metaText}>
               {item.foto_paths?.length || 0} {tr('ta foto')}
             </Text>
@@ -303,7 +307,7 @@ export default function NavbatScreen() {
               <MaterialCommunityIcons
                 name="alert-circle-outline"
                 size={17}
-                color={Colors.danger}
+                color={colors.danger}
                 style={{ marginRight: 8 }}
               />
               <Text style={styles.errorText}>{item.xato}</Text>
@@ -318,13 +322,13 @@ export default function NavbatScreen() {
               activeOpacity={0.75}
             >
               {busy ? (
-                <ActivityIndicator size="small" color={Colors.primary} />
+                <ActivityIndicator size="small" color={colors.primary} />
               ) : (
                 <>
                   <MaterialCommunityIcons
                     name="refresh"
                     size={20}
-                    color={Colors.primary}
+                    color={colors.primary}
                     style={{ marginRight: 6 }}
                   />
                   <Text style={styles.retryText}>{tr('Qayta urinish')}</Text>
@@ -360,10 +364,10 @@ export default function NavbatScreen() {
           <MaterialCommunityIcons
             name={NATIJA_ICONS[syncNatija.holat]}
             size={15}
-            color={NATIJA_COLORS[syncNatija.holat]}
+            color={NATIJA_COLORS(colors)[syncNatija.holat]}
             style={{ marginRight: 6 }}
           />
-          <Text style={[styles.natijaText, { color: NATIJA_COLORS[syncNatija.holat] }]}>
+          <Text style={[styles.natijaText, { color: NATIJA_COLORS(colors)[syncNatija.holat] }]}>
             {syncNatija.matn}
           </Text>
         </View>
@@ -377,13 +381,13 @@ export default function NavbatScreen() {
         refreshControl={<PullToRefresh refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           loading ? (
-            <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 80 }} />
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 80 }} />
           ) : (
             <View style={styles.emptyBox}>
               <MaterialCommunityIcons
                 name="cloud-check-outline"
                 size={56}
-                color={Colors.textMuted}
+                color={colors.textMuted}
               />
               <Text style={styles.emptyTitle}>{tr("Navbat bo'sh")}</Text>
               <Text style={styles.emptyText}>
@@ -397,136 +401,138 @@ export default function NavbatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  syncBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-    gap: Spacing.md,
-  },
-  syncInfo: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  syncCount: {
-    fontSize: FontSizes['3xl'],
-    fontWeight: FontWeights.extrabold,
-    fontFamily: Fonts.heading,
-    color: Colors.primary,
-  },
-  syncLabel: { fontSize: FontSizes.base, fontFamily: Fonts.body, color: Colors.textSecondary },
-  syncBtn: { paddingVertical: 11, paddingHorizontal: 18 },
-  natijaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  natijaText: { flex: 1, fontSize: FontSizes.sm, fontFamily: Fonts.body },
-  list: { padding: Spacing.base, flexGrow: 1 },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    marginBottom: 12,
-    ...Shadows.sm,
-    overflow: 'hidden',
-  },
-  cardYuborilgan: { opacity: 0.6 },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.md,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-  },
-  statusText: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-  },
-  dateText: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textMuted },
-  cardBody: { padding: Spacing.base, gap: Spacing.sm },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  cardTitle: {
-    flex: 1,
-    fontSize: FontSizes.base,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-  },
-  natijaQatori: { flexDirection: 'row', marginTop: Spacing.xs },
-  cardSubtitle: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textMuted },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  xavfBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-  },
-  xavfText: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-    textTransform: 'capitalize',
-  },
-  tavsif: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    lineHeight: 22,
-  },
-  metaText: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textMuted },
-  errorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.dangerSurface,
-    borderRadius: Radius.md,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.base,
-  },
-  errorText: { flex: 1, fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.danger },
-  retryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    borderRadius: Radius.md,
-    paddingVertical: 11,
-  },
-  retryText: {
-    fontSize: FontSizes.base,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading,
-    color: Colors.primary,
-  },
-  emptyBox: { alignItems: 'center', marginTop: 80, paddingHorizontal: Spacing['2xl'] },
-  emptyTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-    marginTop: Spacing.md,
-  },
-  emptyText: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
-    textAlign: 'center',
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    syncBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surface,
+      paddingHorizontal: Spacing.base,
+      paddingVertical: Spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderLight,
+      gap: Spacing.md,
+    },
+    syncInfo: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+    syncCount: {
+      fontSize: FontSizes['3xl'],
+      fontWeight: FontWeights.extrabold,
+      fontFamily: Fonts.heading,
+      color: colors.primary,
+    },
+    syncLabel: { fontSize: FontSizes.base, fontFamily: Fonts.body, color: colors.textSecondary },
+    syncBtn: { paddingVertical: 11, paddingHorizontal: 18 },
+    natijaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      paddingHorizontal: Spacing.base,
+      paddingVertical: Spacing.xs,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderLight,
+    },
+    natijaText: { flex: 1, fontSize: FontSizes.sm, fontFamily: Fonts.body },
+    list: { padding: Spacing.base, flexGrow: 1 },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      marginBottom: 12,
+      ...Shadows.sm,
+      overflow: 'hidden',
+    },
+    cardYuborilgan: { opacity: 0.6 },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.base,
+      paddingTop: Spacing.md,
+    },
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+      borderRadius: Radius.full,
+      borderWidth: 1,
+    },
+    statusText: {
+      fontSize: FontSizes.xs,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+    },
+    dateText: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: colors.textMuted },
+    cardBody: { padding: Spacing.base, gap: Spacing.sm },
+    titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+    cardTitle: {
+      flex: 1,
+      fontSize: FontSizes.base,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+    },
+    natijaQatori: { flexDirection: 'row', marginTop: Spacing.xs },
+    cardSubtitle: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: colors.textMuted },
+    infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    xavfBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      borderRadius: Radius.sm,
+      borderWidth: 1,
+    },
+    xavfText: {
+      fontSize: FontSizes.xs,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+      textTransform: 'capitalize',
+    },
+    tavsif: {
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+    metaText: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: colors.textMuted },
+    errorBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.dangerSurface,
+      borderRadius: Radius.md,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.base,
+    },
+    errorText: { flex: 1, fontSize: FontSizes.sm, fontFamily: Fonts.body, color: colors.danger },
+    retryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      borderRadius: Radius.md,
+      paddingVertical: 11,
+    },
+    retryText: {
+      fontSize: FontSizes.base,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.heading,
+      color: colors.primary,
+    },
+    emptyBox: { alignItems: 'center', marginTop: 80, paddingHorizontal: Spacing['2xl'] },
+    emptyTitle: {
+      fontSize: FontSizes.lg,
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+      marginTop: Spacing.md,
+    },
+    emptyText: {
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      marginTop: Spacing.xs,
+      textAlign: 'center',
+    },
+  });
+}

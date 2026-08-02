@@ -14,12 +14,12 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import PullToRefresh from '../components/PullToRefresh';
 import Button from '../components/Button';
 import api from '../services/api';
 import { cacheTopshiriqlar, getCacheTopshiriqlar } from '../services/cache';
 import {
-  Colors,
   Fonts,
   FontSizes,
   FontWeights,
@@ -28,17 +28,21 @@ import {
   StatusColors,
   tabBarContentPadding,
 } from '../theme';
+import type { ColorPalette } from '../theme/colors';
 import type { ApiResponse, Paginated, Topshiriq } from '../types';
 import { useAlifbo } from '../contexts/AlifboContext';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 type Segment = 'faol' | 'bajarildi';
 
-const STATUS_CFG: Record<string, { label: string; color: string; icon: IconName }> = {
-  yangi: { label: 'Yangi', color: Colors.info, icon: 'star-circle-outline' },
-  korildi: { label: "Ko'rildi", color: StatusColors.jarayonda.text, icon: 'eye-outline' },
-  bajarildi: { label: 'Bajarildi', color: Colors.success, icon: 'check-circle' },
-  kechikkan: { label: 'Kechikkan', color: Colors.danger, icon: 'clock-alert-outline' },
+const STATUS_CFG: Record<
+  string,
+  { label: string; color: (c: ColorPalette) => string; icon: IconName }
+> = {
+  yangi: { label: 'Yangi', color: (c) => c.info, icon: 'star-circle-outline' },
+  korildi: { label: "Ko'rildi", color: () => StatusColors.jarayonda.text, icon: 'eye-outline' },
+  bajarildi: { label: 'Bajarildi', color: (c) => c.success, icon: 'check-circle' },
+  kechikkan: { label: 'Kechikkan', color: (c) => c.danger, icon: 'clock-alert-outline' },
 };
 
 function formatDate(iso: string | null): string {
@@ -60,6 +64,8 @@ function isOverdue(item: Topshiriq): boolean {
 export default function TopshiriqlarScreen() {
   const { tr } = useAlifbo();
   const { user } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<Topshiriq[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +189,7 @@ export default function TopshiriqlarScreen() {
   const renderItem = ({ item, index }: { item: Topshiriq; index: number }) => {
     const cfg = STATUS_CFG[item.status] || {
       label: item.status,
-      color: Colors.textMuted,
+      color: (() => colors.textMuted) as (c: ColorPalette) => string,
       icon: 'help-circle-outline' as IconName,
     };
     const late = isOverdue(item);
@@ -200,7 +206,7 @@ export default function TopshiriqlarScreen() {
         <MaterialCommunityIcons
           name={done ? 'check-circle' : cfg.icon}
           size={22}
-          color={done ? Colors.success : cfg.color}
+          color={done ? colors.success : cfg.color(colors)}
           style={styles.rowIcon}
         />
         <View style={styles.rowBody}>
@@ -211,7 +217,7 @@ export default function TopshiriqlarScreen() {
             <MaterialCommunityIcons
               name="calendar-clock"
               size={13}
-              color={late ? Colors.danger : Colors.textMuted}
+              color={late ? colors.danger : colors.textMuted}
             />
             <Text style={[styles.rowMetaText, late && styles.rowMetaLate]}>
               {formatDate(item.muddat)}
@@ -231,7 +237,7 @@ export default function TopshiriqlarScreen() {
             ) : null}
           </View>
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={18} color={Colors.textMuted} />
+        <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textMuted} />
       </TouchableOpacity>
     );
   };
@@ -292,7 +298,7 @@ export default function TopshiriqlarScreen() {
           loading ? (
             <ActivityIndicator
               size="large"
-              color={Colors.primary}
+              color={colors.primary}
               style={{ marginTop: Spacing['3xl'] }}
             />
           ) : (
@@ -300,7 +306,7 @@ export default function TopshiriqlarScreen() {
               <MaterialCommunityIcons
                 name={segment === 'faol' ? 'clipboard-check-outline' : 'check-all'}
                 size={28}
-                color={Colors.textMuted}
+                color={colors.textMuted}
               />
               <Text style={styles.emptyText}>
                 {segment === 'faol'
@@ -332,7 +338,7 @@ export default function TopshiriqlarScreen() {
                   <MaterialCommunityIcons
                     name="calendar-clock"
                     size={16}
-                    color={selectedLate ? Colors.danger : Colors.textMuted}
+                    color={selectedLate ? colors.danger : colors.textMuted}
                   />
                   <Text style={[styles.sheetMetaText, selectedLate && styles.rowMetaLate]}>
                     {formatDate(selected.muddat)}
@@ -348,7 +354,7 @@ export default function TopshiriqlarScreen() {
                     <MaterialCommunityIcons
                       name="map-marker-outline"
                       size={16}
-                      color={Colors.textMuted}
+                      color={colors.textMuted}
                     />
                     <Text style={styles.sheetMetaText}>{selected.mfy_nomi}</Text>
                   </View>
@@ -358,7 +364,7 @@ export default function TopshiriqlarScreen() {
                     <MaterialCommunityIcons
                       name="account-tie-outline"
                       size={16}
-                      color={Colors.textMuted}
+                      color={colors.textMuted}
                     />
                     <Text style={styles.sheetMetaText}>{selected.rahbar_fio}</Text>
                   </View>
@@ -387,213 +393,215 @@ export default function TopshiriqlarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-  },
-  headerTitle: {
-    fontSize: FontSizes['2xl'],
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-  headerCount: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    fontVariant: ['tabular-nums'],
-  },
-  segmentTrack: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surfaceSubtle,
-    borderRadius: Radius.md,
-    padding: Spacing.xxs,
-    marginHorizontal: Spacing.base,
-    marginBottom: Spacing.sm,
-  },
-  segment: {
-    flex: 1,
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: Radius.sm,
-    gap: Spacing.xs,
-  },
-  segmentActive: {
-    backgroundColor: Colors.surface,
-  },
-  segmentText: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    fontWeight: FontWeights.medium,
-    color: Colors.textMuted,
-  },
-  segmentTextActive: {
-    color: Colors.primary,
-    fontWeight: FontWeights.semibold,
-  },
-  segmentBadge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  segmentBadgeActive: {
-    backgroundColor: Colors.primarySurface,
-  },
-  segmentBadgeText: {
-    fontSize: FontSizes.xs,
-    fontFamily: Fonts.body,
-    fontWeight: FontWeights.semibold,
-    color: Colors.textSecondary,
-    fontVariant: ['tabular-nums'],
-  },
-  segmentBadgeTextActive: {
-    color: Colors.primary,
-  },
-  list: { flexGrow: 1 },
-  listContainer: {
-    marginHorizontal: Spacing.base,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    overflow: 'hidden',
-    flexGrow: 0,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 64,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-    backgroundColor: Colors.surface,
-  },
-  rowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-  },
-  rowDone: {
-    opacity: 0.6,
-  },
-  rowIcon: { marginRight: Spacing.xxs },
-  rowBody: { flex: 1 },
-  rowTitle: {
-    fontSize: FontSizes.base,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-  },
-  rowTitleDone: {
-    color: Colors.textSecondary,
-  },
-  rowMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xxs,
-    marginTop: Spacing.xxs,
-  },
-  rowMetaText: {
-    fontSize: FontSizes.xs,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    flexShrink: 1,
-  },
-  rowMetaLate: {
-    color: Colors.danger,
-  },
-  rowMetaDot: {
-    fontSize: FontSizes.xs,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-  },
-  latePill: {
-    backgroundColor: Colors.dangerSurface,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 2,
-  },
-  latePillText: {
-    fontSize: FontSizes['2xs'],
-    fontFamily: Fonts.body,
-    fontWeight: FontWeights.semibold,
-    color: Colors.danger,
-  },
-  emptyBox: {
-    alignItems: 'center',
-    marginTop: Spacing['3xl'],
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing['2xl'],
-  },
-  emptyText: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    textAlign: 'center',
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(13, 27, 42, 0.4)',
-  },
-  sheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: Radius.lg,
-    borderTopRightRadius: Radius.lg,
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.sm,
-  },
-  sheetHandle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.border,
-    marginBottom: Spacing.md,
-  },
-  sheetTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-  sheetMatn: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    lineHeight: 22,
-    marginTop: Spacing.sm,
-  },
-  sheetMeta: {
-    marginTop: Spacing.md,
-    marginBottom: Spacing.lg,
-    gap: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    paddingTop: Spacing.md,
-  },
-  sheetMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  sheetMetaText: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    flexShrink: 1,
-  },
-  sheetClose: {
-    minHeight: 44,
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.base,
+      paddingTop: Spacing.md,
+      paddingBottom: Spacing.sm,
+    },
+    headerTitle: {
+      fontSize: FontSizes['2xl'],
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+    headerCount: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      fontVariant: ['tabular-nums'],
+    },
+    segmentTrack: {
+      flexDirection: 'row',
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: Radius.md,
+      padding: Spacing.xxs,
+      marginHorizontal: Spacing.base,
+      marginBottom: Spacing.sm,
+    },
+    segment: {
+      flex: 1,
+      height: 44,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: Radius.sm,
+      gap: Spacing.xs,
+    },
+    segmentActive: {
+      backgroundColor: colors.surface,
+    },
+    segmentText: {
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      fontWeight: FontWeights.medium,
+      color: colors.textMuted,
+    },
+    segmentTextActive: {
+      color: colors.primary,
+      fontWeight: FontWeights.semibold,
+    },
+    segmentBadge: {
+      minWidth: 22,
+      height: 22,
+      borderRadius: Radius.full,
+      backgroundColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 6,
+    },
+    segmentBadgeActive: {
+      backgroundColor: colors.primarySurface,
+    },
+    segmentBadgeText: {
+      fontSize: FontSizes.xs,
+      fontFamily: Fonts.body,
+      fontWeight: FontWeights.semibold,
+      color: colors.textSecondary,
+      fontVariant: ['tabular-nums'],
+    },
+    segmentBadgeTextActive: {
+      color: colors.primary,
+    },
+    list: { flexGrow: 1 },
+    listContainer: {
+      marginHorizontal: Spacing.base,
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      overflow: 'hidden',
+      flexGrow: 0,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: 64,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      gap: Spacing.sm,
+      backgroundColor: colors.surface,
+    },
+    rowBorder: {
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+    },
+    rowDone: {
+      opacity: 0.6,
+    },
+    rowIcon: { marginRight: Spacing.xxs },
+    rowBody: { flex: 1 },
+    rowTitle: {
+      fontSize: FontSizes.base,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+    },
+    rowTitleDone: {
+      color: colors.textSecondary,
+    },
+    rowMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xxs,
+      marginTop: Spacing.xxs,
+    },
+    rowMetaText: {
+      fontSize: FontSizes.xs,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      flexShrink: 1,
+    },
+    rowMetaLate: {
+      color: colors.danger,
+    },
+    rowMetaDot: {
+      fontSize: FontSizes.xs,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+    },
+    latePill: {
+      backgroundColor: colors.dangerSurface,
+      borderRadius: Radius.full,
+      paddingHorizontal: Spacing.xs,
+      paddingVertical: 2,
+    },
+    latePillText: {
+      fontSize: FontSizes['2xs'],
+      fontFamily: Fonts.body,
+      fontWeight: FontWeights.semibold,
+      color: colors.danger,
+    },
+    emptyBox: {
+      alignItems: 'center',
+      marginTop: Spacing['3xl'],
+      gap: Spacing.sm,
+      paddingHorizontal: Spacing['2xl'],
+    },
+    emptyText: {
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(13, 27, 42, 0.4)',
+    },
+    sheet: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: Radius.lg,
+      borderTopRightRadius: Radius.lg,
+      paddingHorizontal: Spacing.base,
+      paddingTop: Spacing.sm,
+    },
+    sheetHandle: {
+      alignSelf: 'center',
+      width: 40,
+      height: 4,
+      borderRadius: Radius.full,
+      backgroundColor: colors.border,
+      marginBottom: Spacing.md,
+    },
+    sheetTitle: {
+      fontSize: FontSizes.lg,
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+    sheetMatn: {
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      lineHeight: 22,
+      marginTop: Spacing.sm,
+    },
+    sheetMeta: {
+      marginTop: Spacing.md,
+      marginBottom: Spacing.lg,
+      gap: Spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+      paddingTop: Spacing.md,
+    },
+    sheetMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xs,
+    },
+    sheetMetaText: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      flexShrink: 1,
+    },
+    sheetClose: {
+      minHeight: 44,
+    },
+  });
+}

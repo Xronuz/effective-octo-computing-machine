@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -9,8 +9,10 @@ import KameraModal, { useKameraRuxsati } from '../components/KameraModal';
 import api from '../services/api';
 import { fotoYukla } from '../services/sync';
 import { useAlifbo } from '../contexts/AlifboContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useAppNavigation, useAppRoute } from '../navigation/hooks';
-import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
+import { Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
+import type { ColorPalette } from '../theme/colors';
 import type { ApiResponse } from '../types';
 
 /**
@@ -25,6 +27,8 @@ export default function MuammoYopishScreen() {
   const route = useAppRoute<'MuammoYopish'>();
   const navigation = useAppNavigation();
   const { tr } = useAlifbo();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { muammoId, sarlavha } = route.params;
 
@@ -92,7 +96,7 @@ export default function MuammoYopishScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <SectionLabel title={tr('Yopilayotgan muammo')} />
         <View style={styles.muammoKarta}>
-          <MaterialCommunityIcons name="alert-circle-outline" size={22} color={Colors.danger} />
+          <MaterialCommunityIcons name="alert-circle-outline" size={22} color={colors.danger} />
           <Text style={styles.muammoMatn} numberOfLines={3}>
             {sarlavha}
           </Text>
@@ -110,8 +114,8 @@ export default function MuammoYopishScreen() {
           <Switch
             value={ornidaBartaraf}
             onValueChange={setOrnidaBartaraf}
-            trackColor={{ false: Colors.border, true: Colors.primaryLight }}
-            thumbColor={Colors.textInverse}
+            trackColor={{ false: colors.border, true: colors.primaryLight }}
+            thumbColor={colors.textInverse}
           />
         </View>
 
@@ -122,7 +126,7 @@ export default function MuammoYopishScreen() {
             value={izoh}
             onChangeText={setIzoh}
             placeholder={tr('Nima qilindi, kim bartaraf etdi...')}
-            placeholderTextColor={Colors.textMuted}
+            placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={3}
             textAlignVertical="top"
@@ -166,78 +170,80 @@ export default function MuammoYopishScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: Spacing.base, paddingBottom: Spacing['3xl'] },
-  muammoKarta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.md,
-  },
-  muammoMatn: {
-    flex: 1,
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    fontWeight: FontWeights.semibold,
-    color: Colors.textPrimary,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.base,
-    marginTop: Spacing.lg,
-  },
-  toggleTitle: {
-    fontSize: FontSizes.base,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-  toggleHint: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surface,
-  },
-  textareaWrapper: { alignItems: 'flex-start' },
-  input: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-  },
-  textArea: { height: 90 },
-  fotoIzoh: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    marginBottom: Spacing.sm,
-  },
-  submitBar: {
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.md,
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    content: { paddingHorizontal: Spacing.base, paddingBottom: Spacing['3xl'] },
+    muammoKarta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: Spacing.md,
+    },
+    muammoMatn: {
+      flex: 1,
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      fontWeight: FontWeights.semibold,
+      color: colors.textPrimary,
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: Spacing.base,
+      marginTop: Spacing.lg,
+    },
+    toggleTitle: {
+      fontSize: FontSizes.base,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+    toggleHint: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      marginTop: Spacing.xxs,
+    },
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: Radius.md,
+      backgroundColor: colors.surface,
+    },
+    textareaWrapper: { alignItems: 'flex-start' },
+    input: {
+      flex: 1,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.md,
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+    },
+    textArea: { height: 90 },
+    fotoIzoh: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      marginBottom: Spacing.sm,
+    },
+    submitBar: {
+      backgroundColor: colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingHorizontal: Spacing.base,
+      paddingTop: Spacing.md,
+    },
+  });
+}

@@ -10,6 +10,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAlifbo } from '../contexts/AlifboContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useTabScreenNavigation } from '../navigation/hooks';
 import { useMaydonData } from '../hooks/useMaydonData';
 import { useKunlikTekshiruv } from '../hooks/useKunlikTekshiruv';
@@ -18,7 +19,7 @@ import QuickButtonsRow from '../components/maydon/QuickButtonsRow';
 import HaftaTanlagich from '../components/maydon/HaftaTanlagich';
 import KunlikStatistika from '../components/maydon/KunlikStatistika';
 import { bugunIso } from '../lib/sana';
-import { Colors, tabBarContentPadding } from '../theme';
+import { tabBarContentPadding } from '../theme';
 
 /**
  * ASOSIY — operativ boshqaruv ekrani.
@@ -28,6 +29,7 @@ import { Colors, tabBarContentPadding } from '../theme';
 export default function MaydonScreen() {
   const navigation = useTabScreenNavigation();
   const { tr } = useAlifbo();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { data, loading, refresh } = useMaydonData();
   const [refreshing, setRefreshing] = useState(false);
@@ -88,21 +90,12 @@ export default function MaydonScreen() {
     [attentionItems],
   );
 
-  /**
-   * "Kira olmadi" raqami bosilganda — qaytib borish kerak bo'lgan
-   * xonadonlar ro'yxati. Avval inspektor bularni eslab qolishi kerak edi.
-   */
-  const handleKiraOlmadi = useCallback(() => {
-    const royxat = stat.kiraOlmadiRoyxat;
-    if (royxat.length === 0) return;
-    Alert.alert(tr('Kira olinmagan xonadonlar'), tr('Qayta tashrif buyurish kerak'), [
-      ...royxat.slice(0, 8).map((x) => ({
-        text: x.manzil || `${tr('Xonadon')} #${x.xonadon_id}`,
-        onPress: () => navigation.navigate('XonadonDetail', { id: x.xonadon_id }),
-      })),
-      { text: tr('Yopish'), style: 'cancel' as const },
-    ]);
-  }, [stat.kiraOlmadiRoyxat, navigation, tr]);
+  const handleXonadonPress = useCallback(
+    (xonadonId: number) => {
+      navigation.navigate('XonadonDetail', { id: xonadonId });
+    },
+    [navigation],
+  );
 
   const handlePressAttention = useCallback(() => {
     if (attentionItems.length === 0) return;
@@ -120,7 +113,7 @@ export default function MaydonScreen() {
   }, [attentionItems, tr]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <StatusStrip />
       <ScrollView
         contentContainerStyle={[
@@ -132,16 +125,19 @@ export default function MaydonScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Colors.primary}
+            tintColor={colors.primary}
           />
         }
       >
         {loading && !refreshing ? (
-          <ActivityIndicator color={Colors.primary} style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : (
           <>
             <QuickButtonsRow
-              taskTitle={data.nextTask?.sarlavha ?? null}
+              taskTitle={
+                data.nextTask?.sarlavha ??
+                (data.tasksXato ? tr('Yuklab bo‘lmadi — qayta torting') : null)
+              }
               taskOverdue={overdue}
               activeCount={data.activeCount}
               onPressTask={() => navigation.navigate('Topshiriqlar' as never)}
@@ -154,7 +150,8 @@ export default function MaydonScreen() {
               <KunlikStatistika
                 stat={stat}
                 loading={statLoading}
-                onKiraOlmadiPress={handleKiraOlmadi}
+                sanaIso={tanlanganSana}
+                onXonadonPress={handleXonadonPress}
               />
             </View>
           </>
@@ -165,7 +162,7 @@ export default function MaydonScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  safe: { flex: 1 },
   content: {
     paddingHorizontal: 16,
     gap: 16,

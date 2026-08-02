@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,17 +13,11 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import PullToRefresh from '../components/PullToRefresh';
 import api from '../services/api';
 import { cacheXonadonlar, getCacheXonadonlar } from '../services/cache';
-import {
-  Colors,
-  Fonts,
-  FontSizes,
-  FontWeights,
-  Spacing,
-  Radius,
-  tabBarContentPadding,
-} from '../theme';
+import { Fonts, FontSizes, FontWeights, Spacing, Radius, tabBarContentPadding } from '../theme';
+import type { ColorPalette } from '../theme/colors';
 import type { ApiResponse, Paginated, XonadonSummary } from '../types';
 import { useAlifbo } from '../contexts/AlifboContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useTabScreenNavigation } from '../navigation/hooks';
 import { useAuth } from '../contexts/AuthContext';
 import { useMeningXonadonlarim } from '../hooks/useMeningXonadonlarim';
@@ -47,6 +41,8 @@ function MeningXonadonlarimRoyxati() {
   const navigation = useTabScreenNavigation();
   const { tr } = useAlifbo();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     mfylar,
     tanlanganMfyId,
@@ -92,18 +88,18 @@ function MeningXonadonlarimRoyxati() {
           <MaterialCommunityIcons
             name={tekshirilgan ? 'check-circle' : 'clock-outline'}
             size={14}
-            color={tekshirilgan ? Colors.success : Colors.textMuted}
+            color={tekshirilgan ? colors.success : colors.textMuted}
           />
           <Text
             style={[
               styles.tekshirilganPillText,
-              { color: tekshirilgan ? Colors.success : Colors.textMuted },
+              { color: tekshirilgan ? colors.success : colors.textMuted },
             ]}
           >
             {tekshirilgan ? tr('Tekshirildi') : tr('Navbatda')}
           </Text>
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={22} color={Colors.textMuted} />
+        <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textMuted} />
       </TouchableOpacity>
     );
   };
@@ -170,7 +166,7 @@ function MeningXonadonlarimRoyxati() {
             <ActivityIndicator
               style={{ padding: Spacing.base }}
               size="small"
-              color={Colors.primary}
+              color={colors.primary}
             />
           ) : null
         }
@@ -183,6 +179,8 @@ function ToliqXonadonlarKatalogi() {
   const navigation = useTabScreenNavigation();
   const { tr } = useAlifbo();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [items, setItems] = useState<XonadonSummary[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -275,11 +273,11 @@ function ToliqXonadonlarKatalogi() {
         </View>
         {openCount > 0 ? (
           <View style={styles.openBadge}>
-            <MaterialCommunityIcons name="alert" size={14} color={Colors.textInverse} />
+            <MaterialCommunityIcons name="alert" size={14} color={colors.textInverse} />
             <Text style={styles.openBadgeText}>{openCount}</Text>
           </View>
         ) : null}
-        <MaterialCommunityIcons name="chevron-right" size={22} color={Colors.textMuted} />
+        <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textMuted} />
       </TouchableOpacity>
     );
   };
@@ -305,7 +303,7 @@ function ToliqXonadonlarKatalogi() {
           <MaterialCommunityIcons
             name="magnify"
             size={22}
-            color={Colors.textMuted}
+            color={colors.textMuted}
             style={{ marginLeft: Spacing.md }}
           />
           <TextInput
@@ -313,7 +311,7 @@ function ToliqXonadonlarKatalogi() {
             value={search}
             onChangeText={setSearch}
             placeholder={tr("Manzil bo'yicha qidirish...")}
-            placeholderTextColor={Colors.textMuted}
+            placeholderTextColor={colors.textMuted}
             returnKeyType="search"
             autoCorrect={false}
           />
@@ -325,7 +323,7 @@ function ToliqXonadonlarKatalogi() {
               accessibilityRole="button"
               accessibilityLabel={tr('Qidiruvni tozalash')}
             >
-              <MaterialCommunityIcons name="close-circle" size={20} color={Colors.textMuted} />
+              <MaterialCommunityIcons name="close-circle" size={20} color={colors.textMuted} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -348,7 +346,7 @@ function ToliqXonadonlarKatalogi() {
             <ActivityIndicator
               style={{ padding: Spacing.base }}
               size="small"
-              color={Colors.primary}
+              color={colors.primary}
             />
           ) : null
         }
@@ -357,142 +355,152 @@ function ToliqXonadonlarKatalogi() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  header: { paddingHorizontal: Spacing.base, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
-  headerTitle: {
-    fontSize: FontSizes['2xl'],
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-  headerProgress: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  searchRow: { paddingHorizontal: Spacing.base, paddingTop: Spacing.xs, paddingBottom: Spacing.xs },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 48,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-  },
-  searchClear: {
-    minWidth: 44,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.xxs,
-  },
-  mfyChipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.sm,
-  },
-  mfyChip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  mfyChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  mfyChipText: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.medium,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-  },
-  mfyChipTextActive: { color: Colors.textInverse },
-  tekshirilganPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xxs,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.xxs,
-    borderWidth: 1,
-  },
-  tekshirilganPillDone: { backgroundColor: Colors.successSurface, borderColor: '#A8D9BF' },
-  tekshirilganPillPending: { backgroundColor: Colors.surfaceSubtle, borderColor: Colors.border },
-  tekshirilganPillText: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-  },
-  list: { padding: Spacing.base, paddingTop: Spacing.sm, flexGrow: 1 },
-  // Bitta ramkali konteyner ichidagi ixcham qatorlar (AttentionList uslubi)
-  row: {
-    minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  rowSeparator: { borderTopWidth: 0 },
-  rowFirst: { borderTopLeftRadius: Radius.md, borderTopRightRadius: Radius.md },
-  rowLast: { borderBottomLeftRadius: Radius.md, borderBottomRightRadius: Radius.md },
-  rowInfo: { flex: 1, gap: Spacing.xxs },
-  rowTitle: {
-    fontSize: FontSizes.base,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-  },
-  rowMeta: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-  },
-  openBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xxs,
-    backgroundColor: Colors.danger,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.xxs,
-  },
-  openBadgeText: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.body,
-    color: Colors.textInverse,
-    fontVariant: ['tabular-nums'],
-  },
-  emptyBox: { alignItems: 'center', marginTop: Spacing['4xl'], paddingHorizontal: Spacing['2xl'] },
-  emptyTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-  emptyText: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
-    textAlign: 'center',
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    header: { paddingHorizontal: Spacing.base, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
+    headerTitle: {
+      fontSize: FontSizes['2xl'],
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+    headerProgress: {
+      fontSize: FontSizes.sm,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    searchRow: {
+      paddingHorizontal: Spacing.base,
+      paddingTop: Spacing.xs,
+      paddingBottom: Spacing.xs,
+    },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: 48,
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    searchInput: {
+      flex: 1,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.sm,
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+    },
+    searchClear: {
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: Spacing.xxs,
+    },
+    mfyChipRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: Spacing.xs,
+      paddingHorizontal: Spacing.base,
+      paddingBottom: Spacing.sm,
+    },
+    mfyChip: {
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.xs,
+      borderRadius: Radius.full,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    mfyChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    mfyChipText: {
+      fontSize: FontSizes.sm,
+      fontWeight: FontWeights.medium,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+    },
+    mfyChipTextActive: { color: colors.textInverse },
+    tekshirilganPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xxs,
+      borderRadius: Radius.full,
+      paddingHorizontal: Spacing.xs,
+      paddingVertical: Spacing.xxs,
+      borderWidth: 1,
+    },
+    tekshirilganPillDone: { backgroundColor: colors.successSurface, borderColor: '#A8D9BF' },
+    tekshirilganPillPending: { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+    tekshirilganPillText: {
+      fontSize: FontSizes.xs,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+    },
+    list: { padding: Spacing.base, paddingTop: Spacing.sm, flexGrow: 1 },
+    // Bitta ramkali konteyner ichidagi ixcham qatorlar (AttentionList uslubi)
+    row: {
+      minHeight: 64,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    rowSeparator: { borderTopWidth: 0 },
+    rowFirst: { borderTopLeftRadius: Radius.md, borderTopRightRadius: Radius.md },
+    rowLast: { borderBottomLeftRadius: Radius.md, borderBottomRightRadius: Radius.md },
+    rowInfo: { flex: 1, gap: Spacing.xxs },
+    rowTitle: {
+      fontSize: FontSizes.base,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+    },
+    rowMeta: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+    },
+    openBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xxs,
+      backgroundColor: colors.danger,
+      borderRadius: Radius.full,
+      paddingHorizontal: Spacing.xs,
+      paddingVertical: Spacing.xxs,
+    },
+    openBadgeText: {
+      fontSize: FontSizes.xs,
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.body,
+      color: colors.textInverse,
+      fontVariant: ['tabular-nums'],
+    },
+    emptyBox: {
+      alignItems: 'center',
+      marginTop: Spacing['4xl'],
+      paddingHorizontal: Spacing['2xl'],
+    },
+    emptyTitle: {
+      fontSize: FontSizes.lg,
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+    emptyText: {
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      marginTop: Spacing.xs,
+      textAlign: 'center',
+    },
+  });
+}

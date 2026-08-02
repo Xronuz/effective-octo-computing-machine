@@ -2,7 +2,7 @@
 // joylashuv/joylashuvsiz) tekshiruv topshirmasligi uchun to'liq ekranli
 // bloklovchi qatlam. Faqat rol=xodim uchun ishlaydi — superadmin/rahbar
 // joyda tekshiruv o'tkazmaydi, ularga bu shart emas.
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,9 @@ import * as Location from 'expo-location';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlifbo } from '../contexts/AlifboContext';
-import { Colors, Fonts, FontSizes, FontWeights, Radius } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { Fonts, FontSizes, FontWeights, Radius } from '../theme';
+import type { ColorPalette } from '../theme/colors';
 
 const POLL_MS = 3000;
 
@@ -39,6 +41,8 @@ async function holatniAniqla(): Promise<Holat> {
 export default function GpsGate() {
   const { user } = useAuth();
   const { tr } = useAlifbo();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [holat, setHolat] = useState<Holat>('tekshirilmoqda');
   const [requesting, setRequesting] = useState(false);
   const kerakmi = user?.rol === 'xodim';
@@ -113,7 +117,7 @@ export default function GpsGate() {
           <MaterialCommunityIcons
             name={ruxsatSoralmagan ? 'map-marker-off-outline' : 'crosshairs-gps'}
             size={40}
-            color={Colors.danger}
+            color={colors.danger}
           />
         </View>
         <Text style={styles.title}>
@@ -135,7 +139,7 @@ export default function GpsGate() {
           activeOpacity={0.85}
           disabled={requesting}
         >
-          <MaterialCommunityIcons name="crosshairs-gps" size={18} color={Colors.textInverse} />
+          <MaterialCommunityIcons name="crosshairs-gps" size={18} color={colors.textInverse} />
           <Text style={styles.primaryBtnText}>
             {ruxsatSoralmagan ? tr('Ruxsat berish') : tr("GPS'ni yoqish")}
           </Text>
@@ -153,74 +157,76 @@ export default function GpsGate() {
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10, 30, 60, 0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    zIndex: 999,
-    elevation: 999,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: 24,
-    alignItems: 'center',
-    gap: 10,
-  },
-  iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.dangerSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: FontSizes.lg,
-    fontFamily: Fonts.heading,
-    fontWeight: FontWeights.bold,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  desc: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.md,
-    paddingVertical: 14,
-    width: '100%',
-  },
-  primaryBtnText: {
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.heading,
-    fontWeight: FontWeights.bold,
-    color: Colors.textInverse,
-  },
-  secondaryBtn: {
-    paddingVertical: 12,
-    width: '100%',
-    alignItems: 'center',
-  },
-  secondaryBtnText: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    fontWeight: FontWeights.semibold,
-    color: Colors.primary,
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(10, 30, 60, 0.92)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      zIndex: 999,
+      elevation: 999,
+    },
+    card: {
+      width: '100%',
+      maxWidth: 360,
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      padding: 24,
+      alignItems: 'center',
+      gap: 10,
+    },
+    iconCircle: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: colors.dangerSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    title: {
+      fontSize: FontSizes.lg,
+      fontFamily: Fonts.heading,
+      fontWeight: FontWeights.bold,
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    desc: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+      marginBottom: 8,
+    },
+    primaryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.primary,
+      borderRadius: Radius.md,
+      paddingVertical: 14,
+      width: '100%',
+    },
+    primaryBtnText: {
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.heading,
+      fontWeight: FontWeights.bold,
+      color: colors.textInverse,
+    },
+    secondaryBtn: {
+      paddingVertical: 12,
+      width: '100%',
+      alignItems: 'center',
+    },
+    secondaryBtnText: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      fontWeight: FontWeights.semibold,
+      color: colors.primary,
+    },
+  });
+}

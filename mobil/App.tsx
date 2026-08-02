@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -22,8 +22,9 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { AlifboProvider } from './src/contexts/AlifboContext';
-import { ThemeProvider } from './src/contexts/ThemeContext';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { Colors, Fonts, FontSizes, FontWeights, Shadows, Layout } from './src/theme';
+import type { ColorPalette } from './src/theme/colors';
 import { initDB } from './src/services/db';
 import { setupAutoSync } from './src/services/sync';
 import ErrorBoundary from './src/components/ErrorBoundary';
@@ -46,25 +47,30 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 // ── Navigation Theme ───────────────────────────────
-const NavTheme: Theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: Colors.primary,
-    background: Colors.background,
-    card: Colors.surface,
-    text: Colors.textPrimary,
-    border: Colors.borderLight,
-    notification: Colors.danger,
-  },
-  fonts: {
-    ...DefaultTheme.fonts,
-    regular: { fontFamily: Fonts.body, fontWeight: FontWeights.regular },
-    medium: { fontFamily: Fonts.body, fontWeight: FontWeights.medium },
-    bold: { fontFamily: Fonts.heading, fontWeight: FontWeights.bold },
-    heavy: { fontFamily: Fonts.heading, fontWeight: FontWeights.extrabold },
-  },
-};
+// `colors` xodim tanlagan mavzuga (light/dark) qarab keladi — shu sababli
+// bu funksiya har theme o'zgarishida qayta chaqiriladi, modul darajasida
+// bir marta hisoblanadigan const emas.
+function buildNavTheme(colors: ColorPalette): Theme {
+  return {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.textPrimary,
+      border: colors.borderLight,
+      notification: colors.danger,
+    },
+    fonts: {
+      ...DefaultTheme.fonts,
+      regular: { fontFamily: Fonts.body, fontWeight: FontWeights.regular },
+      medium: { fontFamily: Fonts.body, fontWeight: FontWeights.medium },
+      bold: { fontFamily: Fonts.heading, fontWeight: FontWeights.bold },
+      heavy: { fontFamily: Fonts.heading, fontWeight: FontWeights.extrabold },
+    },
+  };
+}
 
 // ── Tab Icon Map ───────────────────────────────────
 const TAB_ICONS: Record<
@@ -173,11 +179,13 @@ function MainTabs() {
 
 // ── Loading Screen ─────────────────────────────────
 function LoadingScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.loading}>
-      <MaterialCommunityIcons name="shield-home" size={48} color={Colors.primaryLight} />
+      <MaterialCommunityIcons name="shield-home" size={48} color={colors.primaryLight} />
       <Text style={styles.loadingTitle}>Xavfsiz Xonadon</Text>
-      <ActivityIndicator size="small" color={Colors.primary} style={{ marginTop: 16 }} />
+      <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 16 }} />
     </View>
   );
 }
@@ -185,6 +193,7 @@ function LoadingScreen() {
 // ── Root Navigator ─────────────────────────────────
 function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { colors } = useTheme();
 
   if (isLoading) return <LoadingScreen />;
 
@@ -192,10 +201,10 @@ function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: Colors.surface,
+          backgroundColor: colors.surface,
         },
         headerShadowVisible: false,
-        headerTintColor: Colors.textPrimary,
+        headerTintColor: colors.textPrimary,
         headerTitleStyle: {
           fontFamily: Fonts.heading,
           fontWeight: FontWeights.bold,
@@ -238,6 +247,31 @@ function RootNavigator() {
   );
 }
 
+// ── App Shell (ThemeProvider ostida — useTheme() shu yerda ishlatiladi) ──
+function AppShell({ fontsLoaded }: { fontsLoaded: boolean }) {
+  const { colors, isDark } = useTheme();
+  const navTheme = useMemo(() => buildNavTheme(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      {!fontsLoaded ? (
+        <LoadingScreen />
+      ) : (
+        <ErrorBoundary>
+          <View style={styles.root}>
+            <NavigationContainer theme={navTheme}>
+              <RootNavigator />
+            </NavigationContainer>
+            <GpsGate />
+          </View>
+        </ErrorBoundary>
+      )}
+    </>
+  );
+}
+
 // ── App Entry ──────────────────────────────────────
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -262,27 +296,12 @@ export default function App() {
     };
   }, []);
 
-  const renderApp = useCallback(() => {
-    if (!fontsLoaded) return <LoadingScreen />;
-    return (
-      <ErrorBoundary>
-        <View style={styles.root}>
-          <NavigationContainer theme={NavTheme}>
-            <RootNavigator />
-          </NavigationContainer>
-          <GpsGate />
-        </View>
-      </ErrorBoundary>
-    );
-  }, [fontsLoaded]);
-
   return (
     <SafeAreaProvider>
       <ThemeProvider>
         <AuthProvider>
           <AlifboProvider>
-            <StatusBar style="dark" />
-            {renderApp()}
+            <AppShell fontsLoaded={fontsLoaded} />
           </AlifboProvider>
         </AuthProvider>
       </ThemeProvider>
@@ -291,19 +310,21 @@ export default function App() {
 }
 
 // ── Local Styles ───────────────────────────────────
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background },
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.background,
-  },
-  loadingTitle: {
-    marginTop: 12,
-    fontSize: FontSizes.lg,
-    fontFamily: Fonts.heading,
-    fontWeight: FontWeights.semibold,
-    color: Colors.textPrimary,
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.background },
+    loading: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.background,
+    },
+    loadingTitle: {
+      marginTop: 12,
+      fontSize: FontSizes.lg,
+      fontFamily: Fonts.heading,
+      fontWeight: FontWeights.semibold,
+      color: colors.textPrimary,
+    },
+  });
+}

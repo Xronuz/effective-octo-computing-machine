@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, type ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -33,12 +33,14 @@ interface IconProps {
 export default function Icon({
   name,
   size = 'md',
-  color = Colors.textSecondary,
+  color,
   containerSize,
   containerColor,
   style,
 }: IconProps) {
+  const { colors } = useTheme();
   const iconSize = typeof size === 'number' ? size : SIZE_MAP[size];
+  const iconColor = color ?? colors.textSecondary;
 
   if (containerSize) {
     return (
@@ -49,17 +51,19 @@ export default function Icon({
             width: containerSize,
             height: containerSize,
             borderRadius: containerSize / 3,
-            backgroundColor: containerColor || Colors.primarySurface,
+            backgroundColor: containerColor || colors.primarySurface,
           },
           style,
         ]}
       >
-        <MaterialCommunityIcons name={name} size={iconSize} color={color} />
+        <MaterialCommunityIcons name={name} size={iconSize} color={iconColor} />
       </View>
     );
   }
 
-  return <MaterialCommunityIcons name={name} size={iconSize} color={color} style={style as any} />;
+  return (
+    <MaterialCommunityIcons name={name} size={iconSize} color={iconColor} style={style as any} />
+  );
 }
 
 const styles = StyleSheet.create({

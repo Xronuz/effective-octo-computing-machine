@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   View,
   Text,
@@ -28,7 +29,6 @@ import {
 import FormField from '../components/FormField';
 import Button from '../components/Button';
 import {
-  Colors,
   Fonts,
   FontSizes,
   FontWeights,
@@ -37,6 +37,7 @@ import {
   Shadows,
   tabBarContentPadding,
 } from '../theme';
+import type { ColorPalette } from '../theme/colors';
 import type { ApiResponse, Paginated, MfyBrief, KochaBrief, XonadonSummary } from '../types';
 import { useAlifbo } from '../contexts/AlifboContext';
 import { useTabScreenNavigation } from '../navigation/hooks';
@@ -65,6 +66,8 @@ const EMPTY_FORM: YangiXonadonForm = { uy_raqami: '', egasi_fio: '', egasi_tel: 
 export default function HududScreen() {
   const navigation = useTabScreenNavigation();
   const { tr } = useAlifbo();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<MfyDetail[]>([]);
   const [loading, setLoading] = useState(false);
@@ -299,7 +302,7 @@ export default function HududScreen() {
         <MaterialCommunityIcons
           name="home-outline"
           size={16}
-          color={Colors.primary}
+          color={colors.primary}
           style={{ marginRight: 8 }}
         />
         <View style={{ flex: 1 }}>
@@ -315,7 +318,7 @@ export default function HududScreen() {
             <Text style={styles.muammoBadgeText}>{x.ochiq_muammolar_soni}</Text>
           </View>
         )}
-        <MaterialCommunityIcons name="chevron-right" size={18} color={Colors.textMuted} />
+        <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textMuted} />
       </View>
     </TouchableOpacity>
   );
@@ -329,7 +332,7 @@ export default function HududScreen() {
       >
         <View style={styles.mfyLeft}>
           <View style={styles.mfyIndexCircle}>
-            <MaterialCommunityIcons name="home-city-outline" size={20} color={Colors.primary} />
+            <MaterialCommunityIcons name="home-city-outline" size={20} color={colors.primary} />
           </View>
           <View style={styles.mfyInfo}>
             <Text style={styles.mfyTitle} numberOfLines={1}>
@@ -340,7 +343,7 @@ export default function HududScreen() {
                 <MaterialCommunityIcons
                   name="home-outline"
                   size={12}
-                  color={Colors.primary}
+                  color={colors.primary}
                   style={{ marginRight: 3 }}
                 />
                 <Text style={styles.statText}>{item.xonadon_soni}</Text>
@@ -349,7 +352,7 @@ export default function HududScreen() {
                 <MaterialCommunityIcons
                   name="road-variant"
                   size={12}
-                  color={Colors.secondary}
+                  color={colors.secondary}
                   style={{ marginRight: 3 }}
                 />
                 <Text style={styles.statText}>{item.kochalar_soni}</Text>
@@ -360,7 +363,7 @@ export default function HududScreen() {
         <MaterialCommunityIcons
           name={item.expanded ? 'chevron-up' : 'chevron-down'}
           size={22}
-          color={Colors.textMuted}
+          color={colors.textMuted}
         />
       </TouchableOpacity>
 
@@ -369,7 +372,7 @@ export default function HududScreen() {
           {item.loadingKochalar ? (
             <ActivityIndicator
               size="small"
-              color={Colors.primary}
+              color={colors.primary}
               style={{ padding: Spacing.base }}
             />
           ) : item.kochalar.length === 0 ? (
@@ -386,7 +389,7 @@ export default function HududScreen() {
                     <MaterialCommunityIcons
                       name="map-marker-outline"
                       size={14}
-                      color={Colors.textMuted}
+                      color={colors.textMuted}
                       style={{ marginRight: 6 }}
                     />
                     <Text style={styles.kochaNom}>{k.nomi}</Text>
@@ -422,13 +425,13 @@ export default function HududScreen() {
                       <MaterialCommunityIcons
                         name="plus-circle-outline"
                         size={20}
-                        color={Colors.primary}
+                        color={colors.primary}
                       />
                     </TouchableOpacity>
                     <MaterialCommunityIcons
                       name={k.expanded ? 'chevron-up' : 'chevron-down'}
                       size={18}
-                      color={Colors.textMuted}
+                      color={colors.textMuted}
                     />
                   </View>
                 </TouchableOpacity>
@@ -438,7 +441,7 @@ export default function HududScreen() {
                     {k.loadingXonadonlar ? (
                       <ActivityIndicator
                         size="small"
-                        color={Colors.primary}
+                        color={colors.primary}
                         style={{ padding: Spacing.sm }}
                       />
                     ) : (
@@ -456,7 +459,7 @@ export default function HududScreen() {
                           <MaterialCommunityIcons
                             name="plus-circle-outline"
                             size={16}
-                            color={Colors.primary}
+                            color={colors.primary}
                             style={{ marginRight: 5 }}
                           />
                           <Text style={styles.addXonadonText}>Yangi xonadon</Text>
@@ -486,7 +489,7 @@ export default function HududScreen() {
           <MaterialCommunityIcons
             name={searchOpen ? 'close' : 'magnify'}
             size={22}
-            color={Colors.primary}
+            color={colors.primary}
           />
         </TouchableOpacity>
       </View>
@@ -497,7 +500,7 @@ export default function HududScreen() {
             <MaterialCommunityIcons
               name="magnify"
               size={18}
-              color={Colors.textMuted}
+              color={colors.textMuted}
               style={{ marginLeft: Spacing.md }}
             />
             <TextInput
@@ -505,7 +508,7 @@ export default function HududScreen() {
               value={search}
               onChangeText={setSearch}
               placeholder={tr("MFY nomi bo'yicha qidirish...")}
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               autoFocus
             />
           </View>
@@ -537,7 +540,7 @@ export default function HududScreen() {
         }
         ListHeaderComponent={
           loading && items.length === 0 ? (
-            <ActivityIndicator size="large" color={Colors.primary} style={{ padding: 48 }} />
+            <ActivityIndicator size="large" color={colors.primary} style={{ padding: 48 }} />
           ) : null
         }
       />
@@ -562,7 +565,7 @@ export default function HududScreen() {
                 ) : null}
               </View>
               <TouchableOpacity onPress={() => setModalKocha(null)} hitSlop={12}>
-                <MaterialCommunityIcons name="close" size={24} color={Colors.textMuted} />
+                <MaterialCommunityIcons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -607,7 +610,7 @@ export default function HududScreen() {
                   <MaterialCommunityIcons
                     name="alert-circle"
                     size={18}
-                    color={Colors.danger}
+                    color={colors.danger}
                     style={{ marginRight: 6 }}
                   />
                   <Text style={styles.formErrorText}>{formError}</Text>
@@ -628,241 +631,247 @@ export default function HududScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-  },
-  headerTitle: {
-    fontSize: FontSizes['2xl'],
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-  searchBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Shadows.sm,
-  },
-  searchRow: { paddingHorizontal: Spacing.base, paddingBottom: Spacing.sm },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: Spacing.sm,
-    fontSize: FontSizes.base,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-  },
-  list: { padding: Spacing.base, paddingTop: Spacing.xs, flexGrow: 1 },
-  mfyCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    marginBottom: 10,
-    ...Shadows.sm,
-    overflow: 'hidden',
-  },
-  mfyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.base,
-  },
-  mfyLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, flex: 1 },
-  mfyIndexCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primarySurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mfyInfo: { flex: 1, gap: 3 },
-  mfyTitle: {
-    fontSize: FontSizes.base,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-  mfyStats: { flexDirection: 'row', gap: 10 },
-  statBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: Radius.sm,
-  },
-  statText: { fontSize: FontSizes.xs, fontFamily: Fonts.body, color: Colors.textSecondary },
-  kochalarList: {
-    backgroundColor: Colors.surfaceSubtle,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    gap: 4,
-  },
-  kochaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  kochaLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  kochaNom: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: Colors.textPrimary },
-  kochaRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  kochaCount: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  kochaSoni: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.primary,
-  },
-  kochaLabel: { fontSize: FontSizes.xs, fontFamily: Fonts.body, color: Colors.textMuted },
-  kochaAddBtn: { padding: 2 },
-  xonadonlarList: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    marginBottom: Spacing.sm,
-    padding: Spacing.sm,
-    gap: 2,
-  },
-  xonadonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  xonadonLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  xonadonTitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.body,
-    color: Colors.textPrimary,
-  },
-  xonadonMeta: {
-    fontSize: FontSizes.xs,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    marginTop: 1,
-  },
-  xonadonRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  muammoBadge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.dangerSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 5,
-  },
-  muammoBadgeText: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.body,
-    color: Colors.danger,
-  },
-  addXonadonBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    marginTop: 4,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    borderRadius: Radius.md,
-    borderStyle: 'dashed',
-  },
-  addXonadonText: {
-    fontSize: FontSizes.sm,
-    fontWeight: FontWeights.semibold,
-    fontFamily: Fonts.heading,
-    color: Colors.primary,
-  },
-  noKochalar: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    fontStyle: 'italic',
-    color: Colors.textMuted,
-    padding: Spacing.sm,
-    textAlign: 'center',
-  },
-  emptyBox: { alignItems: 'center', marginTop: Spacing['3xl'], paddingHorizontal: Spacing['2xl'] },
-  emptyTitle: {
-    fontSize: FontSizes.md,
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-    marginTop: Spacing.md,
-  },
-  emptyText: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textMuted,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 30, 60, 0.45)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: Radius['2xl'],
-    borderTopRightRadius: Radius['2xl'],
-    padding: Spacing.xl,
-    maxHeight: '85%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-  },
-  modalTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: FontWeights.bold,
-    fontFamily: Fonts.heading,
-    color: Colors.textPrimary,
-  },
-  modalSubtitle: {
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  formErrorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.dangerSurface,
-    borderRadius: Radius.sm,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-  },
-  formErrorText: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    fontFamily: Fonts.body,
-    color: Colors.danger,
-    fontWeight: FontWeights.medium,
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.base,
+      paddingTop: Spacing.md,
+      paddingBottom: Spacing.sm,
+    },
+    headerTitle: {
+      fontSize: FontSizes['2xl'],
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+    searchBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...Shadows.sm,
+    },
+    searchRow: { paddingHorizontal: Spacing.base, paddingBottom: Spacing.sm },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    searchInput: {
+      flex: 1,
+      paddingVertical: 10,
+      paddingHorizontal: Spacing.sm,
+      fontSize: FontSizes.base,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+    },
+    list: { padding: Spacing.base, paddingTop: Spacing.xs, flexGrow: 1 },
+    mfyCard: {
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      marginBottom: 10,
+      ...Shadows.sm,
+      overflow: 'hidden',
+    },
+    mfyHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: Spacing.base,
+    },
+    mfyLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, flex: 1 },
+    mfyIndexCircle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.primarySurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    mfyInfo: { flex: 1, gap: 3 },
+    mfyTitle: {
+      fontSize: FontSizes.base,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+    mfyStats: { flexDirection: 'row', gap: 10 },
+    statBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: Radius.sm,
+    },
+    statText: { fontSize: FontSizes.xs, fontFamily: Fonts.body, color: colors.textSecondary },
+    kochalarList: {
+      backgroundColor: colors.surfaceSubtle,
+      paddingHorizontal: Spacing.base,
+      paddingVertical: Spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      gap: 4,
+    },
+    kochaRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+    },
+    kochaLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    kochaNom: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: colors.textPrimary },
+    kochaRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    kochaCount: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
+    kochaSoni: {
+      fontSize: FontSizes.sm,
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.heading,
+      color: colors.primary,
+    },
+    kochaLabel: { fontSize: FontSizes.xs, fontFamily: Fonts.body, color: colors.textMuted },
+    kochaAddBtn: { padding: 2 },
+    xonadonlarList: {
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      marginBottom: Spacing.sm,
+      padding: Spacing.sm,
+      gap: 2,
+    },
+    xonadonRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 10,
+      paddingHorizontal: Spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderLight,
+    },
+    xonadonLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    xonadonTitle: {
+      fontSize: FontSizes.sm,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.body,
+      color: colors.textPrimary,
+    },
+    xonadonMeta: {
+      fontSize: FontSizes.xs,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    xonadonRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    muammoBadge: {
+      minWidth: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.dangerSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 5,
+    },
+    muammoBadgeText: {
+      fontSize: FontSizes.xs,
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.body,
+      color: colors.danger,
+    },
+    addXonadonBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      marginTop: 4,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      borderRadius: Radius.md,
+      borderStyle: 'dashed',
+    },
+    addXonadonText: {
+      fontSize: FontSizes.sm,
+      fontWeight: FontWeights.semibold,
+      fontFamily: Fonts.heading,
+      color: colors.primary,
+    },
+    noKochalar: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      fontStyle: 'italic',
+      color: colors.textMuted,
+      padding: Spacing.sm,
+      textAlign: 'center',
+    },
+    emptyBox: {
+      alignItems: 'center',
+      marginTop: Spacing['3xl'],
+      paddingHorizontal: Spacing['2xl'],
+    },
+    emptyTitle: {
+      fontSize: FontSizes.md,
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+      marginTop: Spacing.md,
+    },
+    emptyText: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      marginTop: 4,
+      textAlign: 'center',
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(10, 30, 60, 0.45)',
+      justifyContent: 'flex-end',
+    },
+    modalCard: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: Radius['2xl'],
+      borderTopRightRadius: Radius['2xl'],
+      padding: Spacing.xl,
+      maxHeight: '85%',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: Spacing.lg,
+    },
+    modalTitle: {
+      fontSize: FontSizes.lg,
+      fontWeight: FontWeights.bold,
+      fontFamily: Fonts.heading,
+      color: colors.textPrimary,
+    },
+    modalSubtitle: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    formErrorBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.dangerSurface,
+      borderRadius: Radius.sm,
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+    },
+    formErrorText: {
+      flex: 1,
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.danger,
+      fontWeight: FontWeights.medium,
+    },
+  });
+}

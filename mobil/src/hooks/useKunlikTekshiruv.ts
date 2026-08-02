@@ -3,7 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
 import { getNavbatYozuvlari } from '../services/db';
 import { isoVaqtningKuni } from '../lib/sana';
-import { navbatNatijasi } from '../lib/natija';
+import { navbatNatijasi, muammoNatijasi } from '../lib/natija';
 import type { ApiResponse, MuammoSummary, Paginated } from '../types';
 
 /** ISO sanaga 1 kun qo'shadi (mahalliy vaqt zonasidan mustaqil). */
@@ -12,10 +12,13 @@ function ertangiKun(iso: string): string {
   return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
 }
 
-export interface KiraOlmadiXonadon {
+export interface XonadonRoyxatItem {
   xonadon_id: number;
   manzil: string | null;
 }
+
+/** Kunlik statistika kartochkalaridagi 4 toifa. */
+export type KunlikToifa = 'jami' | 'muammosiz' | 'muammoli' | 'kiraOlmadi';
 
 export interface KunlikStat {
   jami: number;
@@ -24,8 +27,8 @@ export interface KunlikStat {
   kiraOlmadi: number;
   /** Shu kunda hali serverga yuborilmagan (navbatdagi) tashriflar soni. */
   yuborilmagan: number;
-  /** Kira olinmagan xonadonlar — qayta tashrif uchun ro'yxat. */
-  kiraOlmadiRoyxat: KiraOlmadiXonadon[];
+  /** Har toifa uchun xonadonlar ro'yxati — kartochkani bosganda pastda ko'rsatish uchun. */
+  royxatlar: Record<KunlikToifa, XonadonRoyxatItem[]>;
 }
 
 const BOSH: KunlikStat = {
@@ -34,8 +37,12 @@ const BOSH: KunlikStat = {
   muammoli: 0,
   kiraOlmadi: 0,
   yuborilmagan: 0,
-  kiraOlmadiRoyxat: [],
+  royxatlar: { jami: [], muammosiz: [], muammoli: [], kiraOlmadi: [] },
 };
+
+function boshQiymat(): KunlikStat {
+  return { ...BOSH, royxatlar: { jami: [], muammosiz: [], muammoli: [], kiraOlmadi: [] } };
+}
 
 interface KunlikJavob {
   jami: number;
@@ -49,23 +56,24 @@ interface KunlikJavob {
  *
  * Serverdagi (sinxronlangan) yozuvlar `/statistika/kunlik` dan olinadi va
  * ustiga qurilmada hali yuborilmagan navbat yozuvlari qo'shiladi — aks holda
- * offline ishlagan xodim o'z ishini "0" deb ko'rardi.
+ * offline ishlagan xodim o'z ishini "0" deb ko'rardi. Har toifa (jami,
+ * muammosiz, muammoli, kira olmadi) uchun xonadonlar ro'yxati ham
+ * yig'iladi — statistika kartochkasida har birini alohida ochib ko'rish
+ * mumkin bo'lishi uchun.
  */
 export function useKunlikTekshiruv(sanaIso: string): {
   stat: KunlikStat;
   loading: boolean;
   yangila: () => void;
 } {
-  const [stat, setStat] = useState<KunlikStat>(BOSH);
+  const [stat, setStat] = useState<KunlikStat>(boshQiymat);
   const [loading, setLoading] = useState(false);
 
   const yuklash = useCallback(async () => {
     setLoading(true);
 
     // 1) Qurilmadagi navbat (server bilan bog'liq emas — doim hisoblanadi).
-    // Diqqat: massiv ALOHIDA yaratiladi — `{...BOSH}` uni havola bo'yicha
-    // nusxalar va push() modul darajasidagi BOSH'ni o'zgartirib yuborardi.
-    let navbat: KunlikStat = { ...BOSH, kiraOlmadiRoyxat: [] };
+    const navbat = boshQiymat();
     try {
       const yozuvlar = await getNavbatYozuvlari();
       for (const y of yozuvlar) {
@@ -73,15 +81,22 @@ export function useKunlikTekshiruv(sanaIso: string): {
         if (isoVaqtningKuni(y.yaratilgan) !== sanaIso) continue;
         navbat.jami += 1;
         navbat.yuborilmagan += 1;
+        const item: XonadonRoyxatItem = { xonadon_id: y.xonadon_id, manzil: null };
+        navbat.royxatlar.jami.push(item);
         const natija = navbatNatijasi(y);
         if (natija === 'kira_olmadi') {
           navbat.kiraOlmadi += 1;
-          navbat.kiraOlmadiRoyxat.push({ xonadon_id: y.xonadon_id, manzil: null });
-        } else if (natija === 'muammo_topildi') navbat.muammoli += 1;
-        else navbat.muammosiz += 1;
+          navbat.royxatlar.kiraOlmadi.push(item);
+        } else if (natija === 'muammo_topildi') {
+          navbat.muammoli += 1;
+          navbat.royxatlar.muammoli.push(item);
+        } else {
+          navbat.muammosiz += 1;
+          navbat.royxatlar.muammosiz.push(item);
+        }
       }
     } catch {
-      navbat = { ...BOSH, kiraOlmadiRoyxat: [] };
+      // e'tiborsiz qoldiriladi — navbat bo'sh holicha qoladi
     }
 
     // 2) Serverdagi sinxronlangan yozuvlar
@@ -91,12 +106,16 @@ export function useKunlikTekshiruv(sanaIso: string): {
       );
       const s = data.ok && data.data ? data.data : null;
 
-      // Kira olinmagan xonadonlar ro'yxati — qayta tashrif uchun
-      let serverKiraOlmadi: KiraOlmadiXonadon[] = [];
-      if ((s?.kira_olmadi ?? 0) > 0) {
+      // Shu kunning barcha tashriflari — toifalarga ajratib, ro'yxat sifatida
+      const serverRoyxatlar: Record<KunlikToifa, XonadonRoyxatItem[]> = {
+        jami: [],
+        muammosiz: [],
+        muammoli: [],
+        kiraOlmadi: [],
+      };
+      if ((s?.jami ?? 0) > 0) {
         try {
           const params = new URLSearchParams({
-            tekshiruv_natijasi: 'kira_olmadi',
             sana_dan: sanaIso,
             sana_gacha: ertangiKun(sanaIso),
             size: '100',
@@ -104,10 +123,15 @@ export function useKunlikTekshiruv(sanaIso: string): {
           const { data: royxat } = await api.get<ApiResponse<Paginated<MuammoSummary>>>(
             `/muammolar?${params}`,
           );
-          serverKiraOlmadi = (royxat.ok ? (royxat.data?.items ?? []) : []).map((m) => ({
-            xonadon_id: m.xonadon_id,
-            manzil: m.xonadon_manzili,
-          }));
+          const items = royxat.ok ? (royxat.data?.items ?? []) : [];
+          for (const m of items) {
+            const elem: XonadonRoyxatItem = { xonadon_id: m.xonadon_id, manzil: m.xonadon_manzili };
+            serverRoyxatlar.jami.push(elem);
+            const natija = muammoNatijasi(m);
+            if (natija === 'kira_olmadi') serverRoyxatlar.kiraOlmadi.push(elem);
+            else if (natija === 'muammo_topildi') serverRoyxatlar.muammoli.push(elem);
+            else serverRoyxatlar.muammosiz.push(elem);
+          }
         } catch {
           // Ro'yxat olinmasa ham sonlar ko'rsatiladi
         }
@@ -119,7 +143,12 @@ export function useKunlikTekshiruv(sanaIso: string): {
         muammoli: (s?.muammoli ?? 0) + navbat.muammoli,
         kiraOlmadi: (s?.kira_olmadi ?? 0) + navbat.kiraOlmadi,
         yuborilmagan: navbat.yuborilmagan,
-        kiraOlmadiRoyxat: [...serverKiraOlmadi, ...navbat.kiraOlmadiRoyxat],
+        royxatlar: {
+          jami: [...serverRoyxatlar.jami, ...navbat.royxatlar.jami],
+          muammosiz: [...serverRoyxatlar.muammosiz, ...navbat.royxatlar.muammosiz],
+          muammoli: [...serverRoyxatlar.muammoli, ...navbat.royxatlar.muammoli],
+          kiraOlmadi: [...serverRoyxatlar.kiraOlmadi, ...navbat.royxatlar.kiraOlmadi],
+        },
       });
     } catch {
       // Tarmoq yo'q — hech bo'lmasa qurilmadagi ish ko'rinib tursin
