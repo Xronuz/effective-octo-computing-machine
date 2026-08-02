@@ -182,3 +182,38 @@ class TestMfyBiriktirishEndpoint:
         assert any(
             isinstance(c.args[0], XodimMfy) for c in mock_db.add.call_args_list
         )
+
+    def test_avval_nofaol_biriktirish_qayta_faollashtiriladi(self, client_factory):
+        """MFY oldin shu xodimga biriktirilib, keyin ajratilgan (faol=False) —
+        qayta biriktirilganda yangi qator emas, mavjudi qayta faollashtiriladi."""
+        rahbar = _make_user(user_id=99, rol=UserRole.rahbar)
+        xodim = _make_user(user_id=1, rol=UserRole.xodim)
+
+        eski_nofaol = _make_xodim_mfy(3, faol=False)
+
+        mock_db = AsyncMock()
+        mock_db.execute = AsyncMock(
+            side_effect=[
+                _result(scalar_one_or_none=xodim),  # 1) foydalanuvchi
+                _result(scalars_all=[MagicMock(id=3)]),  # 2) mfy mavjud
+                _result(scalars_all=[]),  # 3) shu xodimning aktiv MFYlari — yo'q (bu nofaol)
+                _result(all_rows=[]),  # 4) boshqaga biriktirilgan — yo'q
+                _result(scalar_one_or_none=eski_nofaol),  # 5) mavjud nofaol yozuv topildi
+            ]
+        )
+        mock_db.flush = AsyncMock()
+        mock_db.add = MagicMock()
+
+        client = client_factory(
+            user_override=lambda: rahbar,
+            db_override=lambda: mock_db,
+        )
+
+        resp = client.post("/api/users/1/mfy", json={"mfy_ids": [3]})
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+        assert eski_nofaol.faol is True  # qayta faollashtirildi
+        # Yangi XodimMfy qator YARATILMAGAN — faqat audit yozuvi qo'shildi
+        assert not any(
+            isinstance(c.args[0], XodimMfy) for c in mock_db.add.call_args_list
+        )
