@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import {
   View,
@@ -15,6 +15,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import PullToRefresh from '../components/PullToRefresh';
 import api from '../services/api';
@@ -138,6 +139,49 @@ export default function HududScreen() {
       ),
     );
   };
+
+  const xonadonlarniYangila = useCallback(
+    async (mfyIndex: number, kochaIndex: number, kochaId: number) => {
+      try {
+        const { data } = await api.get<ApiResponse<Paginated<XonadonSummary>>>(
+          `/xonadonlar?kocha_id=${kochaId}&size=100`,
+        );
+        if (data.ok && data.data) {
+          patchKocha(mfyIndex, kochaIndex, { xonadonlar: data.data.items });
+          await cacheXonadonlar(data.data.items, kochaId);
+        }
+      } catch {
+        // Tarmoq yo'q — eski ro'yxat qoladi, keyingi fokusda qayta urinadi
+      }
+    },
+    [],
+  );
+
+  // Ekran qayta fokusga kelganda (masalan XonadonDetail'da muammoni yopib
+  // orqaga qaytilganda) ochiq turgan ko'chalardagi "ochiq muammolar"
+  // belgisini yangilaymiz — MFY/ko'cha yig'ilgan-yozilgan holatini
+  // buzmasdan (to'liq fetchMfylar() hammasini yig'ib qo'yardi).
+  const itemsRef = useRef<MfyDetail[]>(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  const birinchiFokusRef = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (birinchiFokusRef.current) {
+        birinchiFokusRef.current = false;
+        return;
+      }
+      itemsRef.current.forEach((mfy, mfyIndex) => {
+        mfy.kochalar.forEach((kocha, kochaIndex) => {
+          if (kocha.expanded && kocha.xonadonlar.length > 0) {
+            xonadonlarniYangila(mfyIndex, kochaIndex, kocha.id);
+          }
+        });
+      });
+    }, [xonadonlarniYangila]),
+  );
 
   const toggleExpand = async (index: number) => {
     const mfy = items[index];
