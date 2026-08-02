@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import PullToRefresh from '../components/PullToRefresh';
 import Button from '../components/Button';
@@ -91,6 +92,15 @@ export default function XonadonDetailScreen() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Muammoni yopish/tekshiruv ekranidan orqaga qaytganda ma'lumot avval
+  // yangilanmasdi — pastdagi amal tugmasi ("Muammoni yopish" → "Tekshiruv
+  // qilish") faqat qo'lda pastga tortib yangilagandagina o'zgarardi.
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData]),
+  );
 
   useEffect(() => {
     if (muammolar.length > 0) {
