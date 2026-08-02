@@ -82,7 +82,21 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
 
   const handleSave = async () => {
     setSaving(true);
-    const res = await apiPost(`/users/${user.id}/mfy`, { mfy_ids: [...selectedIds] });
+    let res = await apiPost(`/users/${user.id}/mfy`, { mfy_ids: [...selectedIds] });
+
+    // Ba'zi MFYlar boshqa xodimga aktiv biriktirilgan bo'lsa backend 409
+    // qaytaradi — rahbarga tasdiqlatib, majburiy=true bilan qayta yuboramiz
+    // (aks holda bu ekranda o'tkazishning boshqa yo'li yo'q edi).
+    if (!res.ok && res.xato?.includes('boshqa xodimga biriktirilgan')) {
+      const rozi = window.confirm(`${res.xato}\n\n${tr("Baribir shu xodimga o'tkazilsinmi?")}`);
+      if (rozi) {
+        res = await apiPost(`/users/${user.id}/mfy`, {
+          mfy_ids: [...selectedIds],
+          majburiy: true,
+        });
+      }
+    }
+
     setSaving(false);
     if (res.ok) {
       onSaved();
