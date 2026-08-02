@@ -1,7 +1,7 @@
 // XAVFSIZ XONADON — Foydalanuvchilar boshqaruvi (rahbar / superadmin)
 
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Users, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, X, Check, Ban, MapPin, Pencil } from 'lucide-react';
 import { apiGet, apiPatch, apiPost } from '@/api';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
@@ -149,6 +149,104 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
   );
 }
 
+// ── Foydalanuvchi ma'lumotlarini tahrirlash modali ──────────────────
+
+interface TahrirlashModalProps {
+  user: Foydalanuvchi;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function TahrirlashModal({ user, onClose, onSaved }: TahrirlashModalProps) {
+  const { tr } = useAlifbo();
+  const [familiya, setFamiliya] = useState(user.familiya);
+  const [ism, setIsm] = useState(user.ism);
+  const [sharif, setSharif] = useState(user.sharif ?? '');
+  const [lavozim, setLavozim] = useState(user.lavozim ?? '');
+  const [telefon, setTelefon] = useState(user.telefon ?? '');
+  const [guvohnoma, setGuvohnoma] = useState(user.guvohnoma_raqami);
+  const [saving, setSaving] = useState(false);
+  const [xato, setXato] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    setXato(null);
+    setSaving(true);
+    const res = await apiPatch(`/users/${user.id}`, {
+      familiya: familiya.trim(),
+      ism: ism.trim(),
+      sharif: sharif.trim() || null,
+      lavozim: lavozim.trim(),
+      telefon: telefon.trim() || null,
+      guvohnoma_raqami: guvohnoma.trim().toUpperCase(),
+    });
+    setSaving(false);
+    if (res.ok) {
+      onSaved();
+      onClose();
+    } else {
+      setXato(res.xato || tr('Saqlashda xatolik'));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="card flex max-h-[85vh] w-full max-w-md flex-col">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <h3 className="text-base font-semibold text-[#0F2033]">
+            {tr('Ma\'lumotlarni tahrirlash')} — {tr(user.full_name)}
+          </h3>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            aria-label={tr('Yopish')}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-3 overflow-y-auto px-6 py-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Familiya')}</label>
+              <input className="input w-full" value={familiya} onChange={(e) => setFamiliya(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Ism')}</label>
+              <input className="input w-full" value={ism} onChange={(e) => setIsm(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Sharif')}</label>
+            <input className="input w-full" value={sharif} onChange={(e) => setSharif(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Lavozim')}</label>
+            <input className="input w-full" value={lavozim} onChange={(e) => setLavozim(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Telefon')}</label>
+            <input className="input w-full" value={telefon} onChange={(e) => setTelefon(e.target.value)} placeholder="+998 XX XXX XX XX" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Guvohnoma raqami')}</label>
+            <input className="input w-full uppercase" value={guvohnoma} onChange={(e) => setGuvohnoma(e.target.value.toUpperCase())} />
+          </div>
+          {xato && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{xato}</p>}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+          <button onClick={onClose} className="btn-ghost" disabled={saving}>
+            {tr('Bekor qilish')}
+          </button>
+          <button onClick={handleSave} className="btn-primary" disabled={saving}>
+            {saving ? tr('Saqlanmoqda...') : tr('Saqlash')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── asosiy sahifa ────────────────────────────────────────────────────
 
 export default function BoshqaruvPage() {
@@ -169,6 +267,7 @@ export default function BoshqaruvPage() {
 
   // Modal
   const [mfyUser, setMfyUser] = useState<Foydalanuvchi | null>(null);
+  const [tahrirUser, setTahrirUser] = useState<Foydalanuvchi | null>(null);
 
   // ── fetch users ──────────────────────────────────────────────────
   const fetchUsers = useCallback(async () => {
@@ -316,13 +415,13 @@ export default function BoshqaruvPage() {
             <thead className="sticky top-0 z-10 bg-white">
               <tr>
                 <th className="w-10 text-center">#</th>
-                <th className="text-center">{tr('F.I.Sh')}</th>
+                <th className="sticky left-0 z-20 bg-white text-left">{tr('F.I.Sh')}</th>
                 <th className="text-center">{tr('Guvohnoma')}</th>
                 <th className="text-center">{tr('Rol')}</th>
                 <th className="text-center">{tr('Holat')}</th>
                 <th className="text-center">{tr('Telefon')}</th>
                 <th className="text-center">{tr('MFY lar')}</th>
-                <th className="text-center">{tr('Amallar')}</th>
+                <th className="w-28 text-center">{tr('Amallar')}</th>
               </tr>
             </thead>
             <tbody>
@@ -331,7 +430,7 @@ export default function BoshqaruvPage() {
                   <td className="whitespace-nowrap text-center text-slate-400 tabular-nums">
                     {(page - 1) * 20 + idx + 1}
                   </td>
-                  <td className="whitespace-nowrap text-center font-medium text-[#0F2033]">
+                  <td className="sticky left-0 z-[5] whitespace-nowrap bg-[var(--bg-surface)] text-left font-medium text-[#0F2033]">
                     {tr(u.full_name)}
                   </td>
                   <td className="whitespace-nowrap text-center text-slate-500">
@@ -360,14 +459,16 @@ export default function BoshqaruvPage() {
                     </span>
                   </td>
                   <td className="whitespace-nowrap text-center">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1">
                       {/* Tasdiqlash — only for kutilmoqda */}
                       {u.holat === 'kutilmoqda' && (
                         <button
                           onClick={() => tasdiqlash(u.id)}
-                          className="btn-primary px-3 py-1.5 text-xs"
+                          title={tr('Tasdiqlash')}
+                          aria-label={tr('Tasdiqlash')}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg text-green-600 transition-colors hover:bg-green-50"
                         >
-                          {tr('Tasdiqlash')}
+                          <Check className="h-4 w-4" />
                         </button>
                       )}
 
@@ -375,18 +476,32 @@ export default function BoshqaruvPage() {
                       {u.holat === 'faol' && (
                         <button
                           onClick={() => bloklash(u.id)}
-                          className="btn-danger px-3 py-1.5 text-xs"
+                          title={tr('Bloklash')}
+                          aria-label={tr('Bloklash')}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50"
                         >
-                          {tr('Bloklash')}
+                          <Ban className="h-4 w-4" />
                         </button>
                       )}
 
                       {/* MFY biriktirish */}
                       <button
                         onClick={() => setMfyUser(u)}
-                        className="btn-soft px-3 py-1.5 text-xs"
+                        title={tr('MFY biriktirish')}
+                        aria-label={tr('MFY biriktirish')}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
                       >
-                        {tr('MFY biriktirish')}
+                        <MapPin className="h-4 w-4" />
+                      </button>
+
+                      {/* Tahrirlash */}
+                      <button
+                        onClick={() => setTahrirUser(u)}
+                        title={tr('Tahrirlash')}
+                        aria-label={tr('Tahrirlash')}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
+                      >
+                        <Pencil className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
@@ -447,6 +562,15 @@ export default function BoshqaruvPage() {
         <MfyBiriktirishModal
           user={mfyUser}
           onClose={() => setMfyUser(null)}
+          onSaved={fetchUsers}
+        />
+      )}
+
+      {/* Tahrirlash modal */}
+      {tahrirUser && (
+        <TahrirlashModal
+          user={tahrirUser}
+          onClose={() => setTahrirUser(null)}
           onSaved={fetchUsers}
         />
       )}

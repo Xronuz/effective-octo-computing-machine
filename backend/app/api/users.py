@@ -14,7 +14,7 @@ from app.core.deps import get_db, get_current_user, require_role
 from app.core.exceptions import NotFoundException, RoyxatException
 from app.models.user import User, UserRole, UserStatus, XodimMfy
 from app.models.hudud import Mfy
-from app.schemas.auth import UserResponse, MfyBiriktirishRequest
+from app.schemas.auth import UserResponse, MfyBiriktirishRequest, UserUpdateRequest
 from app.services.audit import audit_yozish
 
 logger = logging.getLogger("xavfsiz_xonadon")
@@ -100,6 +100,86 @@ async def foydalanuvchilar(
             "size": size,
             "pages": pages,
         },
+        "xato": None,
+    }
+
+
+# ============ PATCH /api/users/{id} ============
+
+@router.patch("/{user_id}")
+async def foydalanuvchi_tahrirlash(
+    user_id: int,
+    body: UserUpdateRequest,
+    request: Request,
+    current_user: User = Depends(require_role("rahbar", "superadmin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Rahbar/superadmin boshqa foydalanuvchining F.I.Sh, lavozim, telefon,
+    guvohnoma raqamini tahrirlaydi. Parol bu yerdan o'zgartirilmaydi
+    (xodim buni o'z profilida — PATCH /auth/men — qiladi).
+    """
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise NotFoundException("Foydalanuvchi", user_id)
+
+    # Superadmin ma'lumotlarini faqat superadmin tahrirlay oladi
+    if user.rol == UserRole.superadmin and current_user.rol != UserRole.superadmin:
+        raise RoyxatException("Superadmin ma'lumotlarini faqat boshqa superadmin tahrirlashi mumkin.")
+
+    eski_qiymat = {
+        "familiya": user.familiya, "ism": user.ism, "sharif": user.sharif,
+        "lavozim": user.lavozim, "telefon": user.telefon,
+        "guvohnoma_raqami": user.guvohnoma_raqami,
+    }
+
+    if body.guvohnoma_raqami:
+        yangi_gr = body.guvohnoma_raqami.upper()
+        if yangi_gr != user.guvohnoma_raqami:
+            dup = await db.execute(
+                select(User).where(User.guvohnoma_raqami == yangi_gr, User.id != user.id)
+            )
+            if dup.scalar_one_or_none():
+                raise RoyxatException("Bu guvohnoma raqami allaqachon band.")
+            user.guvohnoma_raqami = yangi_gr
+
+    if body.familiya:
+        user.familiya = body.familiya
+    if body.ism:
+        user.ism = body.ism
+    if body.sharif is not None:
+        user.sharif = body.sharif or None
+    if body.lavozim:
+        user.lavozim = body.lavozim
+    if body.telefon is not None:
+        user.telefon = body.telefon or None
+
+    await db.flush()
+    await db.refresh(user)
+
+    ip, user_agent = _ip_ua(request)
+    await audit_yozish(
+        db,
+        user_id=current_user.id,
+        amal="user.tahrirlash",
+        obyekt_turi="users",
+        obyekt_id=user.id,
+        eski_qiymat=eski_qiymat,
+        yangi_qiymat={
+            "familiya": user.familiya, "ism": user.ism, "sharif": user.sharif,
+            "lavozim": user.lavozim, "telefon": user.telefon,
+            "guvohnoma_raqami": user.guvohnoma_raqami,
+        },
+        ip=ip,
+        user_agent=user_agent,
+    )
+
+    logger.info(f"Tahrirlandi: user_id={user.id} → {current_user.guvohnoma_raqami} tomonidan")
+
+    return {
+        "ok": True,
+        "data": {"user": UserResponse.model_validate(user).model_dump()},
         "xato": None,
     }
 

@@ -84,9 +84,13 @@ class UserResponse(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    """Foydalanuvchi ma'lumotlarini yangilash."""
-    lavozim: Optional[str] = Field(None, max_length=120)
+    """Boshqa foydalanuvchi ma'lumotlarini rahbar/superadmin tomonidan tahrirlash (PATCH /users/{id})."""
+    familiya: Optional[str] = Field(None, min_length=1, max_length=60)
+    ism: Optional[str] = Field(None, min_length=1, max_length=60)
+    sharif: Optional[str] = Field(None, max_length=60)
+    lavozim: Optional[str] = Field(None, min_length=2, max_length=120)
     telefon: Optional[str] = Field(None, max_length=20)
+    guvohnoma_raqami: Optional[str] = Field(None, min_length=3, max_length=20, pattern=r"^[A-Z0-9]+$")
 
 
 class ProfilYangilashRequest(BaseModel):
