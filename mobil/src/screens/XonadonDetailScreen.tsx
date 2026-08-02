@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Image,
   Linking,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -32,7 +33,8 @@ import { cacheMuammolar, getCacheMuammolar } from '../services/cache';
 import { warmFotoCache, resolveFotoSource } from '../services/fotoCache';
 import { bandlarniParse, bandMatni } from '../constants/yoriqnoma';
 import NatijaBadge from '../components/NatijaBadge';
-import { muammoNatijasi, natijaSarlavhasi } from '../lib/natija';
+import { muammoNatijasi, natijaSarlavhasi, xonadonAmali } from '../lib/natija';
+import { bugunIso } from '../lib/sana';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -60,6 +62,10 @@ export default function XonadonDetailScreen() {
   const [muammolar, setMuammolar] = useState<MuammoSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Keyingi mantiqiy amal: yangi tekshiruv / ochiq muammoni yopish /
+  // bugun allaqachon tekshirilgan (yumshoq ogohlantirish bilan).
+  const amal = useMemo(() => xonadonAmali(muammolar, bugunIso()), [muammolar]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -326,13 +332,57 @@ export default function XonadonDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Yagona asosiy amal */}
+      {/* Kontekstga mos yagona asosiy amal — avval doim "Tekshiruv qilish"
+          bo'lib, ochiq muammoli uyga qaytgan inspektor uni yopa olmasdi. */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing.sm }]}>
-        <Button
-          title={tr('Tekshiruv qilish')}
-          icon="clipboard-check-outline"
-          onPress={() => navigation.navigate('Tekshiruv', { xonadonId: id })}
-        />
+        {amal.turi === 'muammoni_yopish' ? (
+          <>
+            <Text style={styles.amalIzoh}>{tr('Bu xonadonda bartaraf etilmagan muammo bor')}</Text>
+            <Button
+              title={tr('Muammoni yopish')}
+              icon="check-circle-outline"
+              onPress={() =>
+                navigation.navigate('MuammoYopish', {
+                  muammoId: amal.muammoId,
+                  sarlavha: amal.sarlavha,
+                })
+              }
+            />
+          </>
+        ) : amal.turi === 'bugun_tekshirilgan' ? (
+          <>
+            <Text style={styles.amalIzoh}>
+              {tr('Bu xonadon bugun tekshirilgan ({vaqt})').replace('{vaqt}', amal.vaqt)}
+            </Text>
+            <Button
+              title={tr('Baribir qayta tekshirish')}
+              icon="clipboard-alert-outline"
+              variant="secondary"
+              onPress={() =>
+                Alert.alert(
+                  tr('Takroriy tekshiruv'),
+                  tr(
+                    'Bu xonadon bugun allaqachon tekshirilgan. Takroriy yozuv rahbar nazorati uchun belgilanadi.',
+                  ),
+                  [
+                    { text: tr('Bekor qilish'), style: 'cancel' },
+                    {
+                      text: tr('Davom etish'),
+                      onPress: () =>
+                        navigation.navigate('Tekshiruv', { xonadonId: id, majburiy: true }),
+                    },
+                  ],
+                )
+              }
+            />
+          </>
+        ) : (
+          <Button
+            title={tr('Tekshiruv qilish')}
+            icon="clipboard-check-outline"
+            onPress={() => navigation.navigate('Tekshiruv', { xonadonId: id })}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -507,5 +557,12 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.borderLight,
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.sm,
+  },
+  amalIzoh: {
+    fontSize: FontSizes.sm,
+    fontFamily: Fonts.body,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
   },
 });

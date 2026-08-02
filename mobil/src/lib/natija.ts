@@ -38,6 +38,58 @@ export function navbatNatijasi(y: NavbatYozuvi): Natija {
  * Ro'yxatlarda ko'rsatiladigan sarlavha: muammo bo'lsa yo'riqnoma bandlari,
  * aks holda natija matni.
  */
+/**
+ * Xonadon uchun keyingi mantiqiy amal.
+ *
+ * Bitta "Tekshiruv qilish" tugmasi o'rniga kontekstga mos amal taklif
+ * qilinadi — avval inspektor muammoli uyga qaytganda ham faqat yangi
+ * tekshiruv yoza olardi, natijada asl muammo ochiq qolib, statistika
+ * shishardi.
+ */
+export type XonadonAmali =
+  | { turi: 'tekshirish' }
+  | { turi: 'muammoni_yopish'; muammoId: number; sarlavha: string }
+  | { turi: 'bugun_tekshirilgan'; vaqt: string };
+
+function bugungiMi(isoVaqt: string | null, bugun: string): boolean {
+  if (!isoVaqt) return false;
+  const d = new Date(isoVaqt);
+  if (Number.isNaN(d.getTime())) return false;
+  const oy = String(d.getMonth() + 1).padStart(2, '0');
+  const kun = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${oy}-${kun}` === bugun;
+}
+
+export function xonadonAmali(muammolar: MuammoSummary[], bugun: string): XonadonAmali {
+  // 1) Ochiq muammo bor — uni yopish kerak, yangi tekshiruv emas
+  const ochiq = muammolar.find(
+    (m) => muammoNatijasi(m) === 'muammo_topildi' && m.status !== 'yopilgan',
+  );
+  if (ochiq) {
+    return {
+      turi: 'muammoni_yopish',
+      muammoId: ochiq.id,
+      sarlavha: natijaSarlavhasi('muammo_topildi', {
+        turi: ochiq.turi,
+        turiNomi: ochiq.turi_nomi,
+        bandlarCsv: ochiq.taklif_etilgan_tadbirlar,
+      }),
+    };
+  }
+
+  // 2) Bugun allaqachon tekshirilgan (kira olmadi hisobga olinmaydi)
+  const bugungi = muammolar.find(
+    (m) => muammoNatijasi(m) !== 'kira_olmadi' && bugungiMi(m.sinxron_vaqti, bugun),
+  );
+  if (bugungi) {
+    const d = new Date(bugungi.sinxron_vaqti);
+    const soat = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    return { turi: 'bugun_tekshirilgan', vaqt: soat };
+  }
+
+  return { turi: 'tekshirish' };
+}
+
 export function natijaSarlavhasi(
   natija: Natija,
   opts: { turi?: string | null; turiNomi?: string | null; bandlarCsv?: string | null } = {},

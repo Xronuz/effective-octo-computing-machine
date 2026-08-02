@@ -57,7 +57,7 @@ async function setLastSyncTime(): Promise<void> {
   await setLastSync(now);
 }
 
-interface UploadFotoJavob {
+export interface UploadFotoJavob {
   fayl_yoli: string;
   sha256: string;
   olcham_byte: number;
@@ -82,7 +82,8 @@ function qaytaribBolmasXato(err: unknown): boolean {
   return s >= 400 && s < 500 && s !== 408 && s !== 429;
 }
 
-async function fotoYukla(faylYoli: string): Promise<UploadFotoJavob> {
+/** Bitta fotoni serverga yuklash. Muammoni yopish oqimi ham shundan foydalanadi. */
+export async function fotoYukla(faylYoli: string): Promise<UploadFotoJavob> {
   const form = new FormData();
   const name = faylYoli.split('/').pop() || 'foto.jpg';
   form.append('file', { uri: faylYoli, name, type: 'image/jpeg' } as unknown as Blob);
@@ -124,6 +125,9 @@ async function yozuvniYubor(y: NavbatYozuvi): Promise<void> {
       // Eski (yangilanishdan oldingi) navbat yozuvlarida bu maydon bo'lmagan —
       // zaxira qiymat `false`.
       kira_olmadi: y.kira_olmadi ?? false,
+      // Takroriy tekshiruv xodim tomonidan tasdiqlangan bo'lsa — backend
+      // kunlik qoidani chetlab o'tadi, lekin yozuvni `shubhali` deb belgilaydi.
+      majburiy: y.majburiy ?? false,
     },
   );
   // dublikat: true — backend'da client_uuid bilan yozuv allaqachon bor, id sini olamiz

@@ -35,6 +35,7 @@ import MaydonScreen from './src/screens/MaydonScreen';
 import XonadonlarScreen from './src/screens/XonadonlarScreen';
 import XonadonDetailScreen from './src/screens/XonadonDetailScreen';
 import TekshiruvScreen from './src/screens/TekshiruvScreen';
+import MuammoYopishScreen from './src/screens/MuammoYopishScreen';
 import TopshiriqlarScreen from './src/screens/TopshiriqlarScreen';
 import NavbatScreen from './src/screens/NavbatScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -220,6 +221,11 @@ function RootNavigator() {
             name="Tekshiruv"
             component={TekshiruvScreen}
             options={{ title: 'Tekshiruv' }}
+          />
+          <Stack.Screen
+            name="MuammoYopish"
+            component={MuammoYopishScreen}
+            options={{ title: 'Muammoni yopish' }}
           />
           <Stack.Screen
             name="Navbat"

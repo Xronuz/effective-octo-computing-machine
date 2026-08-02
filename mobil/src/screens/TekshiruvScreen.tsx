@@ -8,14 +8,10 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Image,
-  Modal,
   Switch,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as ImageManipulator from 'expo-image-manipulator';
 import NetInfo from '@react-native-community/netinfo';
 import { muammoniNavbatgaQosh, getKutilmaganSoni, type NavbatYozuvi } from '../services/db';
 import { syncNow, setSyncCallback } from '../services/sync';
@@ -24,6 +20,7 @@ import OfflineBanner from '../components/OfflineBanner';
 import SectionLabel from '../components/SectionLabel';
 import Button from '../components/Button';
 import PhotoPreview from '../components/PhotoPreview';
+import KameraModal, { useKameraRuxsati } from '../components/KameraModal';
 import { Colors, Fonts, FontSizes, FontWeights, Spacing, Radius, Shadows } from '../theme';
 import type { ApiResponse, Xonadon } from '../types';
 import { YORIQNOMA_BANDLARI } from '../constants/yoriqnoma';
@@ -33,7 +30,6 @@ import * as Location from 'expo-location';
 
 const GPS_YAXSHI_ANIQLIK_M = 50;
 const GPS_QULF_TIMEOUT_MS = 20_000;
-const FOTO_MAX_PX = 1600;
 const MUDDAT_RE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
 const MUDDAT_PRESETLAR = [3, 7, 15, 30] as const;
 
@@ -43,25 +39,6 @@ function generateUuid(): string {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-}
-
-async function compressPhoto(uri: string): Promise<string> {
-  try {
-    const { width, height } = await new Promise<{ width: number; height: number }>(
-      (resolve, reject) => Image.getSize(uri, (w, h) => resolve({ width: w, height: h }), reject),
-    );
-    const actions: ImageManipulator.Action[] = [];
-    if (Math.max(width, height) > FOTO_MAX_PX) {
-      actions.push({ resize: width >= height ? { width: FOTO_MAX_PX } : { height: FOTO_MAX_PX } });
-    }
-    const result = await ImageManipulator.manipulateAsync(uri, actions, {
-      compress: 0.75,
-      format: ImageManipulator.SaveFormat.JPEG,
-    });
-    return result.uri;
-  } catch {
-    return uri;
-  }
 }
 
 // Bugungi kundan boshlab N kun keyingi sanani ISO ("yyyy-mm-dd") shaklida qaytaradi
@@ -107,7 +84,8 @@ export default function TekshiruvScreen() {
   const navigation = useAppNavigation();
   const { tr } = useAlifbo();
   const insets = useSafeAreaInsets();
-  const { xonadonId } = route.params;
+  // `majburiy` — oldingi ekranda "Baribir qayta tekshirish" tasdiqlangan
+  const { xonadonId, majburiy = false } = route.params;
 
   // ── Xonadon ma'lumoti (route param orqali, o'zgartirib bo'lmaydi) ──
   const [xonadonInfo, setXonadonInfo] = useState<Xonadon | null>(null);
@@ -134,13 +112,11 @@ export default function TekshiruvScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [locError, setLocError] = useState('');
   const [cameraVisible, setCameraVisible] = useState(false);
-  const [capturing, setCapturing] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
-  const cameraRef = useRef<CameraView>(null);
   const locSubRef = useRef<{ remove: () => void } | null>(null);
   const mockWarnedRef = useRef(false);
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const kameraRuxsati = useKameraRuxsati();
 
   const stopWatch = () => {
     locSubRef.current?.remove();
@@ -281,36 +257,7 @@ export default function TekshiruvScreen() {
   };
 
   const takePhoto = async () => {
-    if (!cameraPermission?.granted) {
-      const perm = await requestCameraPermission();
-      if (!perm.granted) {
-        Alert.alert(
-          tr("Ruxsat yo'q"),
-          tr(
-            'Rasm olish uchun kamera ruxsati kerak. Iltimos, qurilma sozlamalaridan kamera ruxsatini yoqing.',
-          ),
-        );
-        return;
-      }
-    }
-    setCameraVisible(true);
-  };
-
-  const capturePhoto = async () => {
-    if (!cameraRef.current || capturing) return;
-    setCapturing(true);
-    try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.75 });
-      if (photo?.uri) {
-        const compressedUri = await compressPhoto(photo.uri);
-        setPhotos((prev) => [...prev, { uri: compressedUri }]);
-        setCameraVisible(false);
-      }
-    } catch (err: any) {
-      Alert.alert(tr('Kamera xatoligi'), err.message || tr('Rasm olishda xatolik yuz berdi'));
-    } finally {
-      setCapturing(false);
-    }
+    if (await kameraRuxsati.soraw()) setCameraVisible(true);
   };
 
   const removePhoto = (index: number) => {
@@ -398,6 +345,7 @@ export default function TekshiruvScreen() {
           : null,
         yoriqnomadan_otkanlar_soni: yoriqnomadanOtkanlarSoni,
         kira_olmadi: kiraOlmadi,
+        majburiy,
         foto_paths: photos.map((p) => p.uri),
         status: 'kutilmoqda',
         urinishlar_soni: 0,
@@ -825,41 +773,11 @@ export default function TekshiruvScreen() {
         />
       </View>
 
-      {/* Fullscreen camera modal */}
-      <Modal
+      <KameraModal
         visible={cameraVisible}
-        animationType="slide"
-        onRequestClose={() => setCameraVisible(false)}
-      >
-        <View style={styles.cameraContainer}>
-          <CameraView ref={cameraRef} style={styles.cameraPreview} facing="back" />
-          <SafeAreaView style={styles.cameraOverlay}>
-            <View style={styles.cameraTopBar}>
-              <TouchableOpacity
-                style={styles.cameraCloseBtn}
-                onPress={() => setCameraVisible(false)}
-                activeOpacity={0.7}
-              >
-                <MaterialCommunityIcons name="close" size={26} color={Colors.textInverse} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.cameraControls}>
-              <TouchableOpacity
-                style={styles.shutterBtn}
-                onPress={capturePhoto}
-                disabled={capturing}
-                activeOpacity={0.8}
-              >
-                {capturing ? (
-                  <ActivityIndicator color={Colors.primary} />
-                ) : (
-                  <View style={styles.shutterInner} />
-                )}
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
-        </View>
-      </Modal>
+        onClose={() => setCameraVisible(false)}
+        onCapture={(uri) => setPhotos((prev) => [...prev, { uri }])}
+      />
     </SafeAreaView>
   );
 }
@@ -1150,36 +1068,4 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
   },
   // ── Kamera ──
-  cameraContainer: { flex: 1, backgroundColor: '#000' },
-  cameraPreview: { flex: 1 },
-  cameraOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-  },
-  cameraTopBar: { alignItems: 'flex-end', padding: Spacing.md },
-  cameraCloseBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraControls: { alignItems: 'center', paddingBottom: Spacing.xl },
-  shutterBtn: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 4,
-    borderColor: Colors.textInverse,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.25)',
-  },
-  shutterInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.textInverse,
-  },
 });

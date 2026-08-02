@@ -13,7 +13,9 @@ export type RootStackParamList = {
   Royxat: undefined;
   MainTabs: NavigatorScreenParams<MainTabParamList>;
   XonadonDetail: { id: number };
-  Tekshiruv: { xonadonId: number };
+  /** `majburiy` — xonadon bugun tekshirilgan bo'lsa ham yozish tasdiqlangan. */
+  Tekshiruv: { xonadonId: number; majburiy?: boolean };
+  MuammoYopish: { muammoId: number; sarlavha: string };
   Navbat: undefined;
 };
 
