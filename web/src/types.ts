@@ -100,6 +100,9 @@ export interface MuammoBrief {
   xavf: XavfDaraja;
   status: MuammoStatus;
   shubhali: boolean;
+  /** Nega shubhali — mock_gps | gps_aniqlik_past | kunlik_takror | foto_sha256_dublikat | exif_masofa */
+  shubhali_sabab: string | null;
+  shubhali_sabab_nomi: string | null;
   ornida_bartaraf: boolean;
   muddat: string | null;
   tashkilot: string | null;
@@ -173,6 +176,8 @@ export interface MuammoDetail {
   gps_aniqlik: number | null;
   mock_gps: boolean;
   shubhali: boolean;
+  shubhali_sabab: string | null;
+  shubhali_sabab_nomi: string | null;
   client_uuid: string;
   qurilma_vaqti: string;
   sinxron_vaqti: string;

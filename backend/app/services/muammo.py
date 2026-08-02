@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models.muammo import (
     Muammo, Foto, MuammoStatus, MuammoTuri, XavfDarajasi, FotoTuri, TekshiruvNatijasi,
-    TEKSHIRUV_NATIJASI_NOMLARI,
+    TEKSHIRUV_NATIJASI_NOMLARI, SHUBHALI_SABAB_NOMLARI,
 )
 from app.models.hudud import Xonadon, Kocha, Mfy
 from app.models.user import User, UserRole
@@ -232,6 +232,7 @@ async def create_muammo(
         gps_aniqlik=gps_aniqlik,
         mock_gps=mock_gps,
         shubhali=shubhali,
+        shubhali_sabab=shubhali_sabab,
         client_uuid=client_uuid,
         qurilma_vaqti=qurilma_vaqti,
         taklif_etilgan_tadbirlar=taklif_etilgan_tadbirlar,
@@ -323,6 +324,7 @@ async def list_muammolar(
     xonadon_id: int | None = None,
     xodim_id: int | None = None,
     shubhali: bool | None = None,
+    shubhali_sabab: str | None = None,
     ornida_bartaraf: bool | None = None,
     tadbirlar_soni_dan: int | None = None,
     tekshiruv_natijasi: str | None = None,
@@ -384,6 +386,9 @@ async def list_muammolar(
 
     if shubhali is not None:
         filters.append(Muammo.shubhali == shubhali)
+
+    if shubhali_sabab:
+        filters.append(Muammo.shubhali_sabab == shubhali_sabab)
 
     if ornida_bartaraf is not None:
         filters.append(Muammo.ornida_bartaraf == ornida_bartaraf)
@@ -575,6 +580,12 @@ async def add_fotos_to_muammo(
                     f"masofa={masofa:.0f} m (> {EXIF_MAX_MASOFA_M:.0f} m)"
                 )
 
+    # Sabab bazaga ham yoziladi — avval faqat WebSocket xabariga qo'yilib
+    # yo'qolardi va rahbar "nega shubhali" degan savolga javob topolmasdi.
+    # Mavjud sabab qayta yozilmaydi (birinchi aniqlangani saqlanadi).
+    if shubhali_sabab is not None and muammo.shubhali_sabab is None:
+        muammo.shubhali_sabab = shubhali_sabab
+
     await db.flush()
     for f in foto_objs:
         await db.refresh(f)
@@ -724,6 +735,8 @@ def _muammo_to_response(muammo: Muammo, current_user: User | None = None) -> dic
         "gps_aniqlik": muammo.gps_aniqlik,
         "mock_gps": muammo.mock_gps,
         "shubhali": muammo.shubhali,
+        "shubhali_sabab": muammo.shubhali_sabab,
+        "shubhali_sabab_nomi": SHUBHALI_SABAB_NOMLARI.get(muammo.shubhali_sabab or ""),
         "client_uuid": muammo.client_uuid,
         "qurilma_vaqti": muammo.qurilma_vaqti.isoformat() if muammo.qurilma_vaqti else None,
         "sinxron_vaqti": muammo.sinxron_vaqti.isoformat() if muammo.sinxron_vaqti else None,

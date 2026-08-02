@@ -537,7 +537,57 @@ class TestKunlikTakror:
 
         assert dublikat is False
         assert m.shubhali is True
+        # Sabab bazaga yoziladi — rahbar NEGA shubhali ekanini bilishi kerak
+        assert m.shubhali_sabab == "kunlik_takror"
         db.add.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_mock_gps_sababi_saqlanadi(self):
+        """Soxta GPS sababi ham bazaga yoziladi (avval faqat logga ketardi)."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
+
+        m, _ = await muammo_service.create_muammo(
+            db, _make_xodim(),
+            xonadon_id=1,
+            turi=None,
+            tavsif=None,
+            xavf="orta",
+            lat=40.1, lng=71.4,
+            gps_aniqlik=5.0,
+            mock_gps=True,
+            client_uuid=str(uuid4()),
+            qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+            yoriqnomadan_otkanlar_soni=0,
+        )
+
+        assert m.shubhali is True
+        assert m.shubhali_sabab == "mock_gps"
+
+    @pytest.mark.asyncio
+    async def test_toza_yozuvda_sabab_bosh(self):
+        """Shubhali bo'lmagan yozuvda sabab None qoladi."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
+
+        m, _ = await muammo_service.create_muammo(
+            db, _make_xodim(),
+            xonadon_id=1,
+            turi=None,
+            tavsif=None,
+            xavf="orta",
+            lat=40.1, lng=71.4,
+            gps_aniqlik=5.0,
+            mock_gps=False,
+            client_uuid=str(uuid4()),
+            qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+            yoriqnomadan_otkanlar_soni=0,
+        )
+
+        assert m.shubhali is False
+        assert m.shubhali_sabab is None
 
     @pytest.mark.asyncio
     async def test_kira_olmadi_qoidaga_tushmaydi(self):

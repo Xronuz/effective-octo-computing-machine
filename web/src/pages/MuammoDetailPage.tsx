@@ -166,7 +166,15 @@ export default function MuammoDetailPage() {
         </h1>
         <div className="flex items-center gap-3">
           <span className={STATUS_BADGE[muammo.status] || 'badge-gray'}>{STATUS_LABEL[muammo.status] ? tr(STATUS_LABEL[muammo.status]) : muammo.status}</span>
-          {muammo.shubhali && <span className="badge-purple">{tr('Shubhali')}</span>}
+          {/* Sabab endi ko'rsatiladi — avval faqat "Shubhali" deyilar,
+              rahbar nega ekanini bilolmasdi. */}
+          {muammo.shubhali && (
+            <span className="badge-purple">
+              {muammo.shubhali_sabab_nomi
+                ? `${tr('Shubhali')}: ${tr(muammo.shubhali_sabab_nomi)}`
+                : tr('Shubhali')}
+            </span>
+          )}
         </div>
       </div>
 

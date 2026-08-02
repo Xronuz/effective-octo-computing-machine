@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ClipboardList, FilterX } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, ClipboardList, FilterX } from 'lucide-react';
 import { apiGet } from '@/api';
 import { SkeletonTable } from '@/components/Skeleton';
 import DateInput from '@/components/DateInput';
@@ -22,6 +22,15 @@ const TABLAR: { key: string; label: string }[] = [
   { key: 'muammo_topildi', label: 'Muammolar' },
   { key: 'muammo_yoq', label: 'Muammosiz' },
   { key: 'kira_olmadi', label: 'Kira olmadi' },
+];
+
+/** Shubhali sabablari — nazorat uchun kesim (backend `shubhali_sabab`). */
+const SHUBHALI_OPTIONS: { value: string; label: string }[] = [
+  { value: 'kunlik_takror', label: 'Kunlik takroriy tekshiruv' },
+  { value: 'mock_gps', label: 'Soxta GPS' },
+  { value: 'gps_aniqlik_past', label: 'GPS aniqligi past' },
+  { value: 'foto_sha256_dublikat', label: 'Takroriy foto' },
+  { value: 'exif_masofa', label: 'Foto joylashuvi mos emas' },
 ];
 
 /** ISO sanaga 1 kun qo'shadi (mahalliy vaqt zonasidan mustaqil). */
@@ -46,6 +55,7 @@ export default function MuammolarPage() {
   const tadbirlarSoni = searchParams.get('tadbirlar_soni') || '';
   const mfyId = searchParams.get('mfy_id') || '';
   const xodimId = searchParams.get('xodim_id') || '';
+  const shubhaliSabab = searchParams.get('shubhali_sabab') || '';
   const qidiruv = searchParams.get('qidiruv') || '';
 
   const updateFilter = (key: string, value: string) => {
@@ -70,11 +80,12 @@ export default function MuammolarPage() {
     // e'tiborsiz qolardi — filtr umuman ishlamasdi).
     if (mfyId) params.set('mfy_id', mfyId);
     if (xodimId) params.set('xodim_id', xodimId);
+    if (shubhaliSabab) params.set('shubhali_sabab', shubhaliSabab);
     if (qidiruv) params.set('qidiruv', krilldanLotinga(qidiruv));
     const res = await apiGet<Paginated<MuammoBrief>>(`/muammolar?${params}`);
     if (res.ok) setData(res.data);
     setLoading(false);
-  }, [page, size, holat, sana, natija, tadbirlarSoni, mfyId, xodimId, qidiruv]);
+  }, [page, size, holat, sana, natija, tadbirlarSoni, mfyId, xodimId, shubhaliSabab, qidiruv]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -168,6 +179,18 @@ export default function MuammolarPage() {
             />
           </label>
         </div>
+        <div>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="whitespace-nowrap font-medium">{tr('Nazorat')}:</span>
+            <StatusSelect
+              options={SHUBHALI_OPTIONS.map(s => ({ value: s.value, label: tr(s.label) }))}
+              value={shubhaliSabab}
+              onChange={(v) => updateFilter('shubhali_sabab', v)}
+              barchasiLabel={tr('Barchasi')}
+              className="select sm:!w-[220px]"
+            />
+          </label>
+        </div>
         <div className="min-w-[140px] flex-1">
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <span className="whitespace-nowrap font-medium">{tr('Qidiruv')}:</span>
@@ -228,7 +251,17 @@ export default function MuammolarPage() {
                   <tr key={m.id}>
                     <td className="text-center text-slate-400 tabular-nums">{(page-1)*size + i + 1}</td>
                     <td className="text-center whitespace-nowrap">
-                      <NatijaBadge natija={m.tekshiruv_natijasi} qisqa />
+                      <div className="flex flex-col items-center gap-1">
+                        <NatijaBadge natija={m.tekshiruv_natijasi} qisqa />
+                        {/* Shubhali yozuvlar ro'yxatda darhol ko'rinsin —
+                            avval buni faqat batafsil sahifada bilish mumkin edi */}
+                        {m.shubhali && (
+                          <span className="badge-purple whitespace-nowrap">
+                            <AlertTriangle className="h-3 w-3" />
+                            {m.shubhali_sabab_nomi ? tr(m.shubhali_sabab_nomi) : tr('Shubhali')}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="text-center font-medium text-[#0F2033]">{m.mfy_nomi ? tr(m.mfy_nomi) : '—'}</td>
                     <td className="text-center text-slate-600">{m.kocha_nomi ? tr(m.kocha_nomi) : '—'}</td>

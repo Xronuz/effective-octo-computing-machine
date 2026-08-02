@@ -52,6 +52,15 @@ MUAMMO_TURI_NOMLARI = {
 }
 
 
+SHUBHALI_SABAB_NOMLARI = {
+    "mock_gps": "Soxta GPS",
+    "gps_aniqlik_past": "GPS aniqligi past",
+    "kunlik_takror": "Kunlik takroriy tekshiruv",
+    "foto_sha256_dublikat": "Takroriy foto",
+    "exif_masofa": "Foto joylashuvi mos emas",
+}
+
+
 TEKSHIRUV_NATIJASI_NOMLARI = {
     "muammo_topildi": "Muammo topildi",
     "muammo_yoq": "Tekshirildi, muammo yo'q",
@@ -137,6 +146,11 @@ class Muammo(Base):
     gps_aniqlik = Column(Float, nullable=True)
     mock_gps = Column(Boolean, default=False, nullable=False)
     shubhali = Column(Boolean, default=False, nullable=False)
+    # Nega shubhali — mock_gps | gps_aniqlik_past | kunlik_takror |
+    # foto_sha256_dublikat | exif_masofa. Avval bu qiymat hisoblanib faqat
+    # WebSocket xabariga qo'yilardi va yo'qolardi; rahbar ro'yxatda "Shubhali"
+    # deb ko'rar, lekin sababini bilolmasdi.
+    shubhali_sabab = Column(String(40), nullable=True)
 
     # Offline sinxronlash
     client_uuid = Column(UUID(as_uuid=True), unique=True, nullable=False)

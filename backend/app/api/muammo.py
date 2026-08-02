@@ -92,6 +92,10 @@ async def list_muammolar(
     xonadon_id: int | None = Query(None),
     xodim_id: int | None = Query(None),
     shubhali: bool | None = Query(None),
+    shubhali_sabab: str | None = Query(
+        None,
+        description="mock_gps | gps_aniqlik_past | kunlik_takror | foto_sha256_dublikat | exif_masofa",
+    ),
     ornida_bartaraf: bool | None = Query(None),
     tadbirlar_soni_dan: int | None = Query(None, ge=0, description="Taklif etilgan tadbirlar soni shundan katta bo'lganlar"),
     tekshiruv_natijasi: str | None = Query(
@@ -129,6 +133,7 @@ async def list_muammolar(
         xonadon_id=xonadon_id,
         xodim_id=xodim_id,
         shubhali=shubhali,
+        shubhali_sabab=shubhali_sabab,
         ornida_bartaraf=ornida_bartaraf,
         tadbirlar_soni_dan=tadbirlar_soni_dan,
         tekshiruv_natijasi=tekshiruv_natijasi,
