@@ -240,9 +240,9 @@ export default function XonadonlarPage() {
                 <tr>
                   <th>#</th>
                   <th>{tr('Manzil')}</th>
-                  <th>{tr('MFY')}</th>
-                  <th>{tr('Egasi')}</th>
-                  <th>{tr('Tel')}</th>
+                  <th className="hidden lg:table-cell">{tr('MFY')}</th>
+                  <th className="hidden xl:table-cell">{tr('Egasi')}</th>
+                  <th className="hidden xl:table-cell">{tr('Tel')}</th>
                   <th className="text-center">{tr('Ochiq muammolar')}</th>
                   <th className="text-right">{tr('Amallar')}</th>
                 </tr>
@@ -252,9 +252,9 @@ export default function XonadonlarPage() {
                   <tr key={x.id}>
                     <td className="text-slate-400 tabular-nums">{(page-1)*size + i + 1}</td>
                     <td className="font-medium text-[#0F2033]">{tr(x.full_address || `${x.uy_raqami}, ${x.kocha_nomi || ''}`)}</td>
-                    <td className="text-slate-500">{x.mfy_nomi ? tr(x.mfy_nomi) : '—'}</td>
-                    <td>{x.egasi_fio ? tr(x.egasi_fio) : '—'}</td>
-                    <td className="text-slate-500">{x.egasi_tel || '—'}</td>
+                    <td className="hidden text-slate-500 lg:table-cell">{x.mfy_nomi ? tr(x.mfy_nomi) : '—'}</td>
+                    <td className="hidden xl:table-cell">{x.egasi_fio ? tr(x.egasi_fio) : '—'}</td>
+                    <td className="hidden text-slate-500 xl:table-cell">{x.egasi_tel || '—'}</td>
                     <td className="text-center">
                       {x.ochiq_muammolar_soni > 0 ? (
                         <span className="badge-red">{x.ochiq_muammolar_soni}</span>

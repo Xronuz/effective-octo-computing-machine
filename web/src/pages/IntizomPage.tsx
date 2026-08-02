@@ -290,9 +290,9 @@ export default function IntizomPage() {
             <thead className="sticky top-0 z-10 bg-white">
               <tr>
                 <th>{tr('Muammo')}</th>
-                <th>{tr('Xodim')}</th>
-                <th>{tr('Manzil')}</th>
-                <th>{tr('Muddat')}</th>
+                <th className="hidden lg:table-cell">{tr('Xodim')}</th>
+                <th className="hidden xl:table-cell">{tr('Manzil')}</th>
+                <th className="hidden lg:table-cell">{tr('Muddat')}</th>
                 <th>{tr('Kechikish')}</th>
                 <th>{tr('Amallar')}</th>
               </tr>
@@ -308,13 +308,13 @@ export default function IntizomPage() {
                         {tr(m.tavsif || m.turi || 'Tekshiruv')}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap text-slate-500">
+                    <td className="hidden whitespace-nowrap text-slate-500 lg:table-cell">
                       {m.xodim_fio ? tr(m.xodim_fio) : `#${m.xodim_id}`}
                     </td>
-                    <td className="max-w-[220px] text-slate-500">
+                    <td className="hidden max-w-[220px] text-slate-500 xl:table-cell">
                       <span className="block truncate">{m.xonadon_manzili ? tr(m.xonadon_manzili) : '—'}</span>
                     </td>
-                    <td className="whitespace-nowrap text-slate-500">
+                    <td className="hidden whitespace-nowrap text-slate-500 lg:table-cell">
                       {m.muddat ? sanaFormat(m.muddat) : '—'}
                     </td>
                     <td className="whitespace-nowrap">
@@ -466,8 +466,8 @@ export default function IntizomPage() {
                 <th>{tr('Sana')}</th>
                 <th>{tr('Xodim')}</th>
                 <th>{tr('Turi')}</th>
-                <th>{tr('Sabab')}</th>
-                <th>{tr('Kim bergan')}</th>
+                <th className="hidden lg:table-cell">{tr('Sabab')}</th>
+                <th className="hidden xl:table-cell">{tr('Kim bergan')}</th>
               </tr>
             </thead>
             <tbody>
@@ -484,10 +484,10 @@ export default function IntizomPage() {
                       {tr(turiLabels[i.turi]) || i.turi}
                     </span>
                   </td>
-                  <td className="max-w-[320px] text-slate-500">
+                  <td className="hidden max-w-[320px] text-slate-500 lg:table-cell">
                     <span className="block truncate">{tr(i.sabab)}</span>
                   </td>
-                  <td className="whitespace-nowrap text-slate-500">
+                  <td className="hidden whitespace-nowrap text-slate-500 xl:table-cell">
                     {i.bergan_fio ? tr(i.bergan_fio) : `#${i.bergan_id}`}
                   </td>
                 </tr>

@@ -33,6 +33,7 @@ export interface UserBrief {
   holat: UserStatus;
   lavozim: string | null;
   telefon: string | null;
+  profil_foto_url: string | null;
   oxirgi_kirish: string | null;
   yaratilgan: string;
 }

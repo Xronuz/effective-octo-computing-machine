@@ -9,6 +9,7 @@ interface AuthState {
   loading: boolean;
   login: (guvohnoma_raqami: string, parol: string) => Promise<string | null>;
   logout: () => void;
+  updateUser: (user: UserBrief) => void;
   isAuthenticated: boolean;
   isRahbar: boolean;
   isSuperadmin: boolean;
@@ -61,11 +62,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
+  const updateUser = useCallback((u: UserBrief) => {
+    setUser(u);
+  }, []);
+
   const value: AuthState = {
     user,
     loading,
     login,
     logout,
+    updateUser,
     isAuthenticated: !!user,
     isRahbar: user?.rol === 'rahbar' || user?.rol === 'superadmin',
     isSuperadmin: user?.rol === 'superadmin',

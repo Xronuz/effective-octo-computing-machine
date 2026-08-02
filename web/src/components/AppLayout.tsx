@@ -18,10 +18,14 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  UserRound,
+  TriangleAlert,
 } from 'lucide-react';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
 import GlobalSearch from '@/components/GlobalSearch';
+import ProfilSozlamalariModal from '@/components/ProfilSozlamalariModal';
 import fvvIcon from '@/styles/fvv-icon.png';
 
 const ICON_PROPS = { size: 20, strokeWidth: 1.8 } as const;
@@ -71,6 +75,23 @@ export function AppLayout() {
   // Foydalanuvchi qo'lda tugma bosgach, keyingi resize'lar uni avtomatik qayta ochib/yopib qo'ymasligi kerak
   const qoldaOzgartirildi = useRef(false);
 
+  const [profilMenuOpen, setProfilMenuOpen] = useState(false);
+  const [profilModalOpen, setProfilModalOpen] = useState(false);
+  const [chiqishModalOpen, setChiqishModalOpen] = useState(false);
+  const profilMenuRef = useRef<HTMLDivElement>(null);
+
+  // Profil menyu tashqarisiga bosilsa yopiladi
+  useEffect(() => {
+    if (!profilMenuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (profilMenuRef.current && !profilMenuRef.current.contains(e.target as Node)) {
+        setProfilMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [profilMenuOpen]);
+
   useEffect(() => {
     const onResize = () => {
       if (qoldaOzgartirildi.current) return;
@@ -86,6 +107,11 @@ export function AppLayout() {
   };
 
   const handleLogout = () => {
+    setChiqishModalOpen(true);
+  };
+
+  const confirmLogout = () => {
+    setChiqishModalOpen(false);
     logout();
     navigate('/kirish');
   };
@@ -98,7 +124,7 @@ export function AppLayout() {
   };
 
   const initials = user ? tr(`${user.ism?.[0] ?? ''}${user.familiya?.[0] ?? ''}`.toUpperCase()) : '';
-  const profilFoto = (user as { profil_foto_url?: string | null } | null)?.profil_foto_url ?? null;
+  const profilFoto = user?.profil_foto_url ?? null;
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `group flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium transition-colors duration-150 ${
@@ -317,26 +343,67 @@ export function AppLayout() {
                 <Bell size={18} strokeWidth={1.8} />
               </button>
 
-              <div className="flex items-center gap-2.5 rounded-full bg-[var(--bg-subtle)] py-1 pl-1 pr-3">
-                {profilFoto ? (
-                  <img
-                    src={profilFoto}
-                    alt={user?.full_name ? tr(user.full_name) : ''}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy-800 text-[11px] font-semibold text-white">
-                    {initials}
+              <div className="relative" ref={profilMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setProfilMenuOpen((v) => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={profilMenuOpen}
+                  className="flex items-center gap-2.5 rounded-full bg-[var(--bg-subtle)] py-1 pl-1 pr-3 transition-colors duration-150 hover:bg-[var(--border)]"
+                >
+                  {profilFoto ? (
+                    <img
+                      src={profilFoto}
+                      alt={user?.full_name ? tr(user.full_name) : ''}
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy-800 text-[11px] font-semibold text-white">
+                      {initials}
+                    </span>
+                  )}
+                  <span className="hidden min-w-0 leading-tight sm:block">
+                    <span className="block max-w-[140px] truncate text-[13px] font-medium text-[var(--text-primary)]">
+                      {user?.full_name ? tr(user.full_name) : ''}
+                    </span>
+                    <span className="block text-[11px] text-[var(--text-muted)]">
+                      {tr(ROL_LABELS[user?.rol ?? ''] ?? user?.rol ?? '')}
+                    </span>
                   </span>
+                  <ChevronDown size={14} className="hidden flex-shrink-0 text-[var(--text-muted)] sm:block" />
+                </button>
+
+                {profilMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-[calc(100%+8px)] z-40 w-52 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] py-1.5 shadow-lift"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfilMenuOpen(false);
+                        setProfilModalOpen(true);
+                      }}
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]"
+                    >
+                      <UserRound size={16} strokeWidth={1.8} />
+                      {tr('Mening profilim')}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfilMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      <LogOut size={16} strokeWidth={1.8} />
+                      {tr('Chiqish')}
+                    </button>
+                  </div>
                 )}
-                <span className="hidden min-w-0 leading-tight sm:block">
-                  <span className="block max-w-[140px] truncate text-[13px] font-medium text-[var(--text-primary)]">
-                    {user?.full_name ? tr(user.full_name) : ''}
-                  </span>
-                  <span className="block text-[11px] text-[var(--text-muted)]">
-                    {tr(ROL_LABELS[user?.rol ?? ''] ?? user?.rol ?? '')}
-                  </span>
-                </span>
               </div>
             </div>
           </div>
@@ -350,6 +417,46 @@ export function AppLayout() {
 
       {/* Global qidiruv (Cmd/Ctrl+K) */}
       <GlobalSearch />
+
+      {/* Profil sozlamalari modali */}
+      <ProfilSozlamalariModal open={profilModalOpen} onClose={() => setProfilModalOpen(false)} />
+
+      {/* Chiqish tasdiqlash modali */}
+      {chiqishModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
+          onClick={() => setChiqishModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 shadow-lift"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-label={tr('Chiqishni tasdiqlash')}
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <TriangleAlert size={20} strokeWidth={1.8} />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                  {tr('Tizimdan chiqish')}
+                </h3>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                  {tr('Rostdan ham tizimdan chiqmoqchimisiz?')}
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setChiqishModalOpen(false)} className="btn-ghost">
+                {tr('Bekor qilish')}
+              </button>
+              <button type="button" onClick={confirmLogout} className="btn-danger">
+                {tr('Chiqish')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

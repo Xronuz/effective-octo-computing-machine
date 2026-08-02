@@ -1,8 +1,8 @@
 // XAVFSIZ XONADON — Foydalanuvchilar boshqaruvi (rahbar / superadmin)
 
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Users, X } from 'lucide-react';
-import { apiGet, apiPatch, apiPost } from '@/api';
+import { ChevronLeft, ChevronRight, Users, X, Pencil, Trash2 } from 'lucide-react';
+import { apiGet, apiPatch, apiPost, apiDelete } from '@/api';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
 import { krilldanLotinga, mfyNomiTozala } from '@/lib/alifbo';
@@ -149,10 +149,108 @@ function MfyBiriktirishModal({ user, onClose, onSaved }: MfyModalProps) {
   );
 }
 
+// ── Foydalanuvchi ma'lumotlarini tahrirlash modali ──────────────────
+
+interface TahrirlashModalProps {
+  user: Foydalanuvchi;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function TahrirlashModal({ user, onClose, onSaved }: TahrirlashModalProps) {
+  const { tr } = useAlifbo();
+  const [familiya, setFamiliya] = useState(user.familiya);
+  const [ism, setIsm] = useState(user.ism);
+  const [sharif, setSharif] = useState(user.sharif ?? '');
+  const [lavozim, setLavozim] = useState(user.lavozim ?? '');
+  const [telefon, setTelefon] = useState(user.telefon ?? '');
+  const [guvohnoma, setGuvohnoma] = useState(user.guvohnoma_raqami);
+  const [saving, setSaving] = useState(false);
+  const [xato, setXato] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    setXato(null);
+    setSaving(true);
+    const res = await apiPatch(`/users/${user.id}`, {
+      familiya: familiya.trim(),
+      ism: ism.trim(),
+      sharif: sharif.trim() || null,
+      lavozim: lavozim.trim(),
+      telefon: telefon.trim() || null,
+      guvohnoma_raqami: guvohnoma.trim().toUpperCase(),
+    });
+    setSaving(false);
+    if (res.ok) {
+      onSaved();
+      onClose();
+    } else {
+      setXato(res.xato || tr('Saqlashda xatolik'));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="card flex max-h-[85vh] w-full max-w-md flex-col">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <h3 className="text-base font-semibold text-[#0F2033]">
+            {tr('Ma\'lumotlarni tahrirlash')} — {tr(user.full_name)}
+          </h3>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            aria-label={tr('Yopish')}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-3 overflow-y-auto px-6 py-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Familiya')}</label>
+              <input className="input w-full" value={familiya} onChange={(e) => setFamiliya(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Ism')}</label>
+              <input className="input w-full" value={ism} onChange={(e) => setIsm(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Sharif')}</label>
+            <input className="input w-full" value={sharif} onChange={(e) => setSharif(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Lavozim')}</label>
+            <input className="input w-full" value={lavozim} onChange={(e) => setLavozim(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Telefon')}</label>
+            <input className="input w-full" value={telefon} onChange={(e) => setTelefon(e.target.value)} placeholder="+998 XX XXX XX XX" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">{tr('Guvohnoma raqami')}</label>
+            <input className="input w-full uppercase" value={guvohnoma} onChange={(e) => setGuvohnoma(e.target.value.toUpperCase())} />
+          </div>
+          {xato && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{xato}</p>}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+          <button onClick={onClose} className="btn-ghost" disabled={saving}>
+            {tr('Bekor qilish')}
+          </button>
+          <button onClick={handleSave} className="btn-primary" disabled={saving}>
+            {saving ? tr('Saqlanmoqda...') : tr('Saqlash')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── asosiy sahifa ────────────────────────────────────────────────────
 
 export default function BoshqaruvPage() {
-  const { isSuperadmin } = useAuth();
+  const { isSuperadmin, user: currentUser } = useAuth();
   const { tr } = useAlifbo();
 
   // Filters
@@ -169,6 +267,7 @@ export default function BoshqaruvPage() {
 
   // Modal
   const [mfyUser, setMfyUser] = useState<Foydalanuvchi | null>(null);
+  const [tahrirUser, setTahrirUser] = useState<Foydalanuvchi | null>(null);
 
   // ── fetch users ──────────────────────────────────────────────────
   const fetchUsers = useCallback(async () => {
@@ -214,6 +313,27 @@ export default function BoshqaruvPage() {
       fetchUsers();
     } else {
       alert(res.xato || tr('Bloklashda xatolik'));
+    }
+  };
+
+  const faollashtirish = async (id: number) => {
+    const res = await apiPatch(`/users/${id}/faollashtirish`);
+    if (res.ok) {
+      fetchUsers();
+    } else {
+      alert(res.xato || tr('Faollashtirishda xatolik'));
+    }
+  };
+
+  const ochirish = async (u: Foydalanuvchi) => {
+    if (!window.confirm(tr(`${u.full_name} butunlay o'chirilsinmi? Bu amalni orqaga qaytarib bo'lmaydi.`))) {
+      return;
+    }
+    const res = await apiDelete(`/users/${u.id}`);
+    if (res.ok) {
+      fetchUsers();
+    } else {
+      alert(res.xato || tr("O'chirishda xatolik"));
     }
   };
 
@@ -316,25 +436,27 @@ export default function BoshqaruvPage() {
             <thead className="sticky top-0 z-10 bg-white">
               <tr>
                 <th className="w-10 text-center">#</th>
-                <th className="text-center">{tr('F.I.Sh')}</th>
-                <th className="text-center">{tr('Guvohnoma')}</th>
+                <th className="sticky left-0 z-20 bg-white text-left">{tr('F.I.Sh')}</th>
+                <th className="hidden text-center lg:table-cell">{tr('Guvohnoma')}</th>
                 <th className="text-center">{tr('Rol')}</th>
                 <th className="text-center">{tr('Holat')}</th>
-                <th className="text-center">{tr('Telefon')}</th>
-                <th className="text-center">{tr('MFY lar')}</th>
-                <th className="text-center">{tr('Amallar')}</th>
+                <th className="hidden text-center xl:table-cell">{tr('Telefon')}</th>
+                <th className="hidden text-center xl:table-cell">{tr('MFY lar')}</th>
+                <th className="min-w-[210px] text-center">{tr('Amallar')}</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u, idx) => (
+              {users.map((u, idx) => {
+                const isSelf = u.id === currentUser?.id;
+                return (
                 <tr key={u.id}>
                   <td className="whitespace-nowrap text-center text-slate-400 tabular-nums">
                     {(page - 1) * 20 + idx + 1}
                   </td>
-                  <td className="whitespace-nowrap text-center font-medium text-[#0F2033]">
+                  <td className="sticky left-0 z-[5] whitespace-nowrap bg-[var(--bg-surface)] text-left font-medium text-[#0F2033]">
                     {tr(u.full_name)}
                   </td>
-                  <td className="whitespace-nowrap text-center text-slate-500">
+                  <td className="hidden whitespace-nowrap text-center text-slate-500 lg:table-cell">
                     {u.guvohnoma_raqami}
                   </td>
                   <td className="whitespace-nowrap text-center">
@@ -347,10 +469,10 @@ export default function BoshqaruvPage() {
                       {tr(holatLabels[u.holat] || u.holat)}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap text-center text-slate-500">
+                  <td className="hidden whitespace-nowrap text-center text-slate-500 xl:table-cell">
                     {u.telefon || '—'}
                   </td>
-                  <td className="max-w-[200px] text-center text-slate-500">
+                  <td className="hidden max-w-[200px] text-center text-slate-500 xl:table-cell">
                     <span className="block truncate">
                       {u.mfy_biriktirishlar?.length
                         ? u.mfy_biriktirishlar
@@ -359,9 +481,9 @@ export default function BoshqaruvPage() {
                         : '—'}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {/* Tasdiqlash — only for kutilmoqda */}
+                  <td className="text-center">
+                    <div className="flex flex-wrap items-center justify-center gap-1.5">
+                      {/* Tasdiqlash — faqat kutilmoqda */}
                       {u.holat === 'kutilmoqda' && (
                         <button
                           onClick={() => tasdiqlash(u.id)}
@@ -371,13 +493,26 @@ export default function BoshqaruvPage() {
                         </button>
                       )}
 
-                      {/* Bloklash — only for faol */}
+                      {/* Bloklash — faol bo'lsa; Faollashtirish — bloklangan bo'lsa (toggle).
+                          O'z qatorida — ko'rinadi, lekin bosib bo'lmaydi (o'zini bloklay olmaydi). */}
                       {u.holat === 'faol' && (
                         <button
-                          onClick={() => bloklash(u.id)}
-                          className="btn-danger px-3 py-1.5 text-xs"
+                          onClick={() => !isSelf && bloklash(u.id)}
+                          disabled={isSelf}
+                          title={isSelf ? tr("O'zingizni bloklay olmaysiz") : undefined}
+                          className={`btn-danger px-3 py-1.5 text-xs ${isSelf ? 'cursor-not-allowed opacity-40' : ''}`}
                         >
                           {tr('Bloklash')}
+                        </button>
+                      )}
+                      {u.holat === 'bloklangan' && (
+                        <button
+                          onClick={() => !isSelf && faollashtirish(u.id)}
+                          disabled={isSelf}
+                          title={isSelf ? tr("O'zingizni faollashtira olmaysiz") : undefined}
+                          className={`btn-primary px-3 py-1.5 text-xs ${isSelf ? 'cursor-not-allowed opacity-40' : ''}`}
+                        >
+                          {tr('Faollashtirish')}
                         </button>
                       )}
 
@@ -388,10 +523,34 @@ export default function BoshqaruvPage() {
                       >
                         {tr('MFY biriktirish')}
                       </button>
+
+                      {/* Tahrirlash */}
+                      <button
+                        onClick={() => setTahrirUser(u)}
+                        title={tr('Tahrirlash')}
+                        aria-label={tr('Tahrirlash')}
+                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+
+                      {/* O'chirish — o'z qatorida ko'rinadi, lekin bosib bo'lmaydi (o'zini o'chira olmaydi) */}
+                      <button
+                        onClick={() => !isSelf && ochirish(u)}
+                        disabled={isSelf}
+                        title={isSelf ? tr("O'zingizni o'chira olmaysiz") : tr("O'chirish")}
+                        aria-label={tr("O'chirish")}
+                        className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-red-500 transition-colors ${
+                          isSelf ? 'cursor-not-allowed opacity-40' : 'hover:bg-red-50'
+                        }`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -447,6 +606,15 @@ export default function BoshqaruvPage() {
         <MfyBiriktirishModal
           user={mfyUser}
           onClose={() => setMfyUser(null)}
+          onSaved={fetchUsers}
+        />
+      )}
+
+      {/* Tahrirlash modal */}
+      {tahrirUser && (
+        <TahrirlashModal
+          user={tahrirUser}
+          onClose={() => setTahrirUser(null)}
           onSaved={fetchUsers}
         />
       )}

@@ -84,9 +84,35 @@ class UserResponse(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    """Foydalanuvchi ma'lumotlarini yangilash."""
-    lavozim: Optional[str] = Field(None, max_length=120)
+    """Boshqa foydalanuvchi ma'lumotlarini rahbar/superadmin tomonidan tahrirlash (PATCH /users/{id})."""
+    familiya: Optional[str] = Field(None, min_length=1, max_length=60)
+    ism: Optional[str] = Field(None, min_length=1, max_length=60)
+    sharif: Optional[str] = Field(None, max_length=60)
+    lavozim: Optional[str] = Field(None, min_length=2, max_length=120)
     telefon: Optional[str] = Field(None, max_length=20)
+    guvohnoma_raqami: Optional[str] = Field(None, min_length=3, max_length=20, pattern=r"^[A-Z0-9]+$")
+
+
+class ProfilYangilashRequest(BaseModel):
+    """Joriy foydalanuvchi o'z profilini yangilash so'rovi (PATCH /auth/men)."""
+    ism: Optional[str] = Field(None, min_length=1, max_length=60)
+    familiya: Optional[str] = Field(None, min_length=1, max_length=60)
+    sharif: Optional[str] = Field(None, max_length=60)
+    telefon: Optional[str] = Field(None, max_length=20)
+    guvohnoma_raqami: Optional[str] = Field(None, min_length=3, max_length=20, pattern=r"^[A-Z0-9]+$")
+    joriy_parol: Optional[str] = None
+    yangi_parol: Optional[str] = Field(None, min_length=8, max_length=100)
+
+    @field_validator("yangi_parol")
+    @classmethod
+    def yangi_parol_murakkabligi(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if not any(c.isalpha() for c in v):
+            raise ValueError("Parol kamida bitta harf bo'lishi kerak")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Parol kamida bitta raqam bo'lishi kerak")
+        return v
 
 
 class MfyBiriktirishRequest(BaseModel):
