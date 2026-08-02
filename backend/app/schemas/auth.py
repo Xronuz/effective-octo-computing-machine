@@ -118,6 +118,9 @@ class ProfilYangilashRequest(BaseModel):
 class MfyBiriktirishRequest(BaseModel):
     """Xodimga MFY biriktirish so'rovi."""
     mfy_ids: list[int] = Field(..., min_length=1, max_length=53)
+    #: Ba'zi mfy_ids allaqachon boshqa xodimga biriktirilgan bo'lsa ham
+    #: davom etish (eski biriktirishni bekor qilib, shu xodimga o'tkazadi).
+    majburiy: bool = False
 
 
 # ============ Javob formati ============

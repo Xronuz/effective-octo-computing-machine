@@ -273,6 +273,11 @@ async def yop_muammo(
     if current_user.rol == UserRole.xodim and muammo.xodim_id != current_user.id:
         raise ForbiddenException("Bu muammoni yopish huquqingiz yo'q.")
 
+    # Allaqachon yopilgan muammoni qayta yopib bo'lmaydi — aks holda cheksiz
+    # marta "yopish" chaqirilib, izoh/vaqt/Telegram avtoposti takrorlanaverardi.
+    if muammo.status == MuammoStatus.yopilgan:
+        raise ValidationException("Bu muammo allaqachon yopilgan.")
+
     muammo.status = MuammoStatus.yopilgan
     muammo.ornida_bartaraf = body.ornida_bartaraf
     muammo.yopilgan_sana = datetime.now(timezone.utc)

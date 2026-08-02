@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_db, get_current_user, require_role
-from app.core.exceptions import NotFoundException, RoyxatException, ConflictException
+from app.core.exceptions import NotFoundException, RoyxatException, ConflictException, ValidationException
 from app.models.user import User, UserRole, UserStatus, XodimMfy
 from app.models.hudud import Mfy
 from app.schemas.auth import UserResponse, MfyBiriktirishRequest, UserUpdateRequest
@@ -20,6 +20,11 @@ from app.services.audit import audit_yozish
 
 logger = logging.getLogger("xavfsiz_xonadon")
 router = APIRouter()
+
+#: Bitta inspektorga biriktirilishi mumkin bo'lgan aktiv MFYlar chegarasi.
+#: Aniq biznes-limit hali belgilanmagan — inspektor real ish yukini hisobga
+#: olib qo'yilgan boshlang'ich qiymat; kerak bo'lsa keyinchalik aniqlashtiriladi.
+MAX_MFY_PER_XODIM = 10
 
 
 def _ip_ua(request: Request) -> tuple[str | None, str | None]:
@@ -361,23 +366,73 @@ async def mfy_biriktirish(
     if missing:
         raise NotFoundException(f"MFY lar topilmadi: {missing}")
 
+    # Shu xodimning joriy aktiv biriktirishlari — limit va "yangi qo'shiladi"
+    # sonini hisoblash uchun.
+    result = await db.execute(
+        select(XodimMfy).where(XodimMfy.xodim_id == user_id, XodimMfy.faol.is_(True))
+    )
+    xodim_faol_biriktirishlari = {row.mfy_id: row for row in result.scalars().all()}
+
+    # Boshqa xodimlarga aktiv biriktirilgan MFYlar — bitta MFY bir vaqtda
+    # faqat bitta inspektorga tegishli bo'lishi kerak (aks holda ikkalasi
+    # ham "mening xonadonlarim"da bir xil uylarni ko'radi).
+    result = await db.execute(
+        select(XodimMfy, User.full_name)
+        .join(User, User.id == XodimMfy.xodim_id)
+        .where(
+            XodimMfy.mfy_id.in_(body.mfy_ids),
+            XodimMfy.xodim_id != user_id,
+            XodimMfy.faol.is_(True),
+        )
+    )
+    boshqalarga_biriktirilgan = {row[0].mfy_id: (row[0], row[1]) for row in result.all()}
+
+    if boshqalarga_biriktirilgan and not body.majburiy:
+        ziddiyat = [
+            f"MFY #{mfy_id} ({boshqa_fio})"
+            for mfy_id, (_, boshqa_fio) in boshqalarga_biriktirilgan.items()
+        ]
+        raise ConflictException(
+            "Quyidagi MFYlar boshqa xodimga biriktirilgan: "
+            + ", ".join(ziddiyat)
+            + ". Baribir o'tkazish uchun so'rovni qayta yuboring (majburiy=true)."
+        )
+
+    yangi_qoshiladigan = [
+        mfy_id for mfy_id in body.mfy_ids if mfy_id not in xodim_faol_biriktirishlari
+    ]
+    boshqa_limit = len(xodim_faol_biriktirishlari) + len(yangi_qoshiladigan)
+    if boshqa_limit > MAX_MFY_PER_XODIM:
+        raise ValidationException(
+            f"Bitta inspektorga ko'pi bilan {MAX_MFY_PER_XODIM} ta aktiv MFY biriktirish mumkin "
+            f"(hozir {len(xodim_faol_biriktirishlari)} ta bor, {len(yangi_qoshiladigan)} ta qo'shilmoqchi)."
+        )
+
+    # Ziddiyatli MFYlar bo'lsa (majburiy=true) — avvalgi inspektordan olib,
+    # shu xodimga o'tkazamiz.
+    for mfy_id, (eski_xm, _) in boshqalarga_biriktirilgan.items():
+        eski_xm.faol = False
+
     biriktirilgan = 0
     for mfy_id in body.mfy_ids:
-        # Mavjud biriktirishni tekshirish
+        existing = xodim_faol_biriktirishlari.get(mfy_id)
+
+        if existing:
+            continue  # Allaqachon shu xodimga aktiv biriktirilgan
+
         result = await db.execute(
             select(XodimMfy).where(
                 XodimMfy.xodim_id == user_id,
                 XodimMfy.mfy_id == mfy_id,
             )
         )
-        existing = result.scalar_one_or_none()
+        mavjud_nofaol = result.scalar_one_or_none()
 
-        if existing:
-            if not existing.faol:
-                existing.faol = True
-                existing.biriktirgan_id = current_user.id
-                existing.sana = datetime.now(timezone.utc)
-                biriktirilgan += 1
+        if mavjud_nofaol:
+            mavjud_nofaol.faol = True
+            mavjud_nofaol.biriktirgan_id = current_user.id
+            mavjud_nofaol.sana = datetime.now(timezone.utc)
+            biriktirilgan += 1
         else:
             # Yangi biriktirish
             xm = XodimMfy(
