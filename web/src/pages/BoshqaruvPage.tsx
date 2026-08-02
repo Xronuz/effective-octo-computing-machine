@@ -494,19 +494,23 @@ export default function BoshqaruvPage() {
                       )}
 
                       {/* Bloklash — faol bo'lsa; Faollashtirish — bloklangan bo'lsa (toggle).
-                          O'zini bloklay olmasligi uchun — o'z qatorida ko'rsatilmaydi. */}
-                      {!isSelf && u.holat === 'faol' && (
+                          O'z qatorida — ko'rinadi, lekin bosib bo'lmaydi (o'zini bloklay olmaydi). */}
+                      {u.holat === 'faol' && (
                         <button
-                          onClick={() => bloklash(u.id)}
-                          className="btn-danger px-3 py-1.5 text-xs"
+                          onClick={() => !isSelf && bloklash(u.id)}
+                          disabled={isSelf}
+                          title={isSelf ? tr("O'zingizni bloklay olmaysiz") : undefined}
+                          className={`btn-danger px-3 py-1.5 text-xs ${isSelf ? 'cursor-not-allowed opacity-40' : ''}`}
                         >
                           {tr('Bloklash')}
                         </button>
                       )}
-                      {!isSelf && u.holat === 'bloklangan' && (
+                      {u.holat === 'bloklangan' && (
                         <button
-                          onClick={() => faollashtirish(u.id)}
-                          className="btn-primary px-3 py-1.5 text-xs"
+                          onClick={() => !isSelf && faollashtirish(u.id)}
+                          disabled={isSelf}
+                          title={isSelf ? tr("O'zingizni faollashtira olmaysiz") : undefined}
+                          className={`btn-primary px-3 py-1.5 text-xs ${isSelf ? 'cursor-not-allowed opacity-40' : ''}`}
                         >
                           {tr('Faollashtirish')}
                         </button>
@@ -530,17 +534,18 @@ export default function BoshqaruvPage() {
                         <Pencil className="h-4 w-4" />
                       </button>
 
-                      {/* O'chirish — o'zini o'chira olmasligi uchun o'z qatorida ko'rsatilmaydi */}
-                      {!isSelf && (
-                        <button
-                          onClick={() => ochirish(u)}
-                          title={tr("O'chirish")}
-                          aria-label={tr("O'chirish")}
-                          className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
+                      {/* O'chirish — o'z qatorida ko'rinadi, lekin bosib bo'lmaydi (o'zini o'chira olmaydi) */}
+                      <button
+                        onClick={() => !isSelf && ochirish(u)}
+                        disabled={isSelf}
+                        title={isSelf ? tr("O'zingizni o'chira olmaysiz") : tr("O'chirish")}
+                        aria-label={tr("O'chirish")}
+                        className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-red-500 transition-colors ${
+                          isSelf ? 'cursor-not-allowed opacity-40' : 'hover:bg-red-50'
+                        }`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>

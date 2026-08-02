@@ -20,6 +20,7 @@ import {
   ChevronRight,
   ChevronDown,
   UserRound,
+  TriangleAlert,
 } from 'lucide-react';
 import { useAuth } from '@/auth';
 import { useAlifbo } from '@/alifbo';
@@ -76,6 +77,7 @@ export function AppLayout() {
 
   const [profilMenuOpen, setProfilMenuOpen] = useState(false);
   const [profilModalOpen, setProfilModalOpen] = useState(false);
+  const [chiqishModalOpen, setChiqishModalOpen] = useState(false);
   const profilMenuRef = useRef<HTMLDivElement>(null);
 
   // Profil menyu tashqarisiga bosilsa yopiladi
@@ -105,7 +107,11 @@ export function AppLayout() {
   };
 
   const handleLogout = () => {
-    if (!window.confirm(tr('Rostdan ham tizimdan chiqmoqchimisiz?'))) return;
+    setChiqishModalOpen(true);
+  };
+
+  const confirmLogout = () => {
+    setChiqishModalOpen(false);
     logout();
     navigate('/kirish');
   };
@@ -414,6 +420,43 @@ export function AppLayout() {
 
       {/* Profil sozlamalari modali */}
       <ProfilSozlamalariModal open={profilModalOpen} onClose={() => setProfilModalOpen(false)} />
+
+      {/* Chiqish tasdiqlash modali */}
+      {chiqishModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
+          onClick={() => setChiqishModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 shadow-lift"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-label={tr('Chiqishni tasdiqlash')}
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <TriangleAlert size={20} strokeWidth={1.8} />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                  {tr('Tizimdan chiqish')}
+                </h3>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                  {tr('Rostdan ham tizimdan chiqmoqchimisiz?')}
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setChiqishModalOpen(false)} className="btn-ghost">
+                {tr('Bekor qilish')}
+              </button>
+              <button type="button" onClick={confirmLogout} className="btn-danger">
+                {tr('Chiqish')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
