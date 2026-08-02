@@ -36,6 +36,7 @@ from app.schemas.auth import (
     RefreshRequest,
     PushTokenRequest,
     UserResponse,
+    ProfilYangilashRequest,
 )
 from app.services import upload as upload_service
 
@@ -297,6 +298,85 @@ async def men(current_user: User = Depends(get_current_user)):
             "user": user_data.model_dump(),
             **extra,
         },
+        "xato": None,
+    }
+
+
+# ============ PATCH /api/auth/men ============
+
+@router.patch("/men")
+@limiter.limit("30/hour")
+async def men_yangilash(
+    request: Request,
+    ism: str | None = Form(None),
+    familiya: str | None = Form(None),
+    sharif: str | None = Form(None),
+    telefon: str | None = Form(None),
+    guvohnoma_raqami: str | None = Form(None),
+    joriy_parol: str | None = Form(None),
+    yangi_parol: str | None = Form(None),
+    rasm: UploadFile | None = File(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Joriy foydalanuvchi o'z profilini yangilaydi: ism, familiya, telefon,
+    profil rasmi, guvohnoma raqami, parol.
+    Guvohnoma raqami yoki parol o'zgartirilsa — joriy parol tekshiriladi.
+    """
+    try:
+        body = ProfilYangilashRequest(
+            ism=ism,
+            familiya=familiya,
+            sharif=sharif,
+            telefon=telefon,
+            guvohnoma_raqami=guvohnoma_raqami,
+            joriy_parol=joriy_parol,
+            yangi_parol=yangi_parol,
+        )
+    except ValidationError as exc:
+        raise RequestValidationError(exc.errors())
+
+    sezgir_ozgarish = bool(body.guvohnoma_raqami or body.yangi_parol)
+    if sezgir_ozgarish:
+        if not body.joriy_parol or not verify_password(body.joriy_parol, current_user.parol_hash):
+            raise AuthException("Joriy parol noto'g'ri.", status_code=400)
+
+    if body.guvohnoma_raqami:
+        yangi_gr = body.guvohnoma_raqami.upper()
+        if yangi_gr != current_user.guvohnoma_raqami:
+            result = await db.execute(
+                select(User).where(User.guvohnoma_raqami == yangi_gr, User.id != current_user.id)
+            )
+            if result.scalar_one_or_none():
+                raise RoyxatException("Bu guvohnoma raqami allaqachon band.")
+            current_user.guvohnoma_raqami = yangi_gr
+
+    if body.ism:
+        current_user.ism = body.ism
+    if body.familiya:
+        current_user.familiya = body.familiya
+    if sharif is not None:
+        current_user.sharif = body.sharif or None
+    if telefon is not None:
+        current_user.telefon = body.telefon or None
+    if body.yangi_parol:
+        current_user.parol_hash = hash_password(body.yangi_parol)
+
+    if rasm is not None:
+        foto = await upload_service.save_upload(rasm, subdir="profil")
+        current_user.profil_foto_url = foto["fayl_yoli"]
+
+    await db.flush()
+    await db.refresh(current_user)
+
+    user_data = UserResponse.model_validate(current_user)
+
+    logger.info(f"Profil yangilandi: {current_user.guvohnoma_raqami} (id={current_user.id})")
+
+    return {
+        "ok": True,
+        "data": {"user": user_data.model_dump()},
         "xato": None,
     }
 

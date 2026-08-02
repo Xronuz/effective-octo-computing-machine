@@ -91,3 +91,30 @@ export const apiPost = <T>(path: string, body?: unknown) =>
 export const apiPatch = <T>(path: string, body?: unknown) =>
   api<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined });
 export const apiDelete = <T>(path: string) => api<T>(path, { method: 'DELETE' });
+
+/** multipart/form-data so'rovlar (fayl yuklash) uchun — Content-Type headerini
+ *  qo'lda qo'ymaymiz, browser boundary bilan o'zi belgilaydi. */
+async function apiForm<T = unknown>(
+  path: string,
+  method: 'POST' | 'PATCH',
+  formData: FormData,
+  retry = true,
+): Promise<ApiResponse<T>> {
+  const headers: Record<string, string> = {};
+  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { method, headers, body: formData });
+
+  if (res.status === 401 && retry && refreshToken) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      headers['Authorization'] = `Bearer ${newToken}`;
+      const retryRes = await fetch(`${API_BASE}${path}`, { method, headers, body: formData });
+      return retryRes.json();
+    }
+  }
+
+  return res.json();
+}
+
+export const apiPatchForm = <T>(path: string, formData: FormData) => apiForm<T>(path, 'PATCH', formData);
