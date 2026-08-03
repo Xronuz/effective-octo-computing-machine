@@ -77,9 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         // Verify token
-        const { data } = await api.get<ApiResponse<UserBrief>>('/auth/men');
+        const { data } = await api.get<ApiResponse<{ user: UserBrief }>>('/auth/men');
         if (data.ok && data.data) {
-          const normalized = normalizeUser(data.data);
+          const normalized = normalizeUser(data.data.user);
           setUser(normalized);
           await saveUser(JSON.stringify(normalized));
           if (normalized.rol === 'xodim') {
