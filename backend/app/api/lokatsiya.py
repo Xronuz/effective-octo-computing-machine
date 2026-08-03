@@ -25,6 +25,25 @@ logger = logging.getLogger("xavfsiz_xonadon")
 router = APIRouter()
 
 
+async def _lokatsiya_yangilandi_yubor(current_user: User, log: LokatsiyaLog) -> None:
+    """Jonli xarita uchun WebSocket orqali barcha klientlarga xabar beradi."""
+    await manager.broadcast_json({
+        "type": "lokatsiya_yangilandi",
+        "data": {
+            "xodim_id": current_user.id,
+            "xodim_fio": current_user.full_name,
+            "lat": log.lat,
+            "lng": log.lng,
+            "aniqlik": log.aniqlik,
+            "tezlik": log.tezlik,
+            "batareya": log.batareya,
+            "mock_gps": log.mock_gps,
+            "qurilma_vaqti": log.qurilma_vaqti.isoformat() if log.qurilma_vaqti else None,
+            "qabul_vaqti": log.qabul_vaqti.isoformat() if log.qabul_vaqti else None,
+        },
+    })
+
+
 # ============ POST /api/lokatsiya ============
 
 @router.post("/lokatsiya")
@@ -44,22 +63,7 @@ async def send_lokatsiya(
             "xato": None,
         }
 
-    # WebSocket orqali barcha klientlarga jonli ma'lumot yuborish
-    await manager.broadcast_json({
-        "type": "lokatsiya_yangilandi",
-        "data": {
-            "xodim_id": current_user.id,
-            "xodim_fio": current_user.full_name,
-            "lat": log.lat,
-            "lng": log.lng,
-            "aniqlik": log.aniqlik,
-            "tezlik": log.tezlik,
-            "batareya": log.batareya,
-            "mock_gps": log.mock_gps,
-            "qurilma_vaqti": log.qurilma_vaqti.isoformat() if log.qurilma_vaqti else None,
-            "qabul_vaqti": log.qabul_vaqti.isoformat() if log.qabul_vaqti else None,
-        },
-    })
+    await _lokatsiya_yangilandi_yubor(current_user, log)
 
     return {
         "ok": True,
@@ -100,10 +104,12 @@ async def send_lokatsiya_batch(
     """
     saqlangan = 0
     rad_etilgan = 0
+    oxirgi_log: LokatsiyaLog | None = None
     for nuqta in body.items:
         log = await lokatsiya_service.save_lokatsiya(db, current_user.id, nuqta)
         if log is not None:
             saqlangan += 1
+            oxirgi_log = log
         else:
             rad_etilgan += 1
 
@@ -111,6 +117,14 @@ async def send_lokatsiya_batch(
         f"Lokatsiya batch: user_id={current_user.id}, "
         f"jami={len(body.items)}, saqlangan={saqlangan}, rad_etilgan={rad_etilgan}"
     )
+
+    # Jonli xarita uchun — mobil ilova har bir nuqtani alohida emas, faqat
+    # batch qilib yuboradi (`/lokatsiya` yagona-nuqta yo'li ishlatilmaydi),
+    # shuning uchun WS bildirishnomasi avval umuman yuborilmasdi. Paketdagi
+    # eng so'nggi (band ro'yxatda oxirgi, ya'ni eng yangi) saqlangan nuqta
+    # broadcast qilinadi — offline to'plangan barcha eski nuqtalarni emas.
+    if oxirgi_log is not None:
+        await _lokatsiya_yangilandi_yubor(current_user, oxirgi_log)
 
     return {
         "ok": True,
