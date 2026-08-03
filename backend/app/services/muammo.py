@@ -78,6 +78,7 @@ async def create_muammo(
     qurilma_vaqti: datetime,
     ornida_bartaraf: bool = False,
     muddat: date | None = None,
+    has_oldin_foto: bool = False,
     has_keyin_foto: bool = False,
     fotos_sha256_list: list[str] | None = None,
     taklif_etilgan_tadbirlar: str | None = None,
@@ -190,6 +191,12 @@ async def create_muammo(
             )
 
     if muammo_topildi:
+        # "Oldin" foto — muammoning topilgan holatining dalili, ornida
+        # bartaraf etilgan-etilmaganidan qat'i nazar har doim majburiy.
+        if not has_oldin_foto:
+            raise ValidationException(
+                "Muammo uchun 'oldin' (muammoning holati) fotosi majburiy."
+            )
         # ornida_bartaraf validatsiyasi — faqat haqiqiy muammo uchun
         if ornida_bartaraf and not has_keyin_foto:
             raise ValidationException(

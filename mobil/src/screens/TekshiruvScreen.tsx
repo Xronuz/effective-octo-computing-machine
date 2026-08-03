@@ -112,7 +112,13 @@ export default function TekshiruvScreen() {
   const [gpsLocked, setGpsLocked] = useState(false);
   const [gpsTimedOut, setGpsTimedOut] = useState(false);
   const [mockGps, setMockGps] = useState(false);
+  // Muammo topilmagan/kira olmadi tashriflarda — ixtiyoriy, umumiy hujjatlashtirish fotosi.
   const [photos, setPhotos] = useState<Photo[]>([]);
+  // Muammo topilganda: "oldin" — muammoning holati (har doim majburiy),
+  // "keyin" — o'rnida bartaraf etilgan holat (faqat ornidaBartaraf bo'lsa majburiy).
+  const [oldinPhotos, setOldinPhotos] = useState<Photo[]>([]);
+  const [keyinPhotos, setKeyinPhotos] = useState<Photo[]>([]);
+  const [kameraNishoni, setKameraNishoni] = useState<'umumiy' | 'oldin' | 'keyin'>('umumiy');
   const [submitting, setSubmitting] = useState(false);
   const [locError, setLocError] = useState('');
   const [cameraVisible, setCameraVisible] = useState(false);
@@ -260,12 +266,21 @@ export default function TekshiruvScreen() {
     );
   };
 
-  const takePhoto = async () => {
+  const takePhoto = async (nishon: 'umumiy' | 'oldin' | 'keyin' = 'umumiy') => {
+    setKameraNishoni(nishon);
     if (await kameraRuxsati.soraw()) setCameraVisible(true);
   };
 
   const removePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeOldinPhoto = (index: number) => {
+    setOldinPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeKeyinPhoto = (index: number) => {
+    setKeyinPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const finalMuddatIso = (): string | null => {
@@ -295,7 +310,11 @@ export default function TekshiruvScreen() {
       Alert.alert(tr('Xatolik'), tr("Kamida bitta yo'riqnoma bandini belgilang"));
       return;
     }
-    if (muammoBormi && ornidaBartaraf && photos.length === 0) {
+    if (muammoBormi && oldinPhotos.length === 0) {
+      Alert.alert(tr('Xatolik'), tr("Muammo uchun 'oldin' (muammoning holati) fotosi majburiy."));
+      return;
+    }
+    if (muammoBormi && ornidaBartaraf && keyinPhotos.length === 0) {
       Alert.alert(
         tr('Xatolik'),
         tr("O'rnida bartaraf etilgan muammo uchun 'keyin' foto majburiy."),
@@ -350,7 +369,8 @@ export default function TekshiruvScreen() {
         yoriqnomadan_otkanlar_soni: yoriqnomadanOtkanlarSoni,
         kira_olmadi: kiraOlmadi,
         majburiy,
-        foto_paths: photos.map((p) => p.uri),
+        foto_paths: muammoBormi ? oldinPhotos.map((p) => p.uri) : photos.map((p) => p.uri),
+        keyin_foto_paths: muammoBormi ? keyinPhotos.map((p) => p.uri) : [],
         status: 'kutilmoqda',
         urinishlar_soni: 0,
         xato: null,
@@ -622,12 +642,36 @@ export default function TekshiruvScreen() {
               </View>
             )}
 
-            {/* Fotolar */}
-            <SectionLabel
-              title={tr('Fotolar')}
-              trailing={ornidaBartaraf ? tr('majburiy') : `${photos.length}`}
+            {/* "Oldin" foto — muammoning topilgan holati, har doim majburiy */}
+            <SectionLabel title={tr('Muammo holati (Oldin)')} trailing={tr('majburiy')} />
+            <Text style={styles.fotoIzoh}>
+              {tr('Aniqlangan muammoni suratga oling — bu dalil sifatida saqlanadi.')}
+            </Text>
+            <PhotoPreview
+              photos={oldinPhotos}
+              onAdd={() => takePhoto('oldin')}
+              onRemove={removeOldinPhoto}
+              maxPhotos={5}
             />
-            <PhotoPreview photos={photos} onAdd={takePhoto} onRemove={removePhoto} maxPhotos={5} />
+
+            {/* "Keyin" foto — faqat o'rnida bartaraf etilganda (darhol yopilganda) */}
+            {ornidaBartaraf && (
+              <>
+                <SectionLabel
+                  title={tr('Bartaraf qilingan holat (Keyin)')}
+                  trailing={tr('majburiy')}
+                />
+                <Text style={styles.fotoIzoh}>
+                  {tr('Bartaraf etilgan holatni suratga oling — bu dalil sifatida saqlanadi.')}
+                </Text>
+                <PhotoPreview
+                  photos={keyinPhotos}
+                  onAdd={() => takePhoto('keyin')}
+                  onRemove={removeKeyinPhoto}
+                  maxPhotos={5}
+                />
+              </>
+            )}
           </>
         )}
 
@@ -654,7 +698,12 @@ export default function TekshiruvScreen() {
 
             {/* Fotolar (ixtiyoriy) */}
             <SectionLabel title={tr('Fotolar (ixtiyoriy)')} trailing={`${photos.length}`} />
-            <PhotoPreview photos={photos} onAdd={takePhoto} onRemove={removePhoto} maxPhotos={5} />
+            <PhotoPreview
+              photos={photos}
+              onAdd={() => takePhoto('umumiy')}
+              onRemove={removePhoto}
+              maxPhotos={5}
+            />
           </>
         )}
 
@@ -686,7 +735,12 @@ export default function TekshiruvScreen() {
 
             {/* Fotolar (ixtiyoriy) */}
             <SectionLabel title={tr('Fotolar (ixtiyoriy)')} trailing={`${photos.length}`} />
-            <PhotoPreview photos={photos} onAdd={takePhoto} onRemove={removePhoto} maxPhotos={5} />
+            <PhotoPreview
+              photos={photos}
+              onAdd={() => takePhoto('umumiy')}
+              onRemove={removePhoto}
+              maxPhotos={5}
+            />
           </>
         )}
 
@@ -780,7 +834,11 @@ export default function TekshiruvScreen() {
       <KameraModal
         visible={cameraVisible}
         onClose={() => setCameraVisible(false)}
-        onCapture={(uri) => setPhotos((prev) => [...prev, { uri }])}
+        onCapture={(uri) => {
+          if (kameraNishoni === 'oldin') setOldinPhotos((prev) => [...prev, { uri }]);
+          else if (kameraNishoni === 'keyin') setKeyinPhotos((prev) => [...prev, { uri }]);
+          else setPhotos((prev) => [...prev, { uri }]);
+        }}
       />
     </SafeAreaView>
   );
@@ -1043,6 +1101,12 @@ function createStyles(colors: ColorPalette) {
       marginTop: Spacing.xxs,
     },
     gpsError: { fontSize: FontSizes.sm, fontFamily: Fonts.body, color: colors.danger },
+    fotoIzoh: {
+      fontSize: FontSizes.sm,
+      fontFamily: Fonts.body,
+      color: colors.textMuted,
+      marginBottom: Spacing.sm,
+    },
     gpsTimeoutBox: {
       marginTop: Spacing.sm,
       backgroundColor: colors.accentSurface,

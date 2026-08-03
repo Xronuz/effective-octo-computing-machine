@@ -140,6 +140,7 @@ class TestCreateMuammoBroadcast:
                 client_uuid=uuid4(),
                 qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
                 muddat=date(2026, 8, 1),
+                has_oldin_foto=True,
             )
 
         assert dublikat is False
@@ -168,6 +169,7 @@ class TestCreateMuammoBroadcast:
                 client_uuid=uuid4(),
                 qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
                 muddat=date(2026, 8, 1),
+                has_oldin_foto=True,
             )
 
         assert m.shubhali is True

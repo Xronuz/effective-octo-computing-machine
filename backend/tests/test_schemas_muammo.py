@@ -444,7 +444,7 @@ class TestFotolarniBoglash:
 
     def test_one_foto(self):
         """FotolarniBoglash with a single foto is valid."""
-        obj = FotolarniBoglash(fotolar=[
+        obj = FotolarniBoglash(turi="keyin", fotolar=[
             MuammoFotoLink(fayl_yoli="/uploads/photo1.jpg", sha256="a" * 64),
         ])
         assert len(obj.fotolar) == 1
@@ -454,7 +454,7 @@ class TestFotolarniBoglash:
     def test_empty_fotolar_raises(self):
         """FotolarniBoglash raises when fotolar list is empty."""
         with pytest.raises(ValidationError):
-            FotolarniBoglash(fotolar=[])
+            FotolarniBoglash(turi="keyin", fotolar=[])
 
     def test_ten_fotolar_ok(self):
         """FotolarniBoglash with exactly 10 fotolar is valid."""
@@ -462,10 +462,17 @@ class TestFotolarniBoglash:
             MuammoFotoLink(fayl_yoli=f"/uploads/photo{i}.jpg", sha256=f"{i:064x}")
             for i in range(10)
         ]
-        obj = FotolarniBoglash(fotolar=fotolar)
+        obj = FotolarniBoglash(turi="oldin", fotolar=fotolar)
         assert len(obj.fotolar) == 10
         for i, foto in enumerate(obj.fotolar):
             assert foto.fayl_yoli == f"/uploads/photo{i}.jpg"
+
+    def test_invalid_turi_raises(self):
+        """FotolarniBoglash raises when turi is not 'oldin'/'keyin'."""
+        with pytest.raises(ValidationError):
+            FotolarniBoglash(turi="boshqa", fotolar=[
+                MuammoFotoLink(fayl_yoli="/uploads/photo1.jpg", sha256="a" * 64),
+            ])
 
     def test_eleven_fotolar_raises(self):
         """FotolarniBoglash raises when fotolar exceeds max_length of 10."""

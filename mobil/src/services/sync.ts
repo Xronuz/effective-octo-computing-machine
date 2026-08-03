@@ -96,11 +96,52 @@ export async function fotoYukla(faylYoli: string): Promise<UploadFotoJavob> {
   return data.data;
 }
 
+// Fotolarni ketma-ket yuklaydi (POST /api/upload/foto, multipart)
+async function fotolarniYukla(paths: string[]): Promise<UploadFotoJavob[]> {
+  const natija: UploadFotoJavob[] = [];
+  for (const path of paths) {
+    natija.push(await fotoYukla(path));
+  }
+  return natija;
+}
+
+// Yuklangan fotolarni muammoga belgilangan `turi` bilan bog'laydi
+// (POST /api/muammolar/{id}/fotolar)
+async function fotolarniBoglash(
+  muammoId: number,
+  fotolar: UploadFotoJavob[],
+  turi: 'oldin' | 'keyin',
+): Promise<void> {
+  const { data: boglash } = await api.post<ApiResponse<unknown>>(`/muammolar/${muammoId}/fotolar`, {
+    turi,
+    fotolar: fotolar.map((f) => ({
+      fayl_yoli: f.fayl_yoli,
+      sha256: f.sha256,
+      exif_lat: f.exif_lat,
+      exif_lng: f.exif_lng,
+      exif_vaqt: f.exif_vaqt,
+      olcham_byte: f.olcham_byte,
+    })),
+  });
+  if (!boglash.ok) throw new Error(boglash.xato || "Fotolarni bog'lashda xatolik");
+}
+
 // Bitta navbat yozuvini backend oqimi bo'yicha yuborish:
 // 1) POST /api/muammolar (client_uuid — idempotent, dublikat ham muvaffaqiyat)
 // 2) har bir foto uchun POST /api/upload/foto (multipart)
-// 3) POST /api/muammolar/{id}/fotolar — bog'lash
+// 3) POST /api/muammolar/{id}/fotolar — bog'lash ("oldin" va "keyin" alohida)
 async function yozuvniYubor(y: NavbatYozuvi): Promise<void> {
+  // Eski (yangilanishdan oldin navbatga tushib qolgan) yozuvlarda
+  // `keyin_foto_paths` ustuni bo'lmasligi mumkin.
+  const keyinFotoPaths = y.keyin_foto_paths ?? [];
+  // Eski ilova versiyasida "o'rnida bartaraf etildi" holatida yagona foto
+  // to'plami ("foto_paths") "keyin" dalili sifatida olinardi. Agar aynan shu
+  // holat uchrasa (bartaraf + foto_paths bor, lekin keyin_foto_paths yo'q) —
+  // xodimdan qayta surat olishni talab qilmaslik uchun o'sha fotolar ham
+  // "keyin" sifatida qo'shimcha bog'lanadi.
+  const eskiYozuvBartarafFotosi =
+    y.ornida_bartaraf && y.foto_paths.length > 0 && keyinFotoPaths.length === 0;
+
   const { data } = await api.post<ApiResponse<MuammoSummary & { dublikat?: boolean }>>(
     '/muammolar',
     {
@@ -116,7 +157,8 @@ async function yozuvniYubor(y: NavbatYozuvi): Promise<void> {
       qurilma_vaqti: y.yaratilgan,
       ornida_bartaraf: y.ornida_bartaraf,
       muddat: y.ornida_bartaraf ? null : y.muddat,
-      has_keyin_foto: y.ornida_bartaraf && y.foto_paths.length > 0,
+      has_oldin_foto: y.foto_paths.length > 0,
+      has_keyin_foto: y.ornida_bartaraf && (keyinFotoPaths.length > 0 || eskiYozuvBartarafFotosi),
       taklif_etilgan_tadbirlar: y.taklif_etilgan_tadbirlar,
       // Backend endi bu maydonni majburiy deb talab qiladi — eski
       // navbatga tushib qolgan (yangilanishdan oldingi) yozuvlarda bo'sh
@@ -135,24 +177,15 @@ async function yozuvniYubor(y: NavbatYozuvi): Promise<void> {
   const muammoId = data.data.id;
 
   if (y.foto_paths.length > 0) {
-    const fotolar: UploadFotoJavob[] = [];
-    for (const path of y.foto_paths) {
-      fotolar.push(await fotoYukla(path));
+    const oldinFotolar = await fotolarniYukla(y.foto_paths);
+    await fotolarniBoglash(muammoId, oldinFotolar, 'oldin');
+    if (eskiYozuvBartarafFotosi) {
+      await fotolarniBoglash(muammoId, oldinFotolar, 'keyin');
     }
-    const { data: boglash } = await api.post<ApiResponse<unknown>>(
-      `/muammolar/${muammoId}/fotolar`,
-      {
-        fotolar: fotolar.map((f) => ({
-          fayl_yoli: f.fayl_yoli,
-          sha256: f.sha256,
-          exif_lat: f.exif_lat,
-          exif_lng: f.exif_lng,
-          exif_vaqt: f.exif_vaqt,
-          olcham_byte: f.olcham_byte,
-        })),
-      },
-    );
-    if (!boglash.ok) throw new Error(boglash.xato || "Fotolarni bog'lashda xatolik");
+  }
+  if (keyinFotoPaths.length > 0) {
+    const keyinFotolar = await fotolarniYukla(keyinFotoPaths);
+    await fotolarniBoglash(muammoId, keyinFotolar, 'keyin');
   }
 }
 

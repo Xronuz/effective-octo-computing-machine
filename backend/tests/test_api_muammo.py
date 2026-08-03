@@ -1016,6 +1016,7 @@ class TestAddFotolarEndpoint:
             resp = client.post(
                 "/api/muammolar/1/fotolar",
                 json={
+                    "turi": "keyin",
                     "fotolar": [
                         {"fayl_yoli": "uploads/foto1.jpg", "sha256": "a" * 64}
                     ]
@@ -1026,6 +1027,50 @@ class TestAddFotolarEndpoint:
             assert data["ok"] is True
             assert data["data"]["jami"] == 1
             assert len(data["data"]["fotolar"]) == 1
+
+    def test_add_fotos_turi_forwarded_not_hardcoded(self, client_factory):
+        """Regression: /fotolar so'ralgan `turi`ni saqlashi kerak — avval
+        bu qattiq "keyin" qilib yozib qo'yilardi, "oldin" fotolar ham
+        "keyin" bo'lib qolar edi."""
+        mock_user = _make_user(rol=UserRole.rahbar)
+        mock_db = AsyncMock()
+        mock_db.flush = AsyncMock()
+        mock_db.refresh = AsyncMock()
+
+        mock_muammo = MagicMock()
+        mock_muammo.xodim_id = 1
+
+        mock_foto = MagicMock(spec=Foto)
+        mock_foto.id = 1
+        mock_foto.turi = FotoTuri.oldin
+        mock_foto.fayl_yoli = "uploads/foto1.jpg"
+        mock_foto.yuklangan = datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc)
+
+        with patch.object(muammo_service, "get_muammo", new_callable=AsyncMock) as mock_get, \
+             patch.object(muammo_service, "add_fotos_to_muammo", new_callable=AsyncMock) as mock_add:
+
+            mock_get.return_value = mock_muammo
+            mock_add.return_value = [mock_foto]
+
+            client = client_factory(
+                user_override=lambda: mock_user,
+                db_override=lambda: mock_db,
+            )
+
+            resp = client.post(
+                "/api/muammolar/1/fotolar",
+                json={
+                    "turi": "oldin",
+                    "fotolar": [
+                        {"fayl_yoli": "uploads/foto1.jpg", "sha256": "a" * 64}
+                    ]
+                },
+            )
+            assert resp.status_code == 200
+
+            call_args = mock_add.call_args.args
+            foto_dicts = call_args[2]
+            assert foto_dicts[0]["turi"] == "oldin"
 
     def test_add_fotos_xodim_own(self, client_factory):
         """Xodim o'z muammosiga foto qo'sha oladi."""
@@ -1057,6 +1102,7 @@ class TestAddFotolarEndpoint:
             resp = client.post(
                 "/api/muammolar/1/fotolar",
                 json={
+                    "turi": "keyin",
                     "fotolar": [
                         {"fayl_yoli": "uploads/foto1.jpg", "sha256": "b" * 64}
                     ]
@@ -1083,6 +1129,7 @@ class TestAddFotolarEndpoint:
             resp = client.post(
                 "/api/muammolar/2/fotolar",
                 json={
+                    "turi": "keyin",
                     "fotolar": [
                         {"fayl_yoli": "uploads/foto1.jpg", "sha256": "b" * 64}
                     ]
@@ -1108,7 +1155,7 @@ class TestAddFotolarEndpoint:
 
             resp = client.post(
                 "/api/muammolar/1/fotolar",
-                json={"fotolar": []},
+                json={"turi": "keyin", "fotolar": []},
             )
             assert resp.status_code == 422
 
@@ -1127,6 +1174,6 @@ class TestAddFotolarEndpoint:
 
             resp = client.post(
                 "/api/muammolar/999/fotolar",
-                json={"fotolar": [{"fayl_yoli": "uploads/f.jpg", "sha256": "c" * 64}]},
+                json={"turi": "keyin", "fotolar": [{"fayl_yoli": "uploads/f.jpg", "sha256": "c" * 64}]},
             )
             assert resp.status_code == 404

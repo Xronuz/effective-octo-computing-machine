@@ -4,7 +4,7 @@ Muammo CRUD uchun so'rov/javob modellari.
 """
 import re
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
@@ -35,6 +35,7 @@ class MuammoCreate(BaseModel):
     qurilma_vaqti: datetime
     ornida_bartaraf: bool = False
     muddat: Optional[date] = None
+    has_oldin_foto: bool = False
     has_keyin_foto: bool = False
     fotos_sha256_list: Optional[list[str]] = None
     taklif_etilgan_tadbirlar: Optional[str] = Field(None, max_length=2000)
@@ -213,5 +214,11 @@ class MuammoFotoLink(BaseModel):
 
 
 class FotolarniBoglash(BaseModel):
-    """Yuklangan fotolarni muammoga bog'lash so'rovi."""
+    """Yuklangan fotolarni muammoga bog'lash so'rovi.
+
+    `turi` — shu so'rovdagi barcha fotolar bir xil turda ('oldin' —
+    muammoning topilgan holati, 'keyin' — bartaraf etilgandan keyingi
+    holat). Mobil ilova ikkalasini alohida so'rov bilan yuboradi.
+    """
+    turi: Literal["oldin", "keyin"]
     fotolar: list[MuammoFotoLink] = Field(..., min_length=1, max_length=10)

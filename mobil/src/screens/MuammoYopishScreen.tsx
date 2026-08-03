@@ -67,6 +67,7 @@ export default function MuammoYopishScreen() {
         yuklangan.push(await fotoYukla(p.uri));
       }
       await api.post(`/muammolar/${muammoId}/fotolar`, {
+        turi: 'keyin',
         fotolar: yuklangan.map((f) => ({
           fayl_yoli: f.fayl_yoli,
           sha256: f.sha256,

@@ -133,6 +133,7 @@ class TestCreateMuammo:
             client_uuid=client_uuid,
             qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
             muddat=date(2026, 8, 1),
+            has_oldin_foto=True,
         )
 
         db.add.assert_called_once()
@@ -206,6 +207,7 @@ class TestCreateMuammo:
             client_uuid=str(uuid4()),
             qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
             muddat=date(2026, 8, 1),
+            has_oldin_foto=True,
         )
         assert m.shubhali is True
 
@@ -228,6 +230,7 @@ class TestCreateMuammo:
             client_uuid=str(uuid4()),
             qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
             muddat=date(2026, 8, 1),
+            has_oldin_foto=True,
         )
         assert m.shubhali is True
 
@@ -343,6 +346,7 @@ class TestCreateMuammo:
                 qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
                 yoriqnomadan_otkanlar_soni=2,
                 taklif_etilgan_tadbirlar="3,4,8",
+                has_oldin_foto=True,
             )
 
     @pytest.mark.asyncio
@@ -366,6 +370,7 @@ class TestCreateMuammo:
             yoriqnomadan_otkanlar_soni=1,
             taklif_etilgan_tadbirlar="3,4,8",
             muddat=date(2026, 8, 15),
+            has_oldin_foto=True,
         )
 
         assert dublikat is False
@@ -376,7 +381,8 @@ class TestCreateMuammo:
 
     @pytest.mark.asyncio
     async def test_checklist_problem_ornida_bartaraf_without_foto_raises(self):
-        """turi=None + bandlar + ornida_bartaraf=True lekin has_keyin_foto=False — xato."""
+        """turi=None + bandlar + ornida_bartaraf=True lekin has_keyin_foto=False — xato
+        (has_oldin_foto=True berilgan, shu tekshiruv aynan 'keyin' talabini tekshiradi)."""
         xonadon = _make_xonadon()
         db, result = _make_mock_db()
         result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
@@ -396,7 +402,34 @@ class TestCreateMuammo:
                 yoriqnomadan_otkanlar_soni=1,
                 taklif_etilgan_tadbirlar="3,4,8",
                 ornida_bartaraf=True,
+                has_oldin_foto=True,
                 has_keyin_foto=False,
+            )
+
+    @pytest.mark.asyncio
+    async def test_checklist_problem_without_oldin_foto_raises(self):
+        """turi=None + bandlar, has_oldin_foto=False — muammo topilgan holatning
+        dalili majburiy, ornida_bartaraf/muddat holatidan qat'i nazar."""
+        xonadon = _make_xonadon()
+        db, result = _make_mock_db()
+        result.scalar_one_or_none = MagicMock(side_effect=[xonadon, None, None])
+
+        with pytest.raises(ValidationException, match="oldin"):
+            await muammo_service.create_muammo(
+                db, _make_xodim(),
+                xonadon_id=1,
+                turi=None,
+                tavsif=None,
+                xavf="orta",
+                lat=40.1, lng=71.4,
+                gps_aniqlik=5.0,
+                mock_gps=False,
+                client_uuid=str(uuid4()),
+                qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+                yoriqnomadan_otkanlar_soni=1,
+                taklif_etilgan_tadbirlar="3,4,8",
+                muddat=date(2026, 8, 15),
+                has_oldin_foto=False,
             )
 
     @pytest.mark.asyncio
@@ -446,6 +479,7 @@ class TestCreateMuammo:
                 yoriqnomadan_otkanlar_soni=1,
                 taklif_etilgan_tadbirlar="3,4,8",
                 muddat=date(2026, 8, 15),
+                has_oldin_foto=True,
             )
             mock_ws.assert_called_once()
             assert mock_ws.call_args.args[0]["type"] == "yangi_muammo"
@@ -469,6 +503,7 @@ class TestCreateMuammo:
             client_uuid=str(uuid4()),
             qurilma_vaqti=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
             muddat=date(2026, 8, 1),
+            has_oldin_foto=True,
         )
         assert m.shubhali is False
 

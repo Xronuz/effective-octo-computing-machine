@@ -63,6 +63,7 @@ async def create_muammo(
         qurilma_vaqti=body.qurilma_vaqti,
         ornida_bartaraf=body.ornida_bartaraf,
         muddat=body.muddat,
+        has_oldin_foto=body.has_oldin_foto,
         has_keyin_foto=body.has_keyin_foto,
         fotos_sha256_list=body.fotos_sha256_list,
         taklif_etilgan_tadbirlar=body.taklif_etilgan_tadbirlar,
@@ -329,7 +330,7 @@ async def add_fotolar(
 
     foto_dicts = [
         {
-            "turi": "keyin",
+            "turi": body.turi,
             "fayl_yoli": f.fayl_yoli,
             "sha256": f.sha256,
             "exif_lat": f.exif_lat,

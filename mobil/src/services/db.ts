@@ -24,7 +24,10 @@ export interface NavbatYozuvi {
   kira_olmadi: boolean;
   /** Xonadon bugun tekshirilgan bo'lsa ham yozish tasdiqlangan (takroriy). */
   majburiy: boolean;
+  /** "Oldin" fotolar — muammoning topilgan holatining dalili. */
   foto_paths: string[];
+  /** "Keyin" fotolar — o'rnida bartaraf etilganda (darhol yopilganda) tuzatilgan holat. */
+  keyin_foto_paths: string[];
   status: NavbatStatus;
   urinishlar_soni: number;
   xato: string | null;
@@ -66,6 +69,7 @@ export async function initDB(): Promise<void> {
       kira_olmadi INTEGER DEFAULT 0,
       majburiy INTEGER DEFAULT 0,
       foto_paths TEXT DEFAULT '[]',
+      keyin_foto_paths TEXT DEFAULT '[]',
       status TEXT DEFAULT 'kutilmoqda',
       urinishlar_soni INTEGER DEFAULT 0,
       xato TEXT,
@@ -93,6 +97,7 @@ export async function initDB(): Promise<void> {
       'ALTER TABLE muammo_navbat ADD COLUMN yoriqnomadan_otkanlar_soni INTEGER',
       'ALTER TABLE muammo_navbat ADD COLUMN kira_olmadi INTEGER DEFAULT 0',
       'ALTER TABLE muammo_navbat ADD COLUMN majburiy INTEGER DEFAULT 0',
+      "ALTER TABLE muammo_navbat ADD COLUMN keyin_foto_paths TEXT DEFAULT '[]'",
     ]) {
       try {
         await database.execAsync(alter);
@@ -131,6 +136,7 @@ export async function initDB(): Promise<void> {
             kira_olmadi INTEGER DEFAULT 0,
             majburiy INTEGER DEFAULT 0,
             foto_paths TEXT DEFAULT '[]',
+            keyin_foto_paths TEXT DEFAULT '[]',
             status TEXT DEFAULT 'kutilmoqda',
             urinishlar_soni INTEGER DEFAULT 0,
             xato TEXT,
@@ -232,6 +238,7 @@ interface NavbatRow {
   kira_olmadi: number;
   majburiy: number;
   foto_paths: string;
+  keyin_foto_paths: string;
   status: string;
   urinishlar_soni: number;
   xato: string | null;
@@ -257,6 +264,7 @@ function rowToYozuv(r: NavbatRow): NavbatYozuvi {
     kira_olmadi: r.kira_olmadi === 1,
     majburiy: r.majburiy === 1,
     foto_paths: JSON.parse(r.foto_paths || '[]'),
+    keyin_foto_paths: JSON.parse(r.keyin_foto_paths || '[]'),
     status: r.status as NavbatStatus,
     urinishlar_soni: r.urinishlar_soni,
     xato: r.xato,
@@ -276,8 +284,9 @@ export async function muammoniNavbatgaQosh(yozuv: NavbatYozuvi): Promise<void> {
     `INSERT OR REPLACE INTO muammo_navbat
       (client_uuid, xonadon_id, turi, xavf, tavsif, lat, lng, gps_aniqlik, mock_gps,
        ornida_bartaraf, muddat, taklif_etilgan_tadbirlar, yoriqnomadan_otkanlar_soni,
-       kira_olmadi, majburiy, foto_paths, status, urinishlar_soni, xato, keyingi_urinish, yaratilgan)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       kira_olmadi, majburiy, foto_paths, keyin_foto_paths, status, urinishlar_soni, xato,
+       keyingi_urinish, yaratilgan)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       yozuv.client_uuid,
       yozuv.xonadon_id,
@@ -295,6 +304,7 @@ export async function muammoniNavbatgaQosh(yozuv: NavbatYozuvi): Promise<void> {
       yozuv.kira_olmadi ? 1 : 0,
       yozuv.majburiy ? 1 : 0,
       JSON.stringify(yozuv.foto_paths),
+      JSON.stringify(yozuv.keyin_foto_paths),
       yozuv.status,
       yozuv.urinishlar_soni,
       yozuv.xato,
