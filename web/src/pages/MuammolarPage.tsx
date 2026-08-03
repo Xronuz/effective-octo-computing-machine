@@ -230,49 +230,52 @@ export default function MuammolarPage() {
           </div>
         ) : (
           <div className="max-h-[60vh] overflow-auto">
-            <table className="table">
+            {/* table-fixed + foizli ustun kengliklari — ustunlar ko'p bo'lsa ham
+                jadval karta kengligiga sig'adi, matn qatorga o'ralib
+                gorizontal scroll shart bo'lmay qoladi (faqat tik scroll qoladi). */}
+            <table className="table table-fixed">
               <thead className="sticky top-0 z-10 bg-white">
                 <tr>
-                  <th className="text-center">#</th>
-                  <th className="text-center">{tr('Natija')}</th>
-                  <th className="text-center">{tr('MFY')}</th>
-                  <th className="hidden text-center md:table-cell">{tr("Ko'cha")}</th>
-                  <th className="hidden text-center lg:table-cell">{tr('Uy raqam')}</th>
-                  <th className="hidden text-center xl:table-cell">{tr('Xonadon egasi')}</th>
-                  <th className="hidden text-center xl:table-cell">{tr('Telefon raqam')}</th>
-                  <th className="hidden text-center 2xl:table-cell">{tr("Taklif etilgan yong'inga qarshi tadbirlar")}</th>
-                  <th className="hidden text-center 2xl:table-cell">{tr("Yo'riqnomadan o'tkanlar soni")}</th>
-                  <th className="hidden text-center lg:table-cell">{tr('Inspector')}</th>
-                  <th className="text-center">{tr('Amallar')}</th>
+                  <th className="w-[4%] text-center">#</th>
+                  <th className="w-[11%] text-center">{tr('Natija')}</th>
+                  <th className="w-[9%] text-center">{tr('MFY')}</th>
+                  <th className="hidden text-center md:table-cell md:w-[9%]">{tr("Ko'cha")}</th>
+                  <th className="hidden text-center lg:table-cell lg:w-[6%]">{tr('Uy raqam')}</th>
+                  <th className="hidden text-center xl:table-cell xl:w-[12%]">{tr('Xonadon egasi')}</th>
+                  <th className="hidden text-center xl:table-cell xl:w-[9%]">{tr('Telefon raqam')}</th>
+                  <th className="hidden text-center 2xl:table-cell 2xl:w-[15%]">{tr("Taklif etilgan yong'inga qarshi tadbirlar")}</th>
+                  <th className="hidden text-center 2xl:table-cell 2xl:w-[7%]">{tr("Yo'riqnomadan o'tkanlar soni")}</th>
+                  <th className="hidden text-center lg:table-cell lg:w-[11%]">{tr('Inspector')}</th>
+                  <th className="w-[7%] text-center">{tr('Amallar')}</th>
                 </tr>
               </thead>
               <tbody>
                 {data.items.map((m, i) => (
                   <tr key={m.id}>
                     <td className="text-center text-slate-400 tabular-nums">{(page-1)*size + i + 1}</td>
-                    <td className="text-center whitespace-nowrap">
+                    <td className="text-center">
                       <div className="flex flex-col items-center gap-1">
                         <NatijaBadge natija={m.tekshiruv_natijasi} qisqa />
                         {/* Shubhali yozuvlar ro'yxatda darhol ko'rinsin —
                             avval buni faqat batafsil sahifada bilish mumkin edi */}
                         {m.shubhali && (
-                          <span className="badge-purple whitespace-nowrap">
-                            <AlertTriangle className="h-3 w-3" />
+                          <span className="badge-purple whitespace-normal text-center">
+                            <AlertTriangle className="h-3 w-3 shrink-0" />
                             {m.shubhali_sabab_nomi ? tr(m.shubhali_sabab_nomi) : tr('Shubhali')}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="text-center font-medium text-[#0F2033]">{m.mfy_nomi ? tr(m.mfy_nomi) : '—'}</td>
-                    <td className="hidden text-center text-slate-600 md:table-cell">{m.kocha_nomi ? tr(m.kocha_nomi) : '—'}</td>
+                    <td className="text-center font-medium text-[#0F2033] break-words">{m.mfy_nomi ? tr(m.mfy_nomi) : '—'}</td>
+                    <td className="hidden text-center text-slate-600 md:table-cell break-words">{m.kocha_nomi ? tr(m.kocha_nomi) : '—'}</td>
                     <td className="hidden text-center text-slate-600 lg:table-cell">{m.uy_raqami || '—'}</td>
-                    <td className="hidden text-center text-slate-600 xl:table-cell">{m.egasi_fio ? tr(m.egasi_fio) : '—'}</td>
-                    <td className="hidden text-center text-slate-600 xl:table-cell">{m.egasi_tel || '—'}</td>
-                    <td className="hidden max-w-[260px] text-center text-xs text-slate-500 2xl:table-cell">
+                    <td className="hidden text-center text-slate-600 xl:table-cell break-words">{m.egasi_fio ? tr(m.egasi_fio) : '—'}</td>
+                    <td className="hidden text-center text-slate-600 xl:table-cell break-all">{m.egasi_tel || '—'}</td>
+                    <td className="hidden text-center text-xs text-slate-500 2xl:table-cell">
                       <span className="line-clamp-2">{m.taklif_etilgan_tadbirlar ? tr(m.taklif_etilgan_tadbirlar) : '—'}</span>
                     </td>
                     <td className="hidden text-center tabular-nums 2xl:table-cell">{m.yoriqnomadan_otkanlar_soni ?? '—'}</td>
-                    <td className="hidden text-center text-slate-600 lg:table-cell">{m.xodim_fio ? tr(m.xodim_fio) : '—'}</td>
+                    <td className="hidden text-center text-slate-600 lg:table-cell break-words">{m.xodim_fio ? tr(m.xodim_fio) : '—'}</td>
                     <td className="text-center">
                       <Link to={`/muammolar/${m.id}`} className="btn-soft px-2 py-1 text-xs">{tr('Batafsil')}</Link>
                     </td>
